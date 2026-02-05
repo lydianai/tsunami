@@ -108,7 +108,7 @@ def tor_servis_baslat():
             subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             _startup_logger.info("[TOR] Dogrudan baslatildi")
             return True
-        except:
+        except Exception:
             pass
     except Exception as e:
         _startup_logger.warning(f"[TOR] Servis baslatilamadi: {e}")
@@ -1855,17 +1855,17 @@ class WiFiTarayici:
 
                         try:
                             kanal = int(parts[2]) if parts[2] else 0
-                        except:
+                        except Exception:
                             kanal = 0
 
                         try:
                             frekans = int(parts[3]) if parts[3] else 0
-                        except:
+                        except Exception:
                             frekans = 0
 
                         try:
                             sinyal = int(parts[4]) if parts[4] else 0
-                        except:
+                        except Exception:
                             sinyal = 0
 
                         sifreleme = parts[5] if parts[5] else 'Acik'
@@ -1912,7 +1912,7 @@ class WiFiTarayici:
                 capture_output=True, text=True, timeout=30
             )
             # Parse ve analiz...
-        except:
+        except Exception:
             pass
 
         return analiz
@@ -1987,7 +1987,7 @@ class AgTarayici:
             try:
                 result = subprocess.run(['which', bilgi['cmd']], capture_output=True, timeout=5)
                 sonuc[arac] = result.returncode == 0
-            except:
+            except Exception:
                 sonuc[arac] = False
         return sonuc
 
@@ -2236,7 +2236,7 @@ class TrafikMonitoru:
                     idx = parts.index('dev')
                     if idx + 1 < len(parts):
                         return parts[idx + 1]
-        except:
+        except Exception:
             pass
         return 'eth0'
 
@@ -2255,7 +2255,7 @@ class TrafikMonitoru:
                         'mac': iface.get('address'),
                         'tip': iface.get('link_type')
                     })
-        except:
+        except Exception:
             pass
         return arayuzler
 
@@ -2284,7 +2284,7 @@ class TrafikMonitoru:
                 stats['rx_errors'] = int(f.read().strip())
             with open(f'/sys/class/net/{arayuz}/statistics/tx_errors') as f:
                 stats['tx_errors'] = int(f.read().strip())
-        except:
+        except Exception:
             pass
 
         # Okunabilir format
@@ -2319,7 +2319,7 @@ class TrafikMonitoru:
                             'remote': parts[4] if len(parts) > 4 else '',
                             'proses': parts[-1] if 'users:' in line else ''
                         })
-        except:
+        except Exception:
             pass
         return baglantilar[:100]  # Ilk 100
 
@@ -2340,7 +2340,7 @@ class TrafikMonitoru:
                         'durum': entry.get('state', []),
                         'satici': satici
                     })
-        except:
+        except Exception:
             pass
         return tablo
 
@@ -2365,7 +2365,7 @@ class TrafikMonitoru:
                                   capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 sonuc['ns'] = result.stdout.strip().split('\n')
-        except:
+        except Exception:
             pass
         return sonuc
 
@@ -2478,7 +2478,7 @@ class CihazParmakIzi:
                 if osmatch is not None:
                     sonuc['os'] = osmatch.get('name', 'bilinmeyen')
                     sonuc['dogruluk'] = int(osmatch.get('accuracy', 0))
-        except:
+        except Exception:
             pass
 
         return sonuc
@@ -2503,7 +2503,7 @@ class SinyalTriangulasyonu:
             exp = (27.55 - (20 * math.log10(frekans_mhz)) + abs(sinyal_dbm)) / 20
             mesafe = math.pow(10, exp)
             return round(mesafe, 2)
-        except:
+        except Exception:
             return 0
 
     @staticmethod
@@ -3008,7 +3008,7 @@ class MullvadVPN:
                         })
 
             return sunucular[:50]  # Ilk 50
-        except:
+        except Exception:
             return []
 
     def kill_switch_ayarla(self, aktif: bool) -> Dict:
@@ -3050,7 +3050,7 @@ class MullvadVPN:
                     "mullvad_bagli": data.get("mullvad_exit_ip", False),
                     "sunucu": data.get("mullvad_server_type")
                 }
-        except:
+        except Exception:
             # Alternatif IP kontrol
             try:
                 req = urllib.request.Request("https://api.ipify.org?format=json")
@@ -3058,7 +3058,7 @@ class MullvadVPN:
                 with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
                     data = json.loads(resp.read().decode())
                     return {"ip": data.get("ip"), "mullvad_bagli": False}
-            except:
+            except Exception:
                 return {"ip": "Bilinmeyen", "mullvad_bagli": False}
 
 
@@ -3086,7 +3086,7 @@ class UniversalVPN:
                                       capture_output=True, timeout=5)
                 if result.returncode == 0:
                     return tip
-            except:
+            except Exception:
                 continue
 
         return None
@@ -3096,7 +3096,7 @@ class UniversalVPN:
         try:
             result = subprocess.run(['wg', 'show'], capture_output=True, text=True, timeout=5)
             return bool(result.stdout.strip())
-        except:
+        except Exception:
             return False
 
     def _openvpn_bagli_mi(self) -> bool:
@@ -3104,7 +3104,7 @@ class UniversalVPN:
         try:
             result = subprocess.run(['pgrep', '-x', 'openvpn'], capture_output=True, timeout=5)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
 
     def durum_kontrol(self) -> Dict:
@@ -3126,7 +3126,7 @@ class UniversalVPN:
                     return sonuc
         except FileNotFoundError:
             pass
-        except:
+        except Exception:
             pass
 
         # 2. WireGuard kontrolu
@@ -3136,7 +3136,7 @@ class UniversalVPN:
             try:
                 result = subprocess.run(['wg', 'show', 'interfaces'], capture_output=True, text=True, timeout=5)
                 sonuc["sunucu"] = result.stdout.strip() if result.returncode == 0 else "wg0"
-            except:
+            except Exception:
                 sonuc["sunucu"] = "wg0"
             return sonuc
 
@@ -3156,7 +3156,7 @@ class UniversalVPN:
                 sonuc["tip"] = "tor"
                 sonuc["sunucu"] = "Tor Network (127.0.0.1:9050)"
                 return sonuc
-        except:
+        except Exception:
             pass
 
         # 5. ProtonVPN kontrolu
@@ -3169,7 +3169,7 @@ class UniversalVPN:
                 if match:
                     sonuc["sunucu"] = match.group(1)
                 return sonuc
-        except:
+        except Exception:
             pass
 
         # 5. NordVPN kontrolu
@@ -3179,7 +3179,7 @@ class UniversalVPN:
                 sonuc["aktif"] = True
                 sonuc["tip"] = "nordvpn"
                 return sonuc
-        except:
+        except Exception:
             pass
 
         return sonuc
@@ -3205,7 +3205,7 @@ class UniversalVPN:
                                      capture_output=True, timeout=30)
                         time.sleep(3)
                         return self.durum_kontrol()
-                    except:
+                    except Exception:
                         continue
 
             # VPN yok - Tor kullanilabilir mi?
@@ -3221,7 +3221,7 @@ class UniversalVPN:
                         "sunucu": "Tor Network",
                         "mesaj": "VPN bulunamadi, Tor anonim agi aktif edildi"
                     }
-            except:
+            except Exception:
                 pass
 
             # Tor'u baslat
@@ -3238,7 +3238,7 @@ class UniversalVPN:
                         "sunucu": "Tor Network",
                         "mesaj": "Tor anonim agi basariyla aktif edildi"
                     }
-            except:
+            except Exception:
                 pass
 
             return {
@@ -3344,7 +3344,7 @@ class UniversalVPN:
                             "sehir": data.get("city"),
                             "org": data.get("org")
                         }
-                except:
+                except Exception:
                     continue
 
             return {"ip": "Bilinmiyor", "hata": "IP alinamadi"}
@@ -3413,14 +3413,14 @@ class OSINTModulu:
                     "as": data.get("as"),
                     "zaman_dilimi": data.get("timezone")
                 }
-        except:
+        except Exception:
             pass
 
         # Shodan bilgisi
         if self.shodan:
             try:
                 sonuc["shodan"] = self.shodan.host_bilgi(ip)
-            except:
+            except Exception:
                 pass
 
         # Ters DNS
@@ -3428,7 +3428,7 @@ class OSINTModulu:
             hostname = socket.gethostbyaddr(ip)
             sonuc["dns"]["hostname"] = hostname[0]
             sonuc["dns"]["aliases"] = hostname[1]
-        except:
+        except Exception:
             pass
 
         return sonuc
@@ -3451,7 +3451,7 @@ class OSINTModulu:
                                       capture_output=True, text=True, timeout=10)
                 if result.stdout.strip():
                     sonuc["dns_kayitlari"][tip] = result.stdout.strip().split('\n')
-            except:
+            except Exception:
                 pass
 
         # A kayitlarindan IP'ler
@@ -3471,7 +3471,7 @@ class OSINTModulu:
                     if key and value and not key.startswith('%'):
                         whois_data[key] = value
             sonuc["whois"] = whois_data
-        except:
+        except Exception:
             pass
 
         return sonuc
@@ -3491,7 +3491,7 @@ class OSINTModulu:
                                       capture_output=True, text=True, timeout=10)
                 if result.stdout.strip():
                     sonuc["mx_kayitlari"] = result.stdout.strip().split('\n')
-            except:
+            except Exception:
                 pass
 
         return sonuc
@@ -3571,7 +3571,7 @@ class OSINTModulu:
                     sonuclar["platformlar"][platform] = {"url": url, "durum": "bulunamadi"}
                 else:
                     sonuclar["platformlar"][platform] = {"url": url, "durum": "belirsiz", "kod": e.code}
-            except:
+            except Exception:
                 sonuclar["platformlar"][platform] = {"url": url, "durum": "hata"}
 
         return sonuclar
@@ -3755,7 +3755,7 @@ class YerelAracYoneticisi:
         try:
             result = subprocess.run(['which', cmd], capture_output=True, timeout=5)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
 
     @classmethod
@@ -4119,7 +4119,7 @@ def health_ready():
         if db and hasattr(db, 'istatistikler'):
             db.istatistikler()
             checks['database'] = True
-    except:
+    except Exception:
         pass
 
     # Check Redis (if available)
@@ -4128,7 +4128,7 @@ def health_ready():
         r = redis.Redis(host='localhost', port=6379, socket_timeout=1)
         r.ping()
         checks['redis'] = True
-    except:
+    except Exception:
         checks['redis'] = None  # Not configured
 
     all_critical_ok = checks['app'] and checks['database']
@@ -7535,7 +7535,7 @@ class DenetimGunlugu:
         try:
             with open(cls.LOG_DOSYASI, 'a') as f:
                 f.write(kayit + '\n')
-        except:
+        except Exception:
             pass
 
     @classmethod
@@ -7554,7 +7554,7 @@ class DenetimGunlugu:
                             'kullanici': match.group(2),
                             'komut': match.group(3)
                         })
-        except:
+        except Exception:
             pass
         return loglar
 
@@ -7579,7 +7579,7 @@ class GizlilikYoneticisi:
         try:
             subprocess.run(['resolvectl', 'dns', 'eth0', '1.1.1.1', '1.0.0.1'], capture_output=True, timeout=10)
             sonuclar.append(('DNS Koruma', True))
-        except:
+        except Exception:
             sonuclar.append(('DNS Koruma', False))
 
         # 4. WebRTC leak koruması (tarayıcı için bilgi)
@@ -7602,7 +7602,7 @@ class GizlilikYoneticisi:
                 'vpn_ip': vpn_ip,
                 'korunuyor': vpn_ip != 'Bilinmiyor'
             }
-        except:
+        except Exception:
             return {'korunuyor': False}
 
 
@@ -7901,7 +7901,7 @@ def api_tor_durum():
             result = subprocess.run(['systemctl', 'is-active', 'tor'],
                                   capture_output=True, text=True, timeout=5)
             servis_aktif = result.stdout.strip() == 'active'
-        except:
+        except Exception:
             servis_aktif = False
 
         # SOCKS port kontrolu
@@ -7912,7 +7912,7 @@ def api_tor_durum():
             result = sock.connect_ex(('127.0.0.1', 9050))
             socks_aktif = (result == 0)
             sock.close()
-        except:
+        except Exception:
             pass
 
         # Cikis IP (eger stealth aktifse)
@@ -7921,7 +7921,7 @@ def api_tor_durum():
             try:
                 from dalga_stealth import stealth_orchestrator
                 cikis_ip = stealth_orchestrator.tor.exit_ip
-            except:
+            except Exception:
                 pass
 
         return jsonify({
@@ -8537,7 +8537,7 @@ class KonumTespitAgenti(OtonomAgent):
                     if data.get('results'):
                         result = data['results'][0]
                         return {'lat': result.get('trilat'), 'lng': result.get('trilong')}
-            except:
+            except Exception:
                 pass
         return None
 
@@ -8838,7 +8838,7 @@ class SwarmKoordinator:
             try:
                 sonuc = AgentYoneticisi.agent_calistir(agent)
                 sonuclar['alt_sonuclar'][agent] = sonuc
-            except:
+            except Exception:
                 pass
 
         return sonuclar
@@ -9549,7 +9549,7 @@ class CanliSaldiriVerisi:
             # Log: Gerçek tehdit sayısı
             try:
                 logger.info(f"[CANLI-SALDIRI] Tehdit cache güncellendi: {len(tum_tehditler)} gerçek IOC (GTI: {len(gti_tehditler)})")
-            except:
+            except Exception:
                 pass
 
     @classmethod
@@ -10333,7 +10333,7 @@ def api_streetview(lat, lng):
             'mapillary_url': mapillary_url,
             'koordinat': {'lat': lat, 'lng': lng}
         })
-    except:
+    except Exception:
         return jsonify({'basarili': False, 'hata': 'Geçersiz koordinat'})
 
 # Saldiri akisi singleton kontrol
@@ -10367,7 +10367,7 @@ def handle_saldiri_akisi():
                         geo = _geo_init()
                         if geo:
                             geo.saldiri_ekle(saldiri)
-                    except:
+                    except Exception:
                         pass
 
                 # BEYIN'e tehdit bildir (eger aktifse)
@@ -10376,7 +10376,7 @@ def handle_saldiri_akisi():
                         beyin = beyin_al()
                         if beyin and hasattr(beyin, 'tehdit_bildir'):
                             beyin.tehdit_bildir('canli_saldiri', saldiri)
-                    except:
+                    except Exception:
                         pass
 
                 # GNN'e saldiri ekle (graf analizi icin)
@@ -10393,7 +10393,7 @@ def handle_saldiri_akisi():
                                     'tehdit': gnn_sonuc['analiz'].get('tehdit'),
                                     'saldiri': saldiri
                                 })
-                    except:
+                    except Exception:
                         pass
 
                 time.sleep(random.uniform(2, 5))
@@ -10522,7 +10522,7 @@ class OSINTZenginlestirici:
             try:
                 ips = socket.gethostbyname_ex(domain)[2]
                 sonuc['records']['A'] = ips
-            except:
+            except Exception:
                 pass
 
             # MX kaydı için subprocess
@@ -10531,7 +10531,7 @@ class OSINTZenginlestirici:
                                       capture_output=True, text=True, timeout=10)
                 if result.stdout:
                     sonuc['records']['MX'] = result.stdout.strip().split('\n')
-            except:
+            except Exception:
                 pass
 
             # NS kaydı
@@ -10540,7 +10540,7 @@ class OSINTZenginlestirici:
                                       capture_output=True, text=True, timeout=10)
                 if result.stdout:
                     sonuc['records']['NS'] = result.stdout.strip().split('\n')
-            except:
+            except Exception:
                 pass
 
             # TXT kaydı
@@ -10549,7 +10549,7 @@ class OSINTZenginlestirici:
                                       capture_output=True, text=True, timeout=10)
                 if result.stdout:
                     sonuc['records']['TXT'] = result.stdout.strip().split('\n')
-            except:
+            except Exception:
                 pass
 
             sonuc['basarili'] = True
@@ -10639,7 +10639,7 @@ class OSINTZenginlestirici:
             try:
                 socket.gethostbyname(fqdn)
                 sonuc['subdomains'].append(fqdn)
-            except:
+            except Exception:
                 pass
 
         sonuc['basarili'] = True
@@ -10711,7 +10711,7 @@ class OSINTZenginlestirici:
                         'url': url,
                         'durum': f'hata_{e.code}'
                     })
-            except:
+            except Exception:
                 pass
 
         sonuc['basarili'] = True
@@ -12289,7 +12289,7 @@ class OSINTOtonomSistem:
                     'hedef': hedef,
                     'zaman': datetime.now().isoformat()
                 })
-            except:
+            except Exception:
                 pass
 
     @classmethod
@@ -12311,7 +12311,7 @@ class OSINTOtonomSistem:
                     'isp': data.get('isp'),
                     'org': data.get('org')
                 }
-        except:
+        except Exception:
             return {'ip': ip, 'hata': 'Lokasyon alinamadi'}
 
     @classmethod
@@ -12371,7 +12371,7 @@ class OSINTOtonomSistem:
                                         'org': shodan_data.get('org')
                                     })
                                     graph.baglanti_ekle(ip, f"shodan_{ip}", 'shodan_data')
-                        except:
+                        except Exception:
                             pass
 
                 sonuc['nodes'].extend(list(graph.nodes.values()))
@@ -12386,7 +12386,7 @@ class OSINTOtonomSistem:
                             'bulgu_sayisi': len(graph.nodes),
                             'zaman': datetime.now().isoformat()
                         })
-                    except:
+                    except Exception:
                         pass
 
             except Exception as e:
@@ -12427,7 +12427,7 @@ class OSINTOtonomSistem:
                     })
                     graph.baglanti_ekle(ip, f"loc_{ip}", 'located_in')
 
-        except:
+        except Exception:
             pass
 
         return {
@@ -13324,7 +13324,7 @@ def api_tarama_kapsamli():
                             'mac': parts[3] if len(parts) > 3 else '-',
                             'hostname': parts[0] if parts[0] != '?' else '-'
                         })
-    except:
+    except Exception:
         pass
 
     # Bildirim gonder
@@ -14897,7 +14897,7 @@ def api_ailydian_v2_integrations_status():
     try:
         r = requests.get('http://localhost:37777/api/health', timeout=2)
         integrations['claude-mem'] = {'active': r.ok, 'port': 37777}
-    except:
+    except Exception:
         integrations['claude-mem'] = {'active': False, 'port': 37777}
 
     # SkillHub status
@@ -17099,7 +17099,7 @@ def api_airspace_aircraft():
                 center_lat = (bbox[0] + bbox[2]) / 2
                 center_lon = (bbox[1] + bbox[3]) / 2
                 aircraft = adsblol.get_aircraft_in_area(center_lat, center_lon, 250)
-            except:
+            except Exception:
                 pass
 
         return jsonify({
@@ -17373,14 +17373,14 @@ def api_aerospace_durum():
         tracker = airspace_tracker_al()
         durum['airspace']['aktif'] = True
         durum['airspace']['opensky_auth'] = tracker.auth is not None
-    except:
+    except Exception:
         pass
 
     try:
         from dalga_airspace import adsblol_tracker_al
         adsblol_tracker_al()
         durum['airspace']['adsblol'] = True
-    except:
+    except Exception:
         pass
 
     try:
@@ -17388,7 +17388,7 @@ def api_aerospace_durum():
         tracker = satellite_tracker_al()
         durum['satellite']['aktif'] = True
         durum['satellite']['n2yo_key'] = bool(tracker.api_key)
-    except:
+    except Exception:
         pass
 
     return jsonify(durum)
@@ -18819,7 +18819,7 @@ def sorgula_tehditler(sorgu: str, konum: str, zaman: dict, hedefler: dict) -> tu
                     'seviye': t.get('seviye', 'orta'),
                     'zaman': str(t.get('zaman', ''))[:19]
                 })
-    except:
+    except Exception:
         pass
 
     # Veritabanından
@@ -18840,7 +18840,7 @@ def sorgula_tehditler(sorgu: str, konum: str, zaman: dict, hedefler: dict) -> tu
                 'seviye': s.seviye,
                 'zaman': str(s.zaman)[:19]
             })
-    except:
+    except Exception:
         pass
 
     # Yanıt oluştur
@@ -18875,7 +18875,7 @@ def sorgula_honeypot(konum: str, zaman: dict) -> tuple:
                 'risk': a.get('risk_score'),
                 'erisim': a.get('interaction_count')
             })
-    except:
+    except Exception:
         pass
 
     if sonuclar:
@@ -18902,7 +18902,7 @@ def sorgula_sinkhole(zaman: dict) -> tuple:
                 'kaynak': b.get('source_ip'),
                 'zaman': b.get('blocked_at')
             })
-    except:
+    except Exception:
         pass
 
     if sonuclar:
@@ -18928,7 +18928,7 @@ def sorgula_wireless() -> tuple:
                 'ciddiyet': e.get('severity'),
                 'detay': e.get('details')
             })
-    except:
+    except Exception:
         pass
 
     if sonuclar:
@@ -19112,7 +19112,7 @@ def api_intervention_summary():
             sinkhole = DNSSinkhole()
             stats = sinkhole.get_stats()
             ozet['sinkhole'] = {'aktif': True, 'engellenen': stats.get('total_blocked', 0)}
-        except: pass
+        except Exception: pass
 
         # Honeypot
         try:
@@ -19120,7 +19120,7 @@ def api_intervention_summary():
             orchestrator = HoneypotOrchestrator()
             stats = orchestrator.get_stats()
             ozet['honeypot'] = {'aktif': True, 'erisim': stats.get('total_interactions', 0)}
-        except: pass
+        except Exception: pass
 
         # Hunter
         try:
@@ -19128,7 +19128,7 @@ def api_intervention_summary():
             hunter = ThreatHunter()
             threats = hunter.get_active_threats(limit=1000)
             ozet['hunter'] = {'aktif': True, 'tehdit': len(threats)}
-        except: pass
+        except Exception: pass
 
         # Wireless
         try:
@@ -19136,7 +19136,7 @@ def api_intervention_summary():
             ids = WirelessIDS()
             stats = ids.get_stats()
             ozet['wireless'] = {'aktif': True, 'alarm': stats.get('total_alerts', 0)}
-        except: pass
+        except Exception: pass
 
         # Federated
         try:
@@ -19144,7 +19144,7 @@ def api_intervention_summary():
             fed = FederatedIntelligence()
             stats = fed.get_stats()
             ozet['federated'] = {'aktif': True, 'peer': stats.get('connected_peers', 0)}
-        except: pass
+        except Exception: pass
 
         return jsonify({'basarili': True, 'ozet': ozet})
     except Exception as e:
