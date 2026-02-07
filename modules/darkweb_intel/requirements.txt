@@ -1,0 +1,31 @@
+# TSUNAMI v5.0 Dark Web Intelligence Module Dependencies
+# =====================================================
+
+# Core HTTP
+requests>=2.28.0
+urllib3>=1.26.0
+
+# SOCKS Proxy Support (for Tor)
+PySocks>=1.7.0
+requests[socks]
+
+# Flask API
+flask>=2.3.0
+
+# Tor Control (optional - for circuit management)
+stem>=1.8.0
+
+# Data validation
+dataclasses-json>=0.5.0
+
+# Async support (optional)
+aiohttp>=3.8.0
+aiofiles>=23.0.0
+
+# Rate limiting
+ratelimit>=2.2.0
+
+# Development/Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+responses>=0.23.0

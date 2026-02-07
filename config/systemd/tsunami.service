@@ -1,0 +1,50 @@
+[Unit]
+Description=TSUNAMI Cyber Intelligence Platform
+Documentation=https://github.com/tsunami-security
+After=network.target redis.service
+Wants=redis.service tsunami-celery.service tsunami-beat.service
+
+[Service]
+Type=simple
+User=tsunami
+Group=tsunami
+WorkingDirectory=/opt/tsunami
+Environment="TSUNAMI_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+EnvironmentFile=/opt/tsunami/.env
+
+ExecStart=/opt/tsunami/venv/bin/gunicorn \
+    --bind 0.0.0.0:8080 \
+    --workers 4 \
+    --threads 2 \
+    --worker-class eventlet \
+    --timeout 120 \
+    --keep-alive 5 \
+    --access-logfile /var/log/tsunami/access.log \
+    --error-logfile /var/log/tsunami/error.log \
+    --capture-output \
+    dalga_web:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tsunami /var/log/tsunami
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=4G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

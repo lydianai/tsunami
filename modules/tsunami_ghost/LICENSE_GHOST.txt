@@ -1,0 +1,49 @@
+GHOST-OSINT-CRM Integration for TSUNAMI
+========================================
+
+This module is inspired by and based on concepts from:
+
+GHOST-osint-crm
+https://github.com/elm1nst3r/GHOST-osint-crm
+
+Original Author: elm1nst3r
+License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+
+---
+
+Attribution Notice:
+- GHOST (Global Human Operations & Surveillance Tracking) concept by elm1nst3r
+- Original implementation: Node.js/Express + React + PostgreSQL
+- This Python/Flask adaptation maintains the same core functionality
+- Non-commercial use only without explicit permission
+
+---
+
+CC BY-NC-SA 4.0 Summary:
+
+You are free to:
+- Share: copy and redistribute the material in any medium or format
+- Adapt: remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution: You must give appropriate credit, provide a link to the license,
+  and indicate if changes were made.
+- NonCommercial: You may not use the material for commercial purposes.
+- ShareAlike: If you remix, transform, or build upon the material, you must
+  distribute your contributions under the same license as the original.
+
+Full license: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+---
+
+TSUNAMI Integration Notes:
+- Pure Python implementation (no Node.js dependency)
+- SQLite database (compatible with TSUNAMI's existing DB)
+- Flask API endpoints integrated with dalga_web.py
+- Leaflet map integration in harita.html
+- D3.js relationship graph visualization
+- Turkish language NLP commands supported
+- Full SIGINT module synchronization
+
+For commercial licensing inquiries:
+Contact elm1nst3r at: hurdles.remand_9g [at] icloud.com

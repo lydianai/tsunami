@@ -1,0 +1,353 @@
+/* TSUNAMI THEME SYSTEM - F-35 Cockpit Themes */
+/* Tema: Varsayılan (Cyan/Mavi) ve Siyah-Beyaz Kokpit */
+
+/* ============================================
+   VARSAYILAN TEMA (CYAN) - Orijinal
+   ============================================ */
+:root, [data-theme="cyan"] {
+    --bg-void: #020408;
+    --bg-deep: #040810;
+    --bg-panel: rgba(8, 16, 24, 0.85);
+    --bg-glass: rgba(12, 24, 36, 0.6);
+    --bg-card: rgba(10, 20, 30, 0.9);
+    --border-glow: rgba(0, 180, 255, 0.3);
+    --border-subtle: rgba(0, 120, 180, 0.15);
+    --text-bright: #e8f4ff;
+    --text-normal: #a0c0d8;
+    --text-dim: #506070;
+    --accent-primary: #00b4ff;
+    --accent-secondary: #00ff9d;
+    --accent-warning: #ffaa00;
+    --accent-danger: #ff3355;
+    --accent-purple: #8855ff;
+    --hud-green: #00ff88;
+    --hud-cyan: #00e5ff;
+    --hud-amber: #ffcc00;
+
+    /* Aurora colors */
+    --aurora-1: rgba(0, 180, 255, 0.12);
+    --aurora-2: rgba(0, 255, 157, 0.08);
+    --aurora-3: rgba(136, 85, 255, 0.06);
+
+    /* Grid */
+    --grid-color: rgba(0, 180, 255, 0.03);
+}
+
+/* ============================================
+   SİYAH-BEYAZ KOKPİT TEMASI (F-35 NIGHT MODE)
+   ============================================ */
+[data-theme="cockpit-bw"] {
+    --bg-void: #000000;
+    --bg-deep: #0a0a0a;
+    --bg-panel: rgba(15, 15, 15, 0.95);
+    --bg-glass: rgba(20, 20, 20, 0.8);
+    --bg-card: rgba(12, 12, 12, 0.95);
+    --border-glow: rgba(255, 255, 255, 0.25);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --text-bright: #ffffff;
+    --text-normal: #d0d0d0;
+    --text-dim: #707070;
+    --accent-primary: #ffffff;
+    --accent-secondary: #cccccc;
+    --accent-warning: #ffcc00;
+    --accent-danger: #ff4444;
+    --accent-purple: #aaaaaa;
+    --hud-green: #00ff00;
+    --hud-cyan: #ffffff;
+    --hud-amber: #ffcc00;
+
+    /* Aurora - subtle white glow */
+    --aurora-1: rgba(255, 255, 255, 0.05);
+    --aurora-2: rgba(255, 255, 255, 0.03);
+    --aurora-3: rgba(255, 255, 255, 0.02);
+
+    /* Grid */
+    --grid-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Cockpit BW tema için özel stiller */
+[data-theme="cockpit-bw"] .aurora-bg {
+    background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 40%),
+                #000000;
+}
+
+[data-theme="cockpit-bw"] .aurora-wave {
+    background:
+        radial-gradient(ellipse 80% 40% at 50% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 30% at 70% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+}
+
+[data-theme="cockpit-bw"] .grid-overlay {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+}
+
+[data-theme="cockpit-bw"] .logo-icon {
+    background: linear-gradient(135deg, #ffffff, #888888);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="cockpit-bw"] .nav-panel::before {
+    background: linear-gradient(180deg,
+        transparent 0%,
+        #ffffff 20%,
+        #ffffff 80%,
+        transparent 100%);
+}
+
+[data-theme="cockpit-bw"] .defcon-display {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="cockpit-bw"] .defcon-display::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+[data-theme="cockpit-bw"] .ghost-dot {
+    background: #00ff00 !important;
+    box-shadow: 0 0 8px #00ff00 !important;
+}
+
+/* Butonlar BW temada */
+[data-theme="cockpit-bw"] .btn,
+[data-theme="cockpit-bw"] button {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+[data-theme="cockpit-bw"] .btn:hover,
+[data-theme="cockpit-bw"] button:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Kartlar BW temada */
+[data-theme="cockpit-bw"] .card,
+[data-theme="cockpit-bw"] .panel {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="cockpit-bw"] .card:hover,
+[data-theme="cockpit-bw"] .panel:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Tablolar */
+[data-theme="cockpit-bw"] table th {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="cockpit-bw"] table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Input alanları */
+[data-theme="cockpit-bw"] input,
+[data-theme="cockpit-bw"] select,
+[data-theme="cockpit-bw"] textarea {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+[data-theme="cockpit-bw"] input:focus,
+[data-theme="cockpit-bw"] select:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Badge'ler */
+[data-theme="cockpit-bw"] .badge {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollbar BW */
+[data-theme="cockpit-bw"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="cockpit-bw"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   HEADER TEMA DEĞİŞTİRİCİ BUTONU (YENİ v5.0)
+   ============================================ */
+.theme-toggle-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(136, 85, 255, 0.15), rgba(0, 180, 255, 0.15));
+    border: 1px solid rgba(136, 85, 255, 0.4);
+    border-radius: 6px;
+    padding: 8px 10px;
+    transition: all 0.3s ease;
+    color: var(--accent-primary);
+}
+
+.theme-toggle-header:hover {
+    background: linear-gradient(135deg, rgba(136, 85, 255, 0.3), rgba(0, 180, 255, 0.3));
+    box-shadow: 0 0 15px rgba(136, 85, 255, 0.4);
+    border-color: rgba(136, 85, 255, 0.7);
+}
+
+.theme-toggle-header svg {
+    transition: all 0.3s;
+}
+
+[data-theme="cyan"] .theme-toggle-header .theme-icon-light { display: block; }
+[data-theme="cyan"] .theme-toggle-header .theme-icon-dark { display: none; }
+[data-theme="cockpit-bw"] .theme-toggle-header .theme-icon-light { display: none; }
+[data-theme="cockpit-bw"] .theme-toggle-header .theme-icon-dark { display: block; }
+
+[data-theme="cockpit-bw"] .theme-toggle-header {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="cockpit-bw"] .theme-toggle-header:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="cockpit-bw"] .theme-toggle-header svg {
+    filter: drop-shadow(0 0 5px #fff);
+}
+
+/* FLOATING TEMA DEĞİŞTİRİCİ (Alternatif) */
+.theme-toggle-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--border-glow);
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--bg-panel);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--accent-primary);
+}
+
+.theme-toggle-float svg {
+    width: 22px;
+    height: 22px;
+    fill: var(--accent-primary);
+    transition: all 0.3s;
+}
+
+[data-theme="cyan"] .theme-toggle-float {
+    background: linear-gradient(135deg, rgba(0, 180, 255, 0.2), rgba(136, 85, 255, 0.2));
+    border-color: rgba(0, 180, 255, 0.5);
+}
+
+[data-theme="cyan"] .theme-toggle-float .icon-moon { display: block; }
+[data-theme="cyan"] .theme-toggle-float .icon-sun { display: none; }
+
+[data-theme="cockpit-bw"] .theme-toggle-float {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="cockpit-bw"] .theme-toggle-float:hover {
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="cockpit-bw"] .theme-toggle-float svg {
+    fill: #fff !important;
+    filter: drop-shadow(0 0 5px #fff);
+}
+
+[data-theme="cockpit-bw"] .theme-toggle-float .icon-moon { display: none; }
+[data-theme="cockpit-bw"] .theme-toggle-float .icon-sun { display: block; }
+
+/* HEADER STILLERI - COCKPIT-BW */
+[data-theme="cockpit-bw"] .command-header,
+[data-theme="cockpit-bw"] .hud-bar,
+[data-theme="cockpit-bw"] .top-bar,
+[data-theme="cockpit-bw"] header {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.98) 0%, rgba(5, 5, 5, 0.95) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="cockpit-bw"] .command-header h1,
+[data-theme="cockpit-bw"] .hud-bar h1,
+[data-theme="cockpit-bw"] .top-bar h1 {
+    color: #fff !important;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* NAV PANEL STILLERI - COCKPIT-BW */
+[data-theme="cockpit-bw"] .nav-panel,
+[data-theme="cockpit-bw"] .side-panel,
+[data-theme="cockpit-bw"] nav {
+    background: rgba(0, 0, 0, 0.98) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="cockpit-bw"] .nav-item:hover,
+[data-theme="cockpit-bw"] .nav-item.active {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* ============================================
+   STEALTH MODE VISUAL INDICATOR
+   ============================================ */
+.stealth-active {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9998;
+    padding: 6px 16px;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 20px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #00ff00;
+    display: none;
+    animation: stealth-pulse 2s infinite;
+}
+
+.stealth-active.visible {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stealth-active::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #00ff00;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes stealth-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

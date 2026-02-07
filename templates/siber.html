@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SİBER KOMUTA MERKEZİ v3.0 | TSUNAMI</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* TSUNAMI Kokpit Teması - Harita ile Uyumlu */
+            --bg-void: #020408;
+            --bg-abyss: #040810;
+            --bg-deep: #081018;
+            --bg-glass: rgba(0, 20, 40, 0.85);
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff88;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff4444;
+            --accent-purple: #8855ff;
+            --hud-cyan: #00e5ff;
+            --hud-green: #00ff88;
+            --text-bright: #f0f4f8;
+            --text-normal: #a8b4c4;
+            --text-dim: #5a6a7a;
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+            --glow-cyan: 0 0 20px rgba(0, 180, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-void);
+            color: var(--text-bright);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scanline efekti */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.05) 0px,
+                rgba(0, 0, 0, 0.05) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            z-index: 9999;
+            opacity: 0.3;
+        }
+
+        /* Header - Kokpit Stili */
+        .header {
+            background: linear-gradient(180deg, rgba(0, 20, 40, 0.98) 0%, rgba(0, 15, 30, 0.95) 100%);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 180, 255, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--hud-green), var(--hud-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: var(--glow-green);
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(0, 255, 136, 0.5); }
+        }
+
+        .logo-text h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--hud-green), var(--hud-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .logo-text span {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-normal);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online { background: var(--hud-green); box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+        .status-dot.warning { background: var(--accent-warning); box-shadow: 0 0 10px rgba(255, 170, 0, 0.5); }
+        .status-dot.offline { background: var(--accent-danger); box-shadow: 0 0 10px rgba(255, 68, 68, 0.5); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        /* Main Container - Kokpit Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1rem;
+            padding: 1rem;
+            min-height: calc(100vh - 70px);
+            background: linear-gradient(180deg, var(--bg-void) 0%, var(--bg-abyss) 100%);
+        }
+
+        /* Left Sidebar - Agents */
+        .sidebar-left {
+            background: var(--bg-glass);
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 180, 255, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 180, 255, 0.05));
+            border-bottom: 1px solid var(--border-glow);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--hud-green);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .agent-layer {
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .layer-header {
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .layer-header:hover {
+            background: rgba(0, 180, 255, 0.1);
+            color: var(--hud-cyan);
+        }
+
+        .layer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .layer-content.expanded {
+            max-height: 500px;
+        }
+
+        .agent-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .agent-item:hover {
+            background: rgba(0, 180, 255, 0.1);
+        }
+
+        .agent-item.active {
+            background: rgba(0, 255, 136, 0.15);
+            border-left: 3px solid var(--hud-green);
+        }
+
+        .agent-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .agent-icon.command { background: linear-gradient(135deg, #ff6b6b, #ee5a24); box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+        .agent-icon.intelligence { background: linear-gradient(135deg, #00d4ff, #0066ff); box-shadow: 0 0 15px rgba(0, 212, 255, 0.3); }
+        .agent-icon.defense { background: linear-gradient(135deg, #00ff88, #00cc66); box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); }
+        .agent-icon.offensive { background: linear-gradient(135deg, #ff4444, #cc0000); box-shadow: 0 0 15px rgba(255, 68, 68, 0.3); }
+        .agent-icon.purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 0 15px rgba(155, 89, 182, 0.3); }
+        .agent-icon.critical { background: linear-gradient(135deg, #f39c12, #e67e22); box-shadow: 0 0 15px rgba(243, 156, 18, 0.3); }
+        .agent-icon.global { background: linear-gradient(135deg, #1abc9c, #16a085); box-shadow: 0 0 15px rgba(26, 188, 156, 0.3); }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-bright);
+        }
+
+        .agent-status {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        /* Center - Main Content - Kokpit Stili */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .command-panel {
+            background: var(--bg-glass);
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            padding: 1.5rem;
+            box-shadow: 0 0 30px rgba(0, 180, 255, 0.1);
+        }
+
+        .command-input-wrapper {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .command-input {
+            flex: 1;
+            background: var(--bg-void);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            color: var(--text-bright);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: var(--hud-green);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, var(--hud-green), var(--hud-cyan));
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 2rem;
+            color: var(--bg-void);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .execute-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+        }
+
+        .quick-commands {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-cmd {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-cmd:hover {
+            background: rgba(0, 180, 255, 0.1);
+            color: var(--hud-cyan);
+            border-color: var(--hud-cyan);
+            box-shadow: 0 0 10px rgba(0, 180, 255, 0.2);
+        }
+
+        /* Output Terminal - Kokpit Stili */
+        .terminal-output {
+            background: var(--bg-glass);
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0, 180, 255, 0.1);
+        }
+
+        .terminal-header {
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 5px currentColor;
+        }
+
+        .terminal-dot.red { background: #ff5f56; }
+        .terminal-dot.yellow { background: #ffbd2e; }
+        .terminal-dot.green { background: #27c93f; }
+
+        .terminal-title {
+            margin-left: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .terminal-body {
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            flex: 1;
+            max-height: 400px;
+            background: var(--bg-void);
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .terminal-line.command {
+            color: var(--accent-primary);
+        }
+
+        .terminal-line.output {
+            color: var(--text-secondary);
+        }
+
+        .terminal-line.error {
+            color: var(--accent-danger);
+        }
+
+        .terminal-line.success {
+            color: var(--accent-primary);
+        }
+
+        .terminal-line.info {
+            color: var(--accent-secondary);
+        }
+
+        /* Right Sidebar - Stats & Metrics */
+        .sidebar-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stats-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+        }
+
+        .stats-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .stat-value.warning {
+            color: var(--accent-warning);
+        }
+
+        .stat-value.danger {
+            color: var(--accent-danger);
+        }
+
+        /* Progress Bars */
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .activity-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .activity-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.success { background: rgba(0, 255, 136, 0.2); color: var(--accent-primary); }
+        .activity-icon.warning { background: rgba(255, 170, 0, 0.2); color: var(--accent-warning); }
+        .activity-icon.danger { background: rgba(255, 68, 68, 0.2); color: var(--accent-danger); }
+        .activity-icon.info { background: rgba(0, 212, 255, 0.2); color: var(--accent-secondary); }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* OSINT Panel */
+        .osint-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .osint-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .osint-input input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .osint-input input:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+
+        .osint-btn {
+            background: var(--accent-secondary);
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            color: var(--bg-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .osint-btn:hover {
+            box-shadow: var(--glow-blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .main-container {
+                grid-template-columns: 250px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-left, .sidebar-right {
+                display: none;
+            }
+        }
+
+        /* Loader */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="logo-text">
+                <h1>SİBER KOMUTA MERKEZİ</h1>
+                <span>v3.0 | Pentagon Seviye | 22 Ajan Aktif</span>
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-dot online" id="statusDot"></span>
+                <span id="statusText">Operasyonel</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-robot"></i>
+                <span id="activeAgents">22 Ajan</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-brain"></i>
+                <span id="groqStatus">GROQ AI Aktif</span>
+            </div>
+            <div class="status-item">
+                <a href="/panel" style="color: var(--text-secondary); text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Panel
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar - Agents -->
+        <aside class="sidebar-left">
+            <div class="sidebar-header">
+                <i class="fas fa-users"></i>
+                PENTAGON AJANLARI
+            </div>
+            <div id="agentList">
+                <!-- Agent layers will be populated here -->
+            </div>
+        </aside>
+
+        <!-- Center - Main Content -->
+        <main class="main-content">
+            <!-- OSINT Panel -->
+            <div class="osint-panel">
+                <div class="sidebar-header" style="margin: -1rem -1rem 1rem -1rem; padding: 1rem;">
+                    <i class="fas fa-search"></i>
+                    OSINT FUSION - Hedef Araştır
+                </div>
+                <div class="osint-input">
+                    <input type="text" id="osintTarget" placeholder="IP, Domain, Hash veya Email girin...">
+                    <button class="osint-btn" onclick="runOSINT()">
+                        <i class="fas fa-crosshairs"></i> TARA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Command Panel -->
+            <div class="command-panel">
+                <div class="command-input-wrapper">
+                    <input type="text" class="command-input" id="commandInput"
+                           placeholder="Siber komut girin... (ör: osint, threat-analyze, aircraft, status)">
+                    <button class="execute-btn" onclick="executeCommand()">
+                        <i class="fas fa-play"></i> ÇALIŞTIR
+                    </button>
+                </div>
+                <div class="quick-commands">
+                    <span class="quick-cmd" onclick="setCommand('status')">status</span>
+                    <span class="quick-cmd" onclick="setCommand('agent-list')">ajanlar</span>
+                    <span class="quick-cmd" onclick="setCommand('aircraft')">hava sahası</span>
+                    <span class="quick-cmd" onclick="setCommand('iss')">ISS takip</span>
+                    <span class="quick-cmd" onclick="setCommand('threat-analyze')">tehdit analiz</span>
+                    <span class="quick-cmd" onclick="runThreatHunt()">tehdit avı</span>
+                </div>
+            </div>
+
+            <!-- Terminal Output -->
+            <div class="terminal-output">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">siber-komuta@tsunami:~$</span>
+                </div>
+                <div class="terminal-body" id="terminalOutput">
+                    <div class="terminal-line info">
+                        ╔══════════════════════════════════════════════════════════════╗
+                    </div>
+                    <div class="terminal-line info">
+                        ║  SİBER KOMUTA MERKEZİ v3.0 - TSUNAMI ENTEGRASYONU            ║
+                    </div>
+                    <div class="terminal-line info">
+                        ║  22 Pentagon Seviye Ajan | GROQ AI | OSINT Fusion            ║
+                    </div>
+                    <div class="terminal-line info">
+                        ╚══════════════════════════════════════════════════════════════╝
+                    </div>
+                    <div class="terminal-line output">[SİSTEM] Başlatılıyor...</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar - Stats -->
+        <aside class="sidebar-right">
+            <!-- System Stats -->
+            <div class="stats-card">
+                <div class="stats-header">
+                    <i class="fas fa-chart-line"></i> SİSTEM DURUMU
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Toplam Operasyon</span>
+                    <span class="stat-value" id="totalOps">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Başarılı</span>
+                    <span class="stat-value" id="successOps">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Tehdit Tespit</span>
+                    <span class="stat-value warning" id="threatsDetected">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">IOC Toplanan</span>
+                    <span class="stat-value" id="iocsCollected">0</span>
+                </div>
+            </div>
+
+            <!-- Module Status -->
+            <div class="stats-card">
+                <div class="stats-header">
+                    <i class="fas fa-puzzle-piece"></i> MODÜL DURUMU
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">GROQ Engine</span>
+                    <span class="stat-value" id="groqEngine">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">OSINT Fusion</span>
+                    <span class="stat-value" id="osintFusion">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">SIGINT Lite</span>
+                    <span class="stat-value" id="sigintLite">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">GEOINT Open</span>
+                    <span class="stat-value" id="geointOpen">-</span>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-feed">
+                <div class="sidebar-header">
+                    <i class="fas fa-stream"></i>
+                    AKTİVİTE
+                </div>
+                <div id="activityFeed">
+                    <!-- Activities will be populated here -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script>
+        // Socket connection
+        const socket = io();
+
+        // Terminal output
+        const terminal = document.getElementById('terminalOutput');
+
+        function addTerminalLine(text, type = 'output') {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.textContent = text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function addActivity(title, type = 'info') {
+            const feed = document.getElementById('activityFeed');
+            const activity = document.createElement('div');
+            activity.className = 'activity-item';
+
+            const icons = {
+                success: 'fa-check',
+                warning: 'fa-exclamation-triangle',
+                danger: 'fa-times',
+                info: 'fa-info'
+            };
+
+            activity.innerHTML = `
+                <div class="activity-icon ${type}">
+                    <i class="fas ${icons[type]}"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">${title}</div>
+                    <div class="activity-time">${new Date().toLocaleTimeString('tr-TR')}</div>
+                </div>
+            `;
+
+            feed.insertBefore(activity, feed.firstChild);
+
+            // Limit activities
+            while (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Layer configurations
+        const layers = {
+            command: { name: 'KOMUTA', icon: 'fa-star', color: 'command' },
+            intelligence: { name: 'İSTİHBARAT', icon: 'fa-eye', color: 'intelligence' },
+            defense: { name: 'SAVUNMA', icon: 'fa-shield-alt', color: 'defense' },
+            offensive: { name: 'SALDIRI', icon: 'fa-crosshairs', color: 'offensive' },
+            purple: { name: 'MOR TAKIM', icon: 'fa-balance-scale', color: 'purple' },
+            critical_infrastructure: { name: 'KRİTİK ALTYAPI', icon: 'fa-industry', color: 'critical' },
+            global_operations: { name: 'GLOBAL OPS', icon: 'fa-globe', color: 'global' }
+        };
+
+        // Populate agents
+        function populateAgents(agents) {
+            const agentList = document.getElementById('agentList');
+            agentList.innerHTML = '';
+
+            const grouped = {};
+            agents.forEach(agent => {
+                const layer = agent.layer || 'unknown';
+                if (!grouped[layer]) grouped[layer] = [];
+                grouped[layer].push(agent);
+            });
+
+            Object.entries(grouped).forEach(([layer, agentsInLayer]) => {
+                const layerConfig = layers[layer] || { name: layer.toUpperCase(), icon: 'fa-robot', color: 'command' };
+
+                const layerDiv = document.createElement('div');
+                layerDiv.className = 'agent-layer';
+                layerDiv.innerHTML = `
+                    <div class="layer-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
+                        <span><i class="fas ${layerConfig.icon}"></i> ${layerConfig.name}</span>
+                        <span>${agentsInLayer.length}</span>
+                    </div>
+                    <div class="layer-content expanded">
+                        ${agentsInLayer.map(agent => `
+                            <div class="agent-item" onclick="selectAgent('${agent.id}')">
+                                <div class="agent-icon ${layerConfig.color}">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="agent-info">
+                                    <div class="agent-name">${agent.name}</div>
+                                    <div class="agent-status">${agent.status || 'idle'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                agentList.appendChild(layerDiv);
+            });
+        }
+
+        // Select agent
+        function selectAgent(agentId) {
+            addTerminalLine(`[AJAN] ${agentId} seçildi`, 'command');
+            addActivity(`Ajan seçildi: ${agentId}`, 'info');
+        }
+
+        // Set command
+        function setCommand(cmd) {
+            document.getElementById('commandInput').value = cmd;
+        }
+
+        // Execute command
+        function executeCommand() {
+            const input = document.getElementById('commandInput');
+            const command = input.value.trim();
+
+            if (!command) return;
+
+            addTerminalLine(`$ ${command}`, 'command');
+            addActivity(`Komut: ${command}`, 'info');
+
+            socket.emit('siber_komut_calistir', { komut: command, params: {} });
+            input.value = '';
+        }
+
+        // Run OSINT
+        function runOSINT() {
+            const target = document.getElementById('osintTarget').value.trim();
+            if (!target) {
+                addTerminalLine('[HATA] Hedef belirtilmedi', 'error');
+                return;
+            }
+
+            addTerminalLine(`[OSINT] Hedef taranıyor: ${target}`, 'command');
+            addActivity(`OSINT başlatıldı: ${target}`, 'info');
+
+            socket.emit('siber_osint_baslat', { hedef: target });
+        }
+
+        // Run Threat Hunt
+        function runThreatHunt() {
+            const targets = prompt('Hedefleri virgülle ayırarak girin:');
+            if (!targets) return;
+
+            const hedefler = targets.split(',').map(t => t.trim());
+            addTerminalLine(`[TEHDİT AVI] ${hedefler.length} hedef`, 'command');
+
+            socket.emit('siber_tehdit_avi', { hedefler });
+        }
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            addTerminalLine('[BAĞLANTI] Socket.IO bağlandı', 'success');
+            socket.emit('siber_durum_iste');
+            socket.emit('siber_ajanlar_iste');
+        });
+
+        socket.on('siber_durum', (data) => {
+            addTerminalLine('[SİSTEM] Durum alındı', 'success');
+
+            // Update stats
+            const stats = data.statistics || {};
+            document.getElementById('totalOps').textContent = stats.total_operations || 0;
+            document.getElementById('successOps').textContent = stats.successful_operations || 0;
+            document.getElementById('threatsDetected').textContent = stats.threats_detected || 0;
+            document.getElementById('iocsCollected').textContent = stats.iocs_collected || 0;
+
+            // Update modules
+            const modules = data.modules || {};
+            document.getElementById('groqEngine').textContent = modules.groq_engine || '-';
+            document.getElementById('osintFusion').textContent = modules.osint_fusion || '-';
+            document.getElementById('sigintLite').textContent = modules.sigint_lite || '-';
+            document.getElementById('geointOpen').textContent = modules.geoint_open || '-';
+
+            // Update status
+            document.getElementById('activeAgents').textContent = `${data.agents?.total || 22} Ajan`;
+        });
+
+        socket.on('siber_ajanlar', (data) => {
+            addTerminalLine(`[AJANLAR] ${data.toplam} ajan yüklendi`, 'success');
+            populateAgents(data.ajanlar || []);
+        });
+
+        socket.on('siber_sonuc', (data) => {
+            if (data.success) {
+                addTerminalLine(`[SONUÇ] ${data.command} başarılı`, 'success');
+                addTerminalLine(JSON.stringify(data.result, null, 2), 'output');
+                addActivity(`${data.command} tamamlandı`, 'success');
+            } else {
+                addTerminalLine(`[HATA] ${data.error || 'Bilinmeyen hata'}`, 'error');
+                addActivity(`Hata: ${data.command}`, 'danger');
+            }
+        });
+
+        socket.on('siber_osint_basladi', (data) => {
+            addTerminalLine(`[OSINT] Tarama başladı: ${data.hedef}`, 'info');
+        });
+
+        socket.on('siber_osint_sonuc', (data) => {
+            addTerminalLine('[OSINT] Tarama tamamlandı', 'success');
+            addTerminalLine(`Risk Skoru: ${data.risk_score}`, data.risk_score > 50 ? 'warning' : 'output');
+            addTerminalLine(`Güven: ${(data.confidence * 100).toFixed(0)}%`, 'output');
+            addTerminalLine(`Kaynak Sayısı: ${Object.keys(data.sources || {}).length}`, 'output');
+            addTerminalLine(`Bulgu Sayısı: ${(data.findings || []).length}`, 'output');
+
+            if (data.findings && data.findings.length > 0) {
+                addTerminalLine('\n[BULGULAR]', 'info');
+                data.findings.slice(0, 10).forEach(f => {
+                    const severity = f.severity || 'info';
+                    addTerminalLine(`  • [${severity.toUpperCase()}] ${f.type}: ${f.value || f.description || ''}`, severity === 'critical' || severity === 'high' ? 'error' : 'output');
+                });
+            }
+
+            addActivity(`OSINT: ${data.risk_score} risk`, data.risk_score > 50 ? 'warning' : 'success');
+        });
+
+        socket.on('siber_tehdit_avi_basladi', (data) => {
+            addTerminalLine(`[TEHDİT AVI] ${data.hedef_sayisi} hedef için başladı`, 'info');
+        });
+
+        socket.on('siber_tehdit_avi_sonuc', (data) => {
+            addTerminalLine('[TEHDİT AVI] Tamamlandı', 'success');
+            addTerminalLine(`Misyon ID: ${data.mission_id}`, 'output');
+            const summary = data.summary || {};
+            addTerminalLine(`Toplam Bulgu: ${summary.total_findings || 0}`, 'output');
+            addTerminalLine(`Kritik: ${summary.critical || 0}`, summary.critical > 0 ? 'error' : 'output');
+            addTerminalLine(`Yüksek: ${summary.high || 0}`, summary.high > 0 ? 'warning' : 'output');
+
+            addActivity(`Tehdit Avı: ${summary.total_findings} bulgu`, summary.critical > 0 ? 'danger' : 'success');
+        });
+
+        socket.on('siber_hata', (data) => {
+            addTerminalLine(`[HATA] ${data.hata}`, 'error');
+            addActivity(`Hata: ${data.hata}`, 'danger');
+        });
+
+        socket.on('siber_islem_basladi', (data) => {
+            addTerminalLine(`[İŞLEM] ${data.komut} başlatıldı...`, 'info');
+        });
+
+        // Enter key handler
+        document.getElementById('commandInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeCommand();
+        });
+
+        document.getElementById('osintTarget').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') runOSINT();
+        });
+
+        // Initial load
+        addTerminalLine('[SİSTEM] Siber Komuta Merkezi hazır', 'success');
+        addActivity('Sistem başlatıldı', 'success');
+    </script>
+</body>
+</html>

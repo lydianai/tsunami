@@ -1,0 +1,30 @@
+[Unit]
+Description=TSUNAMI Celery Beat Scheduler
+After=network.target redis.service tsunami-celery.service
+Requires=redis.service
+
+[Service]
+Type=simple
+User=tsunami
+Group=tsunami
+WorkingDirectory=/opt/tsunami
+Environment="TSUNAMI_ENV=production"
+EnvironmentFile=/opt/tsunami/.env
+
+ExecStart=/opt/tsunami/venv/bin/celery -A celery_worker beat \
+    --loglevel=info \
+    --logfile=/var/log/tsunami/celery-beat.log \
+    --pidfile=/var/run/tsunami/celery-beat.pid \
+    --schedule=/var/lib/tsunami/celerybeat-schedule
+
+ExecStop=/bin/kill -s TERM $MAINPID
+
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

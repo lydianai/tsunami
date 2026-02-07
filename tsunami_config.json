@@ -1,0 +1,312 @@
+{
+  "version": "6.1",
+  "codename": "NEPTUNE_GHOST",
+  "description": "TSUNAMI - Turkiye ve Global Siber Dunyanin Robin Hood'u",
+  "tor": {
+    "auto_start": true,
+    "persistent": true,
+    "control_port": 9051,
+    "socks_port": 9050,
+    "auto_new_identity_interval": 600,
+    "verify_connection": true
+  },
+  "stealth": {
+    "auto_activate": true,
+    "default_level": "maximum",
+    "ghost_mode": true,
+    "auto_rotate": true,
+    "rotate_interval": 300
+  },
+  "encryption": {
+    "military_grade": true,
+    "algorithm": "AES-256-GCM",
+    "key_exchange": "X25519",
+    "signature": "Ed25519",
+    "kdf": "Argon2id",
+    "protocol": "Signal-Double-Ratchet",
+    "forward_secrecy": true,
+    "post_compromise_security": true
+  },
+  "modules": {
+    "beyin": {
+      "auto_start": true
+    },
+    "sinkhole": {
+      "auto_start": true
+    },
+    "honeypot": {
+      "auto_start": true
+    },
+    "hunter": {
+      "auto_start": true
+    },
+    "wireless": {
+      "auto_start": true
+    },
+    "federated": {
+      "auto_start": true
+    },
+    "soar": {
+      "auto_start": true
+    },
+    "nlp": {
+      "auto_start": true
+    },
+    "geo": {
+      "auto_start": true
+    },
+    "gnn": {
+      "auto_start": true
+    },
+    "osint": {
+      "auto_start": true
+    },
+    "vault": {
+      "auto_start": true
+    },
+    "hardening": {
+      "auto_start": true
+    },
+    "defender": {
+      "auto_start": true
+    }
+  },
+  "identity": {
+    "name": "TSUNAMI",
+    "title": "Siber Robin Hood",
+    "mission": "Adalet icin teknoloji, masumlari korumak",
+    "origin": "Turkiye",
+    "scope": "Global"
+  },
+  "security": {
+    "anti_tracking": true,
+    "anti_fingerprint": true,
+    "dns_over_https": true,
+    "webrtc_disabled": true,
+    "canvas_spoofing": true,
+    "timezone_spoofing": true,
+    "user_agent_rotation": true,
+    "referrer_spoofing": true,
+    "cookie_isolation": true,
+    "memory_encryption": true,
+    "zero_logs": true
+  },
+  "network": {
+    "proxy_chain": true,
+    "multi_hop": true,
+    "decoy_traffic": true,
+    "traffic_obfuscation": true,
+    "packet_fragmentation": true,
+    "timing_obfuscation": true
+  },
+  "rules": {
+    "always_tor": true,
+    "never_expose_real_ip": true,
+    "auto_wipe_on_breach": true,
+    "self_destruct_on_compromise": true
+  },
+  "hardening": {
+    "enabled": true,
+    "profile": "military",
+    "auto_apply": false,
+    "firewall": {
+      "enabled": true,
+      "default_policy": "deny",
+      "rate_limiting": true,
+      "ipv6": false,
+      "logging": "high"
+    },
+    "ssh": {
+      "key_only": true,
+      "root_login": false,
+      "port": 22,
+      "max_auth_tries": 3,
+      "ciphers": [
+        "chacha20-poly1305@openssh.com",
+        "aes256-gcm@openssh.com"
+      ],
+      "macs": [
+        "hmac-sha2-512-etm@openssh.com",
+        "hmac-sha2-256-etm@openssh.com"
+      ],
+      "kex_algorithms": [
+        "curve25519-sha256",
+        "diffie-hellman-group16-sha512"
+      ]
+    },
+    "fail2ban": {
+      "enabled": true,
+      "max_retry": 3,
+      "ban_time": 3600,
+      "find_time": 600,
+      "incremental_ban": true
+    },
+    "apparmor": {
+      "enabled": true,
+      "enforce_all": true
+    },
+    "kernel": {
+      "aslr": 2,
+      "kptr_restrict": 2,
+      "dmesg_restrict": 1,
+      "ptrace_scope": 2,
+      "syn_cookies": true,
+      "rp_filter": 1,
+      "accept_redirects": false,
+      "source_routing": false,
+      "ip_forwarding": false
+    },
+    "services": {
+      "disable_unused": true,
+      "disabled_list": [
+        "avahi-daemon",
+        "cups",
+        "bluetooth",
+        "ModemManager"
+      ]
+    },
+    "dns": {
+      "over_https": true,
+      "providers": [
+        "cloudflare",
+        "google"
+      ],
+      "dnssec": true
+    },
+    "usb": {
+      "restrict": true,
+      "whitelist_only": false
+    },
+    "audit": {
+      "enabled": true,
+      "watch_auth": true,
+      "watch_network": true,
+      "watch_files": true,
+      "watch_modules": true
+    },
+    "antivirus": {
+      "clamav": true,
+      "daily_scan": true,
+      "scan_paths": [
+        "/home",
+        "/var/www",
+        "/tmp"
+      ]
+    },
+    "rootkit_detection": {
+      "rkhunter": true,
+      "chkrootkit": true,
+      "daily_scan": true
+    }
+  },
+  "defender": {
+    "enabled": true,
+    "log_dir": "/home/lydian/.tsunami/logs",
+    "scan_interval": 30,
+    "connection_check_interval": 5,
+    "process_check_interval": 10,
+    "file_integrity_interval": 300,
+    "auto_block": true,
+    "block_duration": 3600,
+    "port_scan_threshold": 10,
+    "port_scan_window": 60,
+    "max_connections_per_ip": 50,
+    "suspicious_process_cpu": 90.0,
+    "suspicious_process_memory": 80.0,
+    "whitelist_ips": [
+      "127.0.0.1",
+      "::1"
+    ],
+    "critical_directories": [
+      "/etc/passwd",
+      "/etc/shadow",
+      "/etc/ssh/sshd_config",
+      "/etc/sudoers",
+      "/root/.ssh/authorized_keys",
+      "/var/log/auth.log"
+    ],
+    "suspicious_processes": [
+      "nc",
+      "netcat",
+      "ncat",
+      "nmap",
+      "masscan",
+      "hydra",
+      "medusa",
+      "john",
+      "hashcat",
+      "metasploit",
+      "msfconsole"
+    ],
+    "beyin_integration": true,
+    "alerts": {
+      "email": false,
+      "syslog": true,
+      "webhook": false
+    },
+    "process_whitelist": [
+      "chrome",
+      "chromium",
+      "firefox",
+      "brave",
+      "opera",
+      "edge",
+      "at-spi-bus-launcher",
+      "chrome-headless-shell"
+    ]
+  },
+  "network_guardian": {
+    "enabled": true,
+    "log_dir": "/home/lydian/.tsunami/logs",
+    "data_dir": "/home/lydian/.tsunami/network_data",
+    "pid_file": "/home/lydian/.tsunami/network_guardian.pid",
+    "interface_scan_interval": 30,
+    "device_scan_interval": 60,
+    "arp_monitor_interval": 10,
+    "wifi_scan_interval": 120,
+    "traffic_analysis_interval": 5,
+    "new_device_alert": true,
+    "arp_spoof_detection": true,
+    "rogue_ap_detection": true,
+    "bandwidth_threshold_mbps": 100.0,
+    "packet_threshold_per_second": 10000,
+    "trusted_macs": [],
+    "trusted_ips": [
+      "127.0.0.1",
+      "::1"
+    ],
+    "trusted_ssids": [],
+    "trusted_networks": [
+      "192.168.0.0/16",
+      "10.0.0.0/8",
+      "172.16.0.0/12"
+    ],
+    "blocked_macs": [],
+    "beyin_integration": true,
+    "beyin_alert_file": "/home/lydian/.tsunami/logs/beyin_alerts.json",
+    "log_level": "INFO",
+    "log_all_traffic": false,
+    "log_retention_days": 30,
+    "alerts": {
+      "new_device": true,
+      "arp_spoof": true,
+      "rogue_ap": true,
+      "gateway_change": true,
+      "dns_change": true,
+      "interface_change": true
+    },
+    "auto_actions": {
+      "block_arp_spoofer": true,
+      "disconnect_rogue_ap": false,
+      "quarantine_new_device": false
+    }
+  },
+  "settings": {
+    "ghost_mode": true,
+    "auto_tor": true,
+    "network_monitoring": true,
+    "process_monitoring": true,
+    "desktop_notifications": true,
+    "sound_alerts": true
+  }
+}

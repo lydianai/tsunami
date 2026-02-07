@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI - OSINT Graf Kesif</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+        }
+        [data-theme="cockpit-bw"] header, [data-theme="cockpit-bw"] .header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] h1, [data-theme="cockpit-bw"] h2 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card, [data-theme="cockpit-bw"] .panel { border-color: rgba(255,255,255,0.2) !important; background: rgba(0,0,0,0.9) !important; }
+        [data-theme="cockpit-bw"] nav, [data-theme="cockpit-bw"] .nav-panel { background: rgba(0,0,0,0.98) !important; }
+        [data-theme="cockpit-bw"] .nav-item:hover, [data-theme="cockpit-bw"] .nav-item.active { background: rgba(255,255,255,0.1) !important; }
+        [data-theme="cockpit-bw"] input, [data-theme="cockpit-bw"] select, [data-theme="cockpit-bw"] textarea { background: rgba(0,0,0,0.8) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, var(--bg-void) 0%, var(--bg-deep) 100%);
+            color: var(--text-normal);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 180, 255, 0.03) 2px,
+                    rgba(0, 180, 255, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--bg-panel);
+            border-bottom: 2px solid var(--border-glow);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0, 180, 255, 0.1);
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+        }
+        .logo span {
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-links { display: flex; gap: 8px; }
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 11px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .nav-links a:hover {
+            background: var(--bg-glass);
+            color: var(--accent-primary);
+            border-color: var(--border-glow);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.2);
+        }
+        .nav-links a.active {
+            background: var(--bg-card);
+            color: var(--text-bright);
+            border-color: var(--border-glow);
+            box-shadow: inset 0 0 12px rgba(0, 180, 255, 0.2);
+        }
+
+        /* Ana Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            margin-top: 56px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Sol Panel - Arama ve Kontroller */
+        .control-panel {
+            width: 340px;
+            background: var(--bg-panel);
+            border-right: 2px solid var(--border-glow);
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            backdrop-filter: blur(12px);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-section { margin-bottom: 24px; }
+        .search-title {
+            font-size: 10px;
+            color: var(--hud-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-bright);
+            font-size: 13px;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: var(--border-glow);
+            box-shadow: 0 0 16px rgba(0, 180, 255, 0.2), inset 0 0 8px rgba(0, 180, 255, 0.1);
+        }
+        .search-box::placeholder {
+            color: var(--text-dim);
+        }
+
+        .search-hint {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .enrichment-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .enrich-tag {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .enrich-tag:hover {
+            background: var(--bg-glass);
+            border-color: var(--border-glow);
+            color: var(--accent-primary);
+            transform: translateY(-1px);
+        }
+        .enrich-tag.active {
+            background: rgba(0, 180, 255, 0.15);
+            border-color: var(--border-glow);
+            color: var(--hud-cyan);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.2), inset 0 0 8px rgba(0, 180, 255, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 700;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'Orbitron', monospace;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, #0088cc 100%);
+            color: var(--text-bright);
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 4px 16px rgba(0, 180, 255, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 180, 255, 0.5);
+        }
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-normal);
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            border-color: var(--border-glow);
+            color: var(--text-bright);
+        }
+
+        /* Sonuclar */
+        .results-section { margin-top: 24px; }
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+        .result-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 16px rgba(0, 180, 255, 0.15);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .result-type {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
+        }
+        .result-type.domain {
+            background: rgba(0, 180, 255, 0.2);
+            color: var(--accent-primary);
+            border: 1px solid var(--border-glow);
+        }
+        .result-type.ip {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--hud-green);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        .result-type.social, .result-type.social_profile {
+            background: rgba(255, 51, 85, 0.2);
+            color: var(--accent-danger);
+            border: 1px solid rgba(255, 51, 85, 0.3);
+        }
+        .result-type.asn {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--accent-warning);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+        }
+        .result-type.organization {
+            background: rgba(136, 85, 255, 0.2);
+            color: var(--accent-purple);
+            border: 1px solid rgba(136, 85, 255, 0.3);
+        }
+        .result-type.location {
+            background: rgba(255, 204, 0, 0.2);
+            color: var(--hud-amber);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: var(--text-bright);
+        }
+        .result-meta {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        /* Graf Alani */
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: var(--bg-deep);
+        }
+        #graph-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Graf Stilleri */
+        .node { cursor: pointer; }
+        .node circle {
+            stroke: var(--border-glow);
+            stroke-width: 2px;
+            transition: all 0.2s;
+            filter: drop-shadow(0 0 4px currentColor);
+        }
+        .node:hover circle {
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 12px currentColor);
+        }
+        .node text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            fill: var(--text-normal);
+            pointer-events: none;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+        }
+        .link {
+            stroke: var(--border-subtle);
+            stroke-opacity: 0.5;
+            stroke-width: 1.5px;
+        }
+        .link-label {
+            font-size: 8px;
+            fill: var(--text-dim);
+        }
+
+        /* Lejant */
+        .legend {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 16px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+        .legend-title {
+            font-size: 10px;
+            color: var(--hud-cyan);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 10px;
+            margin-bottom: 6px;
+            color: var(--text-normal);
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        /* Graf Kontrolleri */
+        .graph-controls {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .graph-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-normal);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            backdrop-filter: blur(12px);
+        }
+        .graph-btn:hover {
+            border-color: var(--border-glow);
+            color: var(--accent-primary);
+            box-shadow: 0 0 16px rgba(0, 180, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Dugum Detay Modal */
+        .node-detail {
+            position: absolute;
+            display: none;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 18px;
+            min-width: 300px;
+            max-width: 420px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 180, 255, 0.2);
+            z-index: 200;
+            backdrop-filter: blur(12px);
+        }
+        .node-detail.visible { display: block; }
+        .node-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .node-detail-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--hud-cyan);
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .node-detail-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+        .node-detail-close:hover {
+            color: var(--accent-danger);
+        }
+        .node-detail-body { font-size: 11px; }
+        .node-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .node-detail-row:last-child { border: none; }
+        .node-detail-label {
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        .node-detail-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-bright);
+            text-align: right;
+            max-width: 200px;
+            word-break: break-all;
+        }
+
+        /* Yukleniyor */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 24px;
+            margin: 20px 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+        }
+        .loading.active { display: block; }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.3);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+            border-left: 1px solid var(--border-subtle);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+
+        /* Otonom Mod */
+        .auto-mode-toggle { display: flex; align-items: center; gap: 10px; }
+        .auto-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
+        }
+        .auto-btn.active {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: var(--hud-green);
+            color: var(--hud-green);
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.3), inset 0 0 8px rgba(0, 255, 136, 0.1);
+            animation: pulse-auto 2s infinite;
+        }
+        @keyframes pulse-auto {
+            0%, 100% { box-shadow: 0 0 16px rgba(0, 255, 136, 0.3), inset 0 0 8px rgba(0, 255, 136, 0.1); }
+            50% { box-shadow: 0 0 24px rgba(0, 255, 136, 0.5), inset 0 0 12px rgba(0, 255, 136, 0.2); }
+        }
+        .auto-indicator {
+            position: fixed;
+            top: 65px;
+            right: 24px;
+            z-index: 50;
+            padding: 10px 18px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--hud-green);
+            border-radius: 6px;
+            font-size: 10px;
+            color: var(--hud-green);
+            display: none;
+            backdrop-filter: blur(12px);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .auto-indicator.active { display: flex; align-items: center; gap: 10px; }
+        .auto-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--hud-green);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 8px var(--hud-green);
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div>
+                <h1>TSUNAMI OSINT</h1>
+                <span>Graf Tabanli Istihbarat Kesfi</span>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="/panel">Panel</a>
+            <a href="/komuta">Komuta</a>
+            <a href="/harita">Harita</a>
+            <a href="/osint" class="active">OSINT</a>
+            <a href="/araclar">Araclar</a>
+            <a href="/trafik">Trafik</a>
+            <a href="/raporlar">Raporlar</a>
+        </div>
+        <div class="auto-mode-toggle">
+            <span id="autoModeLabel" style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Otonom:</span>
+            <button id="autoModeBtn" class="auto-btn" onclick="toggleAutoMode()">Pasif</button>
+        </div>
+    </div>
+
+    <!-- Otonom Mod Gostergesi -->
+    <div class="auto-indicator" id="autoIndicator">
+        <span class="dot"></span>
+        <span>Otonom Tarama Aktif</span>
+    </div>
+
+    <div class="main-container">
+        <!-- Sol Panel -->
+        <div class="control-panel">
+            <div class="search-section">
+                <div class="search-title">Hedef Ara</div>
+                <input type="text" class="search-box" id="targetInput" placeholder="domain.com, IP, @kullanici_adi...">
+                <div class="search-hint">Domain, IP adresi, sosyal medya kullanici adi veya organizasyon girebilirsiniz</div>
+
+                <div class="search-title" style="margin-top:18px">Zenginlestirmeler</div>
+                <div class="enrichment-options">
+                    <span class="enrich-tag active" data-enrich="dns">DNS</span>
+                    <span class="enrich-tag active" data-enrich="whois">WHOIS</span>
+                    <span class="enrich-tag active" data-enrich="ssl">SSL</span>
+                    <span class="enrich-tag active" data-enrich="subdomains">Subdomain</span>
+                    <span class="enrich-tag active" data-enrich="ip-info">IP Bilgi</span>
+                    <span class="enrich-tag active" data-enrich="social">Sosyal</span>
+                </div>
+
+                <button class="btn btn-primary" onclick="arastirmaBaslat()">Arastirma Baslat</button>
+                <button class="btn btn-secondary" onclick="grafTemizle()">Grafi Temizle</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div style="color:var(--text-normal);font-size:11px;margin-top:8px">Arastirma yapiliyor...</div>
+            </div>
+
+            <div class="results-section" id="results"></div>
+        </div>
+
+        <!-- Graf Alani -->
+        <div class="graph-container">
+            <svg id="graph-svg"></svg>
+
+            <!-- Lejant -->
+            <div class="legend">
+                <div class="legend-title">Dugum Tipleri</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--accent-primary)"></span> Domain</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--hud-green)"></span> IP Adresi</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--accent-danger)"></span> Sosyal Medya</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--accent-warning)"></span> ASN</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--accent-purple)"></span> Organizasyon</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--hud-amber)"></span> Lokasyon</div>
+            </div>
+
+            <!-- Kontroller -->
+            <div class="graph-controls">
+                <button class="graph-btn" onclick="zoomIn()" title="Yakinlastir">+</button>
+                <button class="graph-btn" onclick="zoomOut()" title="Uzaklastir">-</button>
+                <button class="graph-btn" onclick="resetZoom()" title="Sifirla">O</button>
+                <button class="graph-btn" onclick="exportGraph()" title="Disa Aktar">D</button>
+            </div>
+
+            <!-- Dugum Detay -->
+            <div class="node-detail" id="nodeDetail">
+                <div class="node-detail-header">
+                    <div class="node-detail-title" id="detailTitle">Dugum</div>
+                    <button class="node-detail-close" onclick="closeDetail()">&times;</button>
+                </div>
+                <div class="node-detail-body" id="detailBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Graf degiskenleri
+        let svg, simulation, link, node, zoom;
+        let graphData = { nodes: [], links: [] };
+        const nodeColors = {
+            domain: '#00b4ff',
+            ip: '#00ff88',
+            social: '#ff3355',
+            social_profile: '#ff3355',
+            asn: '#ffaa00',
+            organization: '#8855ff',
+            location: '#ffcc00',
+            email: '#ff00ff',
+            crypto: '#ffd700'
+        };
+
+        // Sayfa yuklendiginde
+        document.addEventListener('DOMContentLoaded', () => {
+            initGraph();
+
+            // Zenginlestirme tag tiklama
+            document.querySelectorAll('.enrich-tag').forEach(tag => {
+                tag.addEventListener('click', () => tag.classList.toggle('active'));
+            });
+
+            // Enter ile arama
+            document.getElementById('targetInput').addEventListener('keypress', e => {
+                if (e.key === 'Enter') arastirmaBaslat();
+            });
+        });
+
+        // Graf baslat
+        function initGraph() {
+            const container = document.querySelector('.graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            svg = d3.select('#graph-svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Zoom
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => {
+                    svg.select('g').attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Ana grup
+            svg.append('g');
+
+            // Simulasyon
+            simulation = d3.forceSimulation()
+                .force('link', d3.forceLink().id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(40));
+        }
+
+        // Arastirma baslat
+        async function arastirmaBaslat() {
+            const hedef = document.getElementById('targetInput').value.trim();
+            if (!hedef) {
+                alert('Lutfen bir hedef girin');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch('/api/osint/arastir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hedef })
+                });
+
+                const data = await response.json();
+
+                if (data.basarili) {
+                    // Grafi guncelle
+                    grafiGuncelle(data.graph);
+                    // Sonuclari goster
+                    sonuclariGoster(data);
+                } else {
+                    alert('Hata: ' + (data.hata || 'Bilinmeyen hata'));
+                }
+            } catch (e) {
+                alert('Baglanti hatasi: ' + e.message);
+            }
+
+            loading.classList.remove('active');
+        }
+
+        // Grafi guncelle
+        function grafiGuncelle(graph) {
+            if (!graph || !graph.nodes) return;
+
+            // Mevcut dugumleri koru, yenileri ekle
+            const existingIds = new Set(graphData.nodes.map(n => n.id));
+
+            graph.nodes.forEach(n => {
+                if (!existingIds.has(n.id)) {
+                    graphData.nodes.push({
+                        id: n.id,
+                        type: n.type,
+                        data: n.data,
+                        confidence: n.confidence
+                    });
+                }
+            });
+
+            // Linkleri ekle
+            graph.edges.forEach(e => {
+                const exists = graphData.links.some(l =>
+                    (l.source.id || l.source) === e.from && (l.target.id || l.target) === e.to
+                );
+                if (!exists) {
+                    graphData.links.push({
+                        source: e.from,
+                        target: e.to,
+                        type: e.type,
+                        confidence: e.confidence
+                    });
+                }
+            });
+
+            renderGraph();
+        }
+
+        // Graf ciz
+        function renderGraph() {
+            const g = svg.select('g');
+
+            // Linkler
+            link = g.selectAll('.link')
+                .data(graphData.links, d => `${d.source.id || d.source}-${d.target.id || d.target}`)
+                .join('line')
+                .attr('class', 'link')
+                .attr('stroke-dasharray', d => d.confidence === 'low' ? '5,5' : null);
+
+            // Dugumler
+            node = g.selectAll('.node')
+                .data(graphData.nodes, d => d.id)
+                .join('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended))
+                .on('click', (event, d) => showDetail(d))
+                .on('dblclick', (event, d) => zenginlestir(d));
+
+            node.selectAll('circle').remove();
+            node.selectAll('text').remove();
+
+            node.append('circle')
+                .attr('r', d => d.data?.orijinal ? 20 : 15)
+                .attr('fill', d => nodeColors[d.type] || '#888')
+                .attr('opacity', d => d.confidence === 'high' ? 1 : d.confidence === 'medium' ? 0.7 : 0.5);
+
+            node.append('text')
+                .attr('dy', 30)
+                .attr('text-anchor', 'middle')
+                .text(d => d.id.length > 20 ? d.id.substring(0, 17) + '...' : d.id);
+
+            // Simulasyonu guncelle
+            simulation.nodes(graphData.nodes).on('tick', ticked);
+            simulation.force('link').links(graphData.links);
+            simulation.alpha(1).restart();
+        }
+
+        function ticked() {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            node.attr('transform', d => `translate(${d.x},${d.y})`);
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Dugum detay goster
+        function showDetail(d) {
+            const detail = document.getElementById('nodeDetail');
+            const title = document.getElementById('detailTitle');
+            const body = document.getElementById('detailBody');
+
+            title.textContent = d.id;
+
+            let html = `
+                <div class="node-detail-row">
+                    <span class="node-detail-label">Tip</span>
+                    <span class="node-detail-value">${d.type}</span>
+                </div>
+                <div class="node-detail-row">
+                    <span class="node-detail-label">Guven</span>
+                    <span class="node-detail-value">${d.confidence}</span>
+                </div>
+            `;
+
+            if (d.data) {
+                for (const [key, val] of Object.entries(d.data)) {
+                    if (key !== 'orijinal') {
+                        html += `
+                            <div class="node-detail-row">
+                                <span class="node-detail-label">${key}</span>
+                                <span class="node-detail-value">${typeof val === 'object' ? JSON.stringify(val) : val}</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            body.innerHTML = html;
+
+            // Pozisyon
+            detail.style.left = (d.x + 100) + 'px';
+            detail.style.top = (d.y + 80) + 'px';
+            detail.classList.add('visible');
+        }
+
+        function closeDetail() {
+            document.getElementById('nodeDetail').classList.remove('visible');
+        }
+
+        // Ek zenginlestirme (cift tiklama)
+        async function zenginlestir(d) {
+            document.getElementById('targetInput').value = d.id;
+            await arastirmaBaslat();
+        }
+
+        // Sonuclari goster
+        function sonuclariGoster(data) {
+            const results = document.getElementById('results');
+            let html = '';
+
+            if (data.graph && data.graph.nodes) {
+                data.graph.nodes.forEach(n => {
+                    html += `
+                        <div class="result-card">
+                            <div class="result-header">
+                                <span class="result-type ${n.type}">${n.type}</span>
+                                <span style="font-size:9px;color:var(--text-dim)">${n.confidence}</span>
+                            </div>
+                            <div class="result-value">${n.id}</div>
+                            <div class="result-meta">${Object.keys(n.data || {}).filter(k => k !== 'orijinal').join(', ') || 'Veri yok'}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            results.innerHTML = html || '<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:11px">Sonuc bulunamadi</div>';
+        }
+
+        // Zoom kontrolleri
+        function zoomIn() {
+            svg.transition().call(zoom.scaleBy, 1.5);
+        }
+
+        function zoomOut() {
+            svg.transition().call(zoom.scaleBy, 0.67);
+        }
+
+        function resetZoom() {
+            const container = document.querySelector('.graph-container');
+            svg.transition().call(zoom.transform, d3.zoomIdentity.translate(container.clientWidth / 2, container.clientHeight / 2).scale(1));
+        }
+
+        // Graf temizle
+        function grafTemizle() {
+            graphData = { nodes: [], links: [] };
+            renderGraph();
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Disa aktar
+        function exportGraph() {
+            const exportData = {
+                investigation_date: new Date().toISOString(),
+                nodes: graphData.nodes,
+                links: graphData.links.map(l => ({
+                    source: l.source.id || l.source,
+                    target: l.target.id || l.target,
+                    type: l.type,
+                    confidence: l.confidence
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `osint-graph-${Date.now()}.json`;
+            a.click();
+        }
+
+        // OTONOM MOD
+        let autoModeActive = false;
+        let autoModeInterval = null;
+
+        function toggleAutoMode() {
+            autoModeActive = !autoModeActive;
+            const btn = document.getElementById('autoModeBtn');
+            const indicator = document.getElementById('autoIndicator');
+
+            if (autoModeActive) {
+                btn.textContent = 'Aktif';
+                btn.classList.add('active');
+                indicator.classList.add('active');
+                startAutoMode();
+            } else {
+                btn.textContent = 'Pasif';
+                btn.classList.remove('active');
+                indicator.classList.remove('active');
+                stopAutoMode();
+            }
+        }
+
+        function startAutoMode() {
+            console.log('[OSINT] Otonom mod baslatildi');
+
+            // Ilk taramayi hemen yap
+            autoScan();
+
+            // Periyodik tarama (30 saniyede bir)
+            autoModeInterval = setInterval(autoScan, 30000);
+        }
+
+        function stopAutoMode() {
+            console.log('[OSINT] Otonom mod durduruldu');
+            if (autoModeInterval) {
+                clearInterval(autoModeInterval);
+                autoModeInterval = null;
+            }
+        }
+
+        async function autoScan() {
+            if (!autoModeActive) return;
+
+            try {
+                // Otonom OSINT API'sini cagir
+                const response = await fetch('/api/osint/otonom', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.sonuc) {
+                    // Grafi guncelle
+                    const graph = {
+                        nodes: data.sonuc.nodes || [],
+                        edges: data.sonuc.edges || []
+                    };
+
+                    if (graph.nodes.length > 0) {
+                        grafiGuncelle(graph);
+                        console.log(`[OSINT] ${graph.nodes.length} yeni dugum eklendi`);
+
+                        // Bildirim goster
+                        showAutoNotification(`${graph.nodes.length} yeni kesif`);
+                    }
+                }
+            } catch (e) {
+                console.error('[OSINT] Otonom tarama hatasi:', e);
+            }
+        }
+
+        function showAutoNotification(message) {
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+                padding: 12px 20px; background: rgba(0,255,136,0.15);
+                border: 1px solid var(--hud-green); border-radius: 6px;
+                font-size: 11px; color: var(--hud-green);
+                backdrop-filter: blur(12px);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+                animation: slideUp 0.3s ease;
+            `;
+            notif.innerHTML = `<strong>OSINT:</strong> ${message}`;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.style.opacity = '0';
+                notif.style.transform = 'translateY(10px)';
+                notif.style.transition = 'all 0.3s';
+                setTimeout(() => notif.remove(), 300);
+            }, 3000);
+        }
+
+        // WebSocket baglantisi (opsiyonel - gercel zamanli guncellemeler icin)
+        function initWebSocket() {
+            if (typeof io !== 'undefined') {
+                const socket = io();
+
+                socket.on('osint_update', data => {
+                    if (data.graph) {
+                        grafiGuncelle(data.graph);
+                        showAutoNotification('Yeni istihbarat verisi');
+                    }
+                });
+
+                socket.on('connect', () => {
+                    console.log('[OSINT] WebSocket baglantisi kuruldu');
+                });
+            }
+        }
+
+        // Sayfa yuklendiginde WebSocket baslat
+        document.addEventListener('DOMContentLoaded', () => {
+            // WebSocket script'i varsa baslat
+            if (typeof io !== 'undefined') {
+                initWebSocket();
+            }
+        });
+    </script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="/static/theme-switcher.js"></script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

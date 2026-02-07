@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI - Pentagon Seviye Güvenlik Araçları</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+        }
+        [data-theme="cockpit-bw"] header, [data-theme="cockpit-bw"] .header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] h1, [data-theme="cockpit-bw"] h2 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card, [data-theme="cockpit-bw"] .panel { border-color: rgba(255,255,255,0.2) !important; background: rgba(0,0,0,0.9) !important; }
+        [data-theme="cockpit-bw"] nav, [data-theme="cockpit-bw"] .nav-panel { background: rgba(0,0,0,0.98) !important; }
+        [data-theme="cockpit-bw"] .nav-item:hover, [data-theme="cockpit-bw"] .nav-item.active { background: rgba(255,255,255,0.1) !important; }
+        [data-theme="cockpit-bw"] input, [data-theme="cockpit-bw"] select, [data-theme="cockpit-bw"] textarea { background: rgba(0,0,0,0.8) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: radial-gradient(ellipse at top, var(--bg-deep) 0%, var(--bg-void) 100%);
+            min-height: 100vh;
+            color: var(--text-normal);
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 180, 255, 0.03) 2px, rgba(0, 180, 255, 0.03) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .header {
+            background: var(--bg-panel);
+            border-bottom: 2px solid var(--border-glow);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 180, 255, 0.1);
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            background: linear-gradient(135deg, var(--hud-green), var(--accent-secondary));
+            color: var(--bg-void);
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 900;
+            box-shadow: 0 0 10px var(--hud-green);
+        }
+
+        .nav-links { display: flex; gap: 15px; align-items: center; position: relative; z-index: 2; }
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 11px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            border: 1px solid var(--border-subtle);
+            font-family: 'Orbitron', monospace;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            background: var(--bg-glass);
+            border-color: var(--border-glow);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.3);
+        }
+
+        .container { padding: 20px; padding-bottom: 100px; position: relative; z-index: 2; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .dash-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .dash-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        }
+
+        .dash-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--border-glow);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .dash-card:hover::after {
+            opacity: 1;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 180, 255, 0.2);
+            border-color: var(--border-glow);
+        }
+
+        .dash-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .dash-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+        }
+
+        .dash-card.total .dash-value { color: var(--accent-primary); text-shadow: 0 0 10px var(--accent-primary); }
+        .dash-card.installed .dash-value { color: var(--hud-green); text-shadow: 0 0 10px var(--hud-green); }
+        .dash-card.missing .dash-value { color: var(--accent-danger); text-shadow: 0 0 10px var(--accent-danger); }
+        .dash-card.active .dash-value { color: var(--accent-purple); text-shadow: 0 0 10px var(--accent-purple); }
+        .dash-card.installing .dash-value { color: var(--hud-amber); animation: pulse 1s infinite; text-shadow: 0 0 10px var(--hud-amber); }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(0, 180, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--hud-green));
+            border-radius: 3px;
+            transition: width 0.5s;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: var(--bg-panel);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 18px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-bright);
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .filter-btn {
+            padding: 10px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--text-dim);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--bg-card);
+            border-color: var(--border-glow);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .filter-btn .count {
+            background: var(--bg-void);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #0066cc);
+            color: var(--text-bright);
+            border-color: var(--border-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 180, 255, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--hud-green), var(--accent-secondary));
+            color: var(--bg-void);
+            border-color: var(--hud-green);
+            font-weight: 700;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-danger), #cc0033);
+            color: var(--text-bright);
+            border-color: var(--accent-danger);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, var(--hud-amber), var(--accent-warning));
+            color: var(--bg-void);
+            border-color: var(--hud-amber);
+            font-weight: 700;
+        }
+        .btn-sm { padding: 6px 12px; font-size: 9px; }
+
+        .category-section { margin-bottom: 25px; }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 180, 255, 0.1);
+        }
+
+        .category-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .category-stats { display: flex; gap: 15px; font-size: 11px; align-items: center; }
+        .category-stats .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-normal);
+        }
+        .category-stats .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .category-stats .dot.green {
+            background: var(--hud-green);
+            box-shadow: 0 0 10px var(--hud-green);
+        }
+        .category-stats .dot.red {
+            background: var(--accent-danger);
+            box-shadow: 0 0 10px var(--accent-danger);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+        }
+
+        .tool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            transition: all 0.3s;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            transition: all 0.3s;
+        }
+
+        .tool-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 180, 255, 0.15);
+        }
+
+        .tool-card.installed::before { background: var(--hud-green); box-shadow: 0 0 10px var(--hud-green); }
+        .tool-card.missing::before { background: var(--accent-danger); box-shadow: 0 0 10px var(--accent-danger); }
+        .tool-card.installing::before { background: var(--hud-amber); box-shadow: 0 0 10px var(--hud-amber); animation: pulse 1.5s infinite; }
+        .tool-card.active::before { background: var(--accent-purple); box-shadow: 0 0 10px var(--accent-purple); }
+
+        .tool-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(10px);
+        }
+
+        .tool-icon.installed {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            border-color: var(--hud-green);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        .tool-icon.missing {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+            box-shadow: 0 0 15px rgba(255, 51, 85, 0.2);
+        }
+        .tool-icon.installing {
+            background: rgba(255, 204, 0, 0.15);
+            color: var(--hud-amber);
+            border-color: var(--hud-amber);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+        }
+        .tool-icon.active {
+            background: rgba(136, 85, 255, 0.15);
+            color: var(--accent-purple);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 15px rgba(136, 85, 255, 0.2);
+        }
+
+        .tool-content { flex: 1; min-width: 0; }
+
+        .tool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .tool-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-bright);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tool-status {
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .tool-status.installed {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--hud-green);
+            border-color: var(--hud-green);
+        }
+        .tool-status.missing {
+            background: rgba(255, 51, 85, 0.2);
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+        }
+        .tool-status.installing {
+            background: rgba(255, 204, 0, 0.2);
+            color: var(--hud-amber);
+            border-color: var(--hud-amber);
+        }
+        .tool-status.active {
+            background: rgba(136, 85, 255, 0.2);
+            color: var(--accent-purple);
+            border-color: var(--accent-purple);
+        }
+
+        .tool-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .tool-cmd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent-primary);
+            background: var(--bg-void);
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            word-break: break-all;
+            display: none;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .tool-card:hover .tool-cmd,
+        .tool-card.missing .tool-cmd { display: block; }
+
+        .tool-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+
+        .notification {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+        }
+
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .notification.success { border-color: var(--hud-green); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2); }
+        .notification.warning { border-color: var(--hud-amber); box-shadow: 0 10px 30px rgba(255, 204, 0, 0.2); }
+        .notification.error { border-color: var(--accent-danger); box-shadow: 0 10px 30px rgba(255, 51, 85, 0.2); }
+        .notification.info { border-color: var(--accent-primary); box-shadow: 0 10px 30px rgba(0, 180, 255, 0.2); }
+
+        .notification-icon { font-size: 20px; }
+        .notification-content { flex: 1; }
+        .notification-title {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 3px;
+            font-family: 'Orbitron', monospace;
+            color: var(--text-bright);
+        }
+        .notification-msg {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 4, 8, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 180, 255, 0.3);
+        }
+
+        .modal-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-glass);
+        }
+
+        .modal-header h3 {
+            font-size: 14px;
+            color: var(--accent-primary);
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+
+        .install-log {
+            background: var(--bg-void);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .install-log .line { margin-bottom: 6px; padding: 2px 0; }
+        .install-log .line.success { color: var(--hud-green); }
+        .install-log .line.error { color: var(--accent-danger); }
+        .install-log .line.info { color: var(--accent-primary); }
+        .install-log .line.warning { color: var(--hud-amber); }
+
+        .status-bar {
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-glow);
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 180, 255, 0.1);
+        }
+
+        .status-text {
+            font-size: 10px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .spinner {
+            width: 14px; height: 14px;
+            border: 2px solid var(--border-subtle);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .loading .spinner { display: inline-block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .status-actions { display: flex; gap: 10px; }
+
+        .voice-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border-glow);
+            background: var(--bg-card);
+            color: var(--accent-primary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .voice-btn:hover {
+            background: var(--bg-glass);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.4);
+        }
+        .voice-btn.active {
+            background: var(--accent-danger);
+            border-color: var(--accent-danger);
+            color: var(--text-bright);
+            animation: pulse 1s infinite;
+            box-shadow: 0 0 20px var(--accent-danger);
+        }
+
+        @media (max-width: 1400px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .action-bar { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            TSUNAMI Güvenlik Araçları
+            <span class="header-badge">PENTAGON</span>
+        </h1>
+        <nav class="nav-links">
+            <a href="/panel">Panel</a>
+            <a href="/komuta">Komuta</a>
+            <a href="/harita">Harita</a>
+            <a href="/tarama">Tarama</a>
+            <a href="/osint">OSINT</a>
+            <a href="/araclar" class="active">Araçlar</a>
+            <a href="/raporlar">Raporlar</a>
+        </nav>
+    </header>
+
+    <div class="notification-container" id="notifContainer"></div>
+
+    <div class="container">
+        <div class="dashboard-grid">
+            <div class="dash-card total">
+                <div class="dash-value" id="totalCount">0</div>
+                <div class="dash-label">Toplam Araç</div>
+            </div>
+            <div class="dash-card installed">
+                <div class="dash-value" id="installedCount">0</div>
+                <div class="dash-label">Yüklü</div>
+            </div>
+            <div class="dash-card missing">
+                <div class="dash-value" id="missingCount">0</div>
+                <div class="dash-label">Eksik</div>
+            </div>
+            <div class="dash-card active">
+                <div class="dash-value" id="activeCount">0</div>
+                <div class="dash-label">Aktif Çalışan</div>
+            </div>
+            <div class="dash-card installing">
+                <div class="dash-value" id="installingCount">0</div>
+                <div class="dash-label">Kuruluyor</div>
+            </div>
+            <div class="dash-card">
+                <div class="dash-value" id="percentComplete">0%</div>
+                <div class="dash-label">Tamamlanma</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <input type="text" class="search-box" id="searchBox" placeholder="Araç ara... (nmap, wireshark, metasploit...)">
+
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">Tümü <span class="count" id="filterAll">0</span></button>
+                <button class="filter-btn" data-filter="installed">Yüklü <span class="count" id="filterInstalled">0</span></button>
+                <button class="filter-btn" data-filter="missing">Eksik <span class="count" id="filterMissing">0</span></button>
+                <button class="filter-btn" data-filter="active">Aktif <span class="count" id="filterActive">0</span></button>
+            </div>
+
+            <button class="btn btn-success" id="btnInstallAll" onclick="installAllMissing()">
+                Tüm Eksikleri Kur
+            </button>
+            <button class="btn btn-primary" onclick="refreshTools()">
+                Yenile
+            </button>
+            <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Sesli Komut">
+                🎤
+            </button>
+        </div>
+
+        <div class="action-bar" style="margin-bottom: 20px; padding: 10px 20px;">
+            <span style="color: var(--text-dim); font-size: 10px; margin-right: 10px; font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 1px;">Kategori:</span>
+            <div class="filter-group" id="categoryFilters">
+            </div>
+        </div>
+
+        <div id="toolsContainer">
+            <div style="text-align: center; padding: 50px; color: var(--text-dim);">
+                <div class="spinner" style="display: inline-block; margin-bottom: 15px;"></div>
+                <div>Araçlar yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="installModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Araç Kurulumu</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="install-log" id="installLog">
+                    <div class="line info">[*] Kurulum hazırlanıyor...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span class="status-text">
+            <span class="spinner" id="spinner"></span>
+            <span id="statusText">Hazır</span>
+        </span>
+        <div class="status-actions">
+            <span class="status-text">TSUNAMI Pentagon Güvenlik Araçları v3.0</span>
+        </div>
+    </div>
+
+    <script>
+        // Sesli Bildirim Sistemi - Web Speech API
+        function sesliUyari(mesaj) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(mesaj);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                const voices = speechSynthesis.getVoices();
+                const turkceVoice = voices.find(v => v.lang.startsWith('tr'));
+                if (turkceVoice) utterance.voice = turkceVoice;
+                speechSynthesis.speak(utterance);
+            }
+        }
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        }
+
+        let toolsData = null;
+        let currentFilter = 'all';
+        let currentCategory = null;
+        let searchQuery = '';
+        let installingTools = new Set();
+        let activeTools = new Set();
+        let socket = null;
+
+        const CATEGORY_NAMES = {
+            'tarama': 'Ağ Tarama',
+            'kablosuz': 'Kablosuz',
+            'bluetooth': 'Bluetooth',
+            'paket': 'Paket Analiz',
+            'web': 'Web Güvenlik',
+            'sifre': 'Şifre Kırma',
+            'exploit': 'Exploit',
+            'osint': 'OSINT',
+            'zafiyet': 'Zafiyet',
+            'sosyal': 'Sosyal Müh.',
+            'altyapi': 'Ağ Altyapı',
+            'mobil': 'Mobil',
+            'forensik': 'Forensik',
+            'diger': 'Diğer'
+        };
+
+        const CATEGORY_ORDER = ['tarama', 'kablosuz', 'bluetooth', 'paket', 'web', 'sifre', 'exploit', 'osint', 'zafiyet', 'sosyal', 'altyapi', 'mobil', 'forensik', 'diger'];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSocket();
+            fetchTools();
+            checkActiveTools();
+            setInterval(checkActiveTools, 30000);
+        });
+
+        function initSocket() {
+            socket = io();
+            socket.on('connect', () => {
+                console.log('Socket bağlantısı kuruldu');
+            });
+
+            socket.on('tool_status', data => {
+                if (data.status === 'installing') {
+                    installingTools.add(data.tool);
+                } else if (data.status === 'installed' || data.status === 'failed') {
+                    installingTools.delete(data.tool);
+                }
+                updateCounts();
+                renderTools();
+            });
+        }
+
+        async function fetchTools() {
+            setStatus('Araçlar kontrol ediliyor...', true);
+
+            try {
+                const response = await fetch('/api/yerel/araclar');
+                toolsData = await response.json();
+                updateCounts();
+                renderCategoryFilters();
+                renderTools();
+                setStatus('Hazır', false);
+            } catch (e) {
+                setStatus('Hata: ' + e.message, false);
+                showNotif('Hata', 'Araçlar yüklenemedi: ' + e.message, 'error');
+            }
+        }
+
+        async function checkActiveTools() {
+            try {
+                const commonTools = ['nmap', 'wireshark', 'tcpdump', 'airodump-ng', 'kismet', 'bettercap', 'msfconsole', 'burpsuite'];
+                const result = await fetch('/api/yerel/aktif-araclar');
+
+                if (result.ok) {
+                    const data = await result.json();
+                    activeTools = new Set(data.aktif || []);
+                } else {
+                    activeTools.clear();
+                }
+                updateCounts();
+            } catch (e) {
+                console.log('Aktif araç kontrolü başarısız');
+            }
+        }
+
+        function updateCounts() {
+            if (!toolsData) return;
+
+            const total = toolsData.toplam || 0;
+            const installed = toolsData.yuklu || 0;
+            const missing = total - installed;
+            const percent = toolsData.yuzde || 0;
+            const installing = installingTools.size;
+            const active = activeTools.size;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('installedCount').textContent = installed;
+            document.getElementById('missingCount').textContent = missing;
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('installingCount').textContent = installing;
+            document.getElementById('percentComplete').textContent = percent + '%';
+            document.getElementById('progressFill').style.width = percent + '%';
+
+            document.getElementById('filterAll').textContent = total;
+            document.getElementById('filterInstalled').textContent = installed;
+            document.getElementById('filterMissing').textContent = missing;
+            document.getElementById('filterActive').textContent = active;
+        }
+
+        function renderCategoryFilters() {
+            if (!toolsData || !toolsData.kategoriler) return;
+
+            const container = document.getElementById('categoryFilters');
+            let html = '<button class="filter-btn active" data-cat="all">Tümü</button>';
+
+            CATEGORY_ORDER.forEach(kat => {
+                if (toolsData.kategoriler[kat]) {
+                    const count = toolsData.kategoriler[kat].araclar.length;
+                    html += `<button class="filter-btn" data-cat="${kat}">${CATEGORY_NAMES[kat]} <span class="count">${count}</span></button>`;
+                }
+            });
+
+            container.innerHTML = html;
+
+            container.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.cat === 'all' ? null : this.dataset.cat;
+                    renderTools();
+                });
+            });
+        }
+
+        function renderTools() {
+            if (!toolsData || !toolsData.kategoriler) return;
+
+            const container = document.getElementById('toolsContainer');
+            let html = '';
+
+            CATEGORY_ORDER.forEach(kategori => {
+                const data = toolsData.kategoriler[kategori];
+                if (!data) return;
+
+                if (currentCategory && kategori !== currentCategory) return;
+
+                let araclar = data.araclar;
+
+                if (currentFilter === 'installed') {
+                    araclar = araclar.filter(a => a.yuklu);
+                } else if (currentFilter === 'missing') {
+                    araclar = araclar.filter(a => !a.yuklu);
+                } else if (currentFilter === 'active') {
+                    araclar = araclar.filter(a => activeTools.has(a.ad));
+                }
+
+                if (searchQuery) {
+                    araclar = araclar.filter(a =>
+                        a.ad.toLowerCase().includes(searchQuery) ||
+                        a.aciklama.toLowerCase().includes(searchQuery)
+                    );
+                }
+
+                if (araclar.length === 0) return;
+
+                const yukluSayisi = araclar.filter(a => a.yuklu).length;
+                const eksikSayisi = araclar.length - yukluSayisi;
+
+                html += `
+                    <div class="category-section" data-category="${kategori}">
+                        <div class="category-header">
+                            <div class="category-title">
+                                ${CATEGORY_NAMES[kategori] || kategori}
+                            </div>
+                            <div class="category-stats">
+                                <div class="stat"><span class="dot green"></span> ${yukluSayisi} Yüklü</div>
+                                <div class="stat"><span class="dot red"></span> ${eksikSayisi} Eksik</div>
+                                ${eksikSayisi > 0 ? `<button class="btn btn-sm btn-primary" onclick="installCategory('${kategori}')">Kategoriyi Kur</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="tools-grid">
+                            ${araclar.map(arac => renderToolCard(arac, kategori)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (!html) {
+                html = '<div style="text-align: center; padding: 50px; color: var(--text-dim);">Araç bulunamadı</div>';
+            }
+
+            container.innerHTML = html;
+
+            loadInstallCommands();
+        }
+
+        function renderToolCard(arac, kategori) {
+            const isInstalling = installingTools.has(arac.ad);
+            const isActive = activeTools.has(arac.ad);
+
+            let statusClass = arac.yuklu ? (isActive ? 'active' : 'installed') : 'missing';
+            let statusText = arac.yuklu ? (isActive ? 'Aktif' : 'Yüklü') : 'Eksik';
+            let iconText = arac.yuklu ? (isActive ? '⚡' : '✓') : '✕';
+
+            if (isInstalling) {
+                statusClass = 'installing';
+                statusText = 'Kuruluyor';
+                iconText = '⏳';
+            }
+
+            return `
+                <div class="tool-card ${statusClass}" id="tool-${arac.ad}">
+                    <div class="tool-icon ${statusClass}">${iconText}</div>
+                    <div class="tool-content">
+                        <div class="tool-header">
+                            <div class="tool-name">${arac.ad}</div>
+                            <div class="tool-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="tool-desc">${arac.aciklama}</div>
+                        <div class="tool-cmd" id="cmd-${arac.ad}">Yükleniyor...</div>
+                        <div class="tool-actions">
+                            ${!arac.yuklu && !isInstalling ? `
+                                <button class="btn btn-sm btn-success" onclick="installTool('${arac.ad}')">Kur</button>
+                                <button class="btn btn-sm btn-primary" onclick="copyCommand('${arac.ad}')">Kopyala</button>
+                                <button class="btn btn-sm btn-warning" onclick="openTerminal('${arac.ad}')">Terminal</button>
+                            ` : ''}
+                            ${arac.yuklu ? `
+                                <button class="btn btn-sm btn-primary" onclick="runTool('${arac.ad}')">Çalıştır</button>
+                                <button class="btn btn-sm" onclick="openHelp('${arac.ad}')" style="background:var(--bg-glass); border-color: var(--border-glow);">Yardım</button>
+                                <button class="btn btn-sm" onclick="showInMap('${arac.ad}')" style="background:var(--bg-glass); border-color: var(--accent-purple);">Harita</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadInstallCommands() {
+            if (!toolsData) return;
+
+            for (const [kat, info] of Object.entries(toolsData.kategoriler)) {
+                for (const arac of info.araclar) {
+                    if (!arac.yuklu) {
+                        try {
+                            const response = await fetch(`/api/yerel/kurulum-komutu/${arac.ad}`);
+                            const data = await response.json();
+                            const cmdEl = document.getElementById(`cmd-${arac.ad}`);
+                            if (cmdEl) {
+                                cmdEl.textContent = data.komut || 'Bilinmeyen';
+                            }
+                        } catch (e) {
+                            console.log(`Komut alınamadı: ${arac.ad}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        async function installTool(arac) {
+            installingTools.add(arac);
+            renderTools();
+
+            const modal = document.getElementById('installModal');
+            const log = document.getElementById('installLog');
+            const title = document.getElementById('modalTitle');
+
+            title.textContent = `${arac} Kurulumu`;
+            log.innerHTML = `<div class="line info">[*] ${arac} kuruluyor...</div>`;
+            modal.classList.add('active');
+
+            setStatus(`${arac} kuruluyor...`, true);
+            showNotif('Kurulum', `${arac} kurulumu başlatıldı`, 'info');
+
+            try {
+                const response = await fetch(`/api/yerel/kur/${arac}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (data.basarili) {
+                    log.innerHTML += `<div class="line success">[+] ${arac} başarıyla kuruldu!</div>`;
+                    showNotif('Başarılı', `${arac} kuruldu`, 'success');
+                } else {
+                    log.innerHTML += `<div class="line error">[-] Kurulum başarısız: ${data.hata || 'Bilinmeyen hata'}</div>`;
+                    log.innerHTML += `<div class="line warning">[!] Manuel kurulum için: Terminal butonunu kullanın</div>`;
+                    showNotif('Hata', `${arac} kurulamadı`, 'error');
+                }
+
+                if (data.cikti) {
+                    log.innerHTML += `<div class="line">${data.cikti.substring(0, 1000)}</div>`;
+                }
+
+                installingTools.delete(arac);
+                await fetchTools();
+
+            } catch (e) {
+                log.innerHTML += `<div class="line error">[-] Hata: ${e.message}</div>`;
+                installingTools.delete(arac);
+                showNotif('Hata', e.message, 'error');
+            }
+
+            setStatus('Hazır', false);
+        }
+
+        async function installCategory(kategori) {
+            if (!toolsData || !toolsData.kategoriler[kategori]) return;
+
+            const eksikler = toolsData.kategoriler[kategori].araclar
+                .filter(a => !a.yuklu)
+                .map(a => a.ad);
+
+            if (eksikler.length === 0) {
+                showNotif('Bilgi', 'Bu kategoride eksik araç yok!', 'info');
+                return;
+            }
+
+            if (!confirm(`${CATEGORY_NAMES[kategori]} kategorisindeki ${eksikler.length} eksik aracı kurmak istiyor musunuz?`)) {
+                return;
+            }
+
+            await installMultiple(eksikler, `${CATEGORY_NAMES[kategori]} Kurulumu`);
+        }
+
+        async function installAllMissing() {
+            if (!toolsData) return;
+
+            const eksikSayisi = toolsData.toplam - toolsData.yuklu;
+            if (eksikSayisi === 0) {
+                showNotif('Bilgi', 'Eksik araç yok!', 'info');
+                return;
+            }
+
+            if (!confirm(`Tüm ${eksikSayisi} eksik aracı kurmak istiyor musunuz?\n\nNot: Bu işlem uzun sürebilir ve sudo yetkisi gerektirebilir.`)) {
+                return;
+            }
+
+            await installMultiple(null, `Toplu Kurulum (${eksikSayisi} araç)`);
+        }
+
+        async function installMultiple(araclar, title) {
+            const modal = document.getElementById('installModal');
+            const log = document.getElementById('installLog');
+            const modalTitle = document.getElementById('modalTitle');
+
+            modalTitle.textContent = title;
+            log.innerHTML = `<div class="line info">[*] Kurulum başlatılıyor...</div>`;
+            modal.classList.add('active');
+
+            setStatus('Toplu kurulum yapılıyor...', true);
+
+            try {
+                const response = await fetch('/api/yerel/toplu-kur', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ araclar: araclar })
+                });
+                const data = await response.json();
+
+                log.innerHTML += `<div class="line info">[*] Sonuç: ${data.basarili}/${data.toplam} başarılı</div>`;
+
+                if (data.detaylar) {
+                    for (const detay of data.detaylar) {
+                        if (detay.basarili) {
+                            log.innerHTML += `<div class="line success">[+] ${detay.arac} kuruldu</div>`;
+                        } else {
+                            log.innerHTML += `<div class="line error">[-] ${detay.arac}: ${detay.hata || 'Başarısız'}</div>`;
+                        }
+                    }
+                }
+
+                showNotif('Kurulum Tamamlandı', `${data.basarili}/${data.toplam} araç kuruldu`, data.basarili > 0 ? 'success' : 'warning');
+
+            } catch (e) {
+                log.innerHTML += `<div class="line error">[-] Hata: ${e.message}</div>`;
+                showNotif('Hata', e.message, 'error');
+            }
+
+            installingTools.clear();
+            await fetchTools();
+            setStatus('Hazır', false);
+        }
+
+        async function copyCommand(arac) {
+            try {
+                const response = await fetch(`/api/yerel/kurulum-komutu/${arac}`);
+                const data = await response.json();
+                const cmd = data.komut;
+
+                if (!cmd || cmd.includes('Bilinmeyen')) {
+                    showNotif('Hata', `Kurulum komutu bulunamadı: ${arac}`, 'error');
+                    return;
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(cmd);
+                    showNotif('Kopyalandı', cmd.substring(0, 50) + '...', 'success');
+                    return;
+                }
+
+                const ta = document.createElement('textarea');
+                ta.value = cmd;
+                ta.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showNotif('Kopyalandı', cmd.substring(0, 50) + '...', 'success');
+
+            } catch (e) {
+                showNotif('Hata', 'Kopyalama başarısız', 'error');
+            }
+        }
+
+        async function openTerminal(arac) {
+            try {
+                const response = await fetch(`/api/yerel/kurulum-komutu/${arac}`);
+                const data = await response.json();
+                localStorage.setItem('tsunami_terminal_cmd', data.komut);
+                window.location.href = '/harita?terminal=1';
+            } catch (e) {
+                showNotif('Hata', 'Terminal açılamadı', 'error');
+            }
+        }
+
+        async function runTool(arac) {
+            showNotif('Başlatılıyor', `${arac} başlatılıyor...`, 'info');
+
+            try {
+                const r = await fetch(`/api/yerel/calistir/${arac}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ argumanlar: [] })
+                });
+                const d = await r.json();
+
+                if (d.basarili !== false) {
+                    showNotif('Çalıştırıldı', `${arac} başlatıldı`, 'success');
+                    activeTools.add(arac);
+                    updateCounts();
+                    renderTools();
+
+                    if (d.cikti) {
+                        const modal = document.getElementById('installModal');
+                        const log = document.getElementById('installLog');
+                        document.getElementById('modalTitle').textContent = `${arac} Çıktısı`;
+                        log.innerHTML = `<pre style="color:var(--accent-primary)">${d.cikti}</pre>`;
+                        modal.classList.add('active');
+                    }
+                } else {
+                    showNotif('Hata', d.hata || 'Çalıştırılamadı', 'error');
+                }
+            } catch (e) {
+                showNotif('Hata', e.message, 'error');
+            }
+        }
+
+        async function openHelp(arac) {
+            const modal = document.getElementById('installModal');
+            const log = document.getElementById('installLog');
+            document.getElementById('modalTitle').textContent = `${arac} Yardım`;
+            log.innerHTML = `<div class="line info">[*] ${arac} --help yükleniyor...</div>`;
+            modal.classList.add('active');
+
+            try {
+                const r = await fetch(`/api/yerel/calistir/${arac}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ argumanlar: ['--help'] })
+                });
+                const d = await r.json();
+
+                if (d.cikti || d.hata) {
+                    log.innerHTML = `<pre style="color:var(--accent-primary);font-size:10px;white-space:pre-wrap">${d.cikti || d.hata}</pre>`;
+                } else {
+                    log.innerHTML = `<div class="line warning">[!] Yardım bilgisi alınamadı</div>`;
+                }
+            } catch (e) {
+                log.innerHTML = `<div class="line error">[-] Hata: ${e.message}</div>`;
+            }
+        }
+
+        function showInMap(arac) {
+            localStorage.setItem('tsunami_ai_cmd', `${arac} çalıştır ve sonuçları haritada göster`);
+            window.location.href = '/harita';
+        }
+
+        function refreshTools() {
+            fetchTools();
+            checkActiveTools();
+            showNotif('Yenilendi', 'Araç listesi güncellendi', 'success');
+        }
+
+        function closeModal() {
+            document.getElementById('installModal').classList.remove('active');
+        }
+
+        function setStatus(text, loading) {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('spinner').style.display = loading ? 'inline-block' : 'none';
+        }
+
+        function showNotif(title, msg, type = 'info') {
+            const container = document.getElementById('notifContainer');
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `
+                <span class="notification-icon">${icons[type]}</span>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-msg">${msg}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(notif);
+
+            setTimeout(() => {
+                if (notif.parentElement) {
+                    notif.style.opacity = '0';
+                    notif.style.transform = 'translateX(100px)';
+                    setTimeout(() => notif.remove(), 300);
+                }
+            }, 5000);
+
+            // Sesli bildirim ekle
+            if (type === 'error') {
+                sesliUyari('Hata! ' + msg);
+            } else if (type === 'warning') {
+                sesliUyari('Dikkat! ' + msg);
+            } else if (type === 'success') {
+                sesliUyari(title + '. ' + msg);
+            }
+        }
+
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderTools();
+            });
+        });
+
+        document.getElementById('searchBox').addEventListener('input', function() {
+            searchQuery = this.value.toLowerCase();
+            renderTools();
+        });
+
+        document.getElementById('installModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+            if (e.ctrlKey && e.key === 'r') { e.preventDefault(); refreshTools(); }
+            if (e.ctrlKey && e.key === 'f') { e.preventDefault(); document.getElementById('searchBox').focus(); }
+        });
+
+        let recognition = null;
+        let isListening = false;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function toggleVoice() {
+            if (!SpeechRecognition) {
+                showNotif('Hata', 'Tarayıcınız ses tanımayı desteklemiyor', 'error');
+                return;
+            }
+
+            if (isListening) {
+                stopVoice();
+            } else {
+                startVoice();
+            }
+        }
+
+        function startVoice() {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'tr-TR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('voiceBtn').classList.add('active');
+                showNotif('Dinleniyor', 'Komut bekleniyor...', 'info');
+            };
+
+            recognition.onresult = async (event) => {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                showNotif('Algılandı', transcript, 'success');
+                await processVoiceCommand(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                showNotif('Hata', 'Ses tanıma hatası: ' + event.error, 'error');
+                stopVoice();
+            };
+
+            recognition.onend = () => {
+                stopVoice();
+            };
+
+            recognition.start();
+        }
+
+        function stopVoice() {
+            isListening = false;
+            document.getElementById('voiceBtn').classList.remove('active');
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+            }
+        }
+
+        async function processVoiceCommand(cmd) {
+            if (cmd.includes('kur') && cmd.includes('nmap')) {
+                await installTool('nmap');
+            } else if (cmd.includes('kur') && cmd.includes('nessus')) {
+                await installTool('nessus');
+            } else if (cmd.includes('tüm') && cmd.includes('kur')) {
+                await installAllMissing();
+            } else if (cmd.includes('yenile') || cmd.includes('güncelle')) {
+                refreshTools();
+            } else if (cmd.includes('ara')) {
+                const searchTerm = cmd.replace('ara', '').trim();
+                document.getElementById('searchBox').value = searchTerm;
+                searchQuery = searchTerm;
+                renderTools();
+            } else {
+                try {
+                    const r = await fetch('/api/ai/komut', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mesaj: cmd })
+                    });
+                    const d = await r.json();
+                    if (d.cikti) {
+                        showNotif('AI Yanıtı', d.cikti.substring(0, 100), 'info');
+                    }
+                } catch (e) {
+                    showNotif('Hata', 'AI komutu gönderilemedi', 'error');
+                }
+            }
+        }
+    </script>
+    <script src="/static/theme-switcher.js"></script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

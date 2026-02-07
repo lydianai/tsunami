@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI - Kapsamli Tarama Merkezi</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+        }
+        [data-theme="cockpit-bw"] header, [data-theme="cockpit-bw"] .header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] h1, [data-theme="cockpit-bw"] h2 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card, [data-theme="cockpit-bw"] .panel { border-color: rgba(255,255,255,0.2) !important; background: rgba(0,0,0,0.9) !important; }
+        [data-theme="cockpit-bw"] nav, [data-theme="cockpit-bw"] .nav-panel { background: rgba(0,0,0,0.98) !important; }
+        [data-theme="cockpit-bw"] .nav-item:hover, [data-theme="cockpit-bw"] .nav-item.active { background: rgba(255,255,255,0.1) !important; }
+        [data-theme="cockpit-bw"] input, [data-theme="cockpit-bw"] select, [data-theme="cockpit-bw"] textarea { background: rgba(0,0,0,0.8) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, var(--bg-void) 0%, var(--bg-deep) 100%);
+            color: var(--text-normal);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at top left, rgba(0, 180, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(136, 85, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-panel);
+            border-bottom: 2px solid var(--border-glow);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0, 180, 255, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+        }
+
+        .logo::before {
+            content: '';
+            width: 4px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+            box-shadow: 0 0 12px var(--accent-primary);
+        }
+
+        .logo h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-bright);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(0, 180, 255, 0.6);
+        }
+
+        .logo span {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-links a:hover::before {
+            left: 100%;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: var(--bg-glass);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 16px rgba(0, 180, 255, 0.3), inset 0 0 8px rgba(0, 180, 255, 0.1);
+        }
+
+        /* Main Container */
+        .main {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            gap: 24px;
+            min-height: calc(100vh - 70px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+            opacity: 0.5;
+        }
+
+        .panel-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, rgba(0, 180, 255, 0.08), rgba(136, 85, 255, 0.08));
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .panel-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 30%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), transparent);
+            box-shadow: 0 0 8px var(--accent-primary);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+        }
+
+        .panel-body {
+            padding: 18px;
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+
+        /* Tarama Kontrolleri */
+        .scan-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scan-btn {
+            padding: 16px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scan-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .scan-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .scan-btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--hud-cyan));
+            color: var(--bg-void);
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .scan-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 180, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .scan-btn-secondary {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-normal);
+        }
+
+        .scan-btn-secondary:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 16px rgba(0, 180, 255, 0.2);
+        }
+
+        .scan-btn-danger {
+            background: linear-gradient(135deg, var(--accent-danger), #cc0033);
+            color: var(--text-bright);
+            border: 1px solid var(--accent-danger);
+            box-shadow: 0 0 20px rgba(255, 51, 85, 0.3);
+        }
+
+        .scan-btn-danger:hover {
+            box-shadow: 0 0 28px rgba(255, 51, 85, 0.5);
+        }
+
+        .scan-btn.running {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 20px var(--accent-primary); }
+            50% { opacity: 0.7; box-shadow: 0 0 32px var(--accent-primary); }
+        }
+
+        /* Istatistikler */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: currentColor;
+            opacity: 0.5;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 0 16px currentColor;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .stat-card.wifi { color: var(--accent-primary); border-color: var(--accent-primary); }
+        .stat-card.wifi:hover { box-shadow: 0 8px 24px rgba(0, 180, 255, 0.3); }
+        .stat-card.wifi .stat-value { color: var(--accent-primary); }
+
+        .stat-card.bt { color: var(--accent-purple); border-color: var(--accent-purple); }
+        .stat-card.bt:hover { box-shadow: 0 8px 24px rgba(136, 85, 255, 0.3); }
+        .stat-card.bt .stat-value { color: var(--accent-purple); }
+
+        .stat-card.ip { color: var(--hud-green); border-color: var(--hud-green); }
+        .stat-card.ip:hover { box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3); }
+        .stat-card.ip .stat-value { color: var(--hud-green); }
+
+        .stat-card.iot { color: var(--accent-warning); border-color: var(--accent-warning); }
+        .stat-card.iot:hover { box-shadow: 0 8px 24px rgba(255, 170, 0, 0.3); }
+        .stat-card.iot .stat-value { color: var(--accent-warning); }
+
+        .stat-card.vuln { color: var(--accent-danger); border-color: var(--accent-danger); }
+        .stat-card.vuln:hover { box-shadow: 0 8px 24px rgba(255, 51, 85, 0.3); }
+        .stat-card.vuln .stat-value { color: var(--accent-danger); }
+
+        .stat-card.baz { color: var(--hud-amber); border-color: var(--hud-amber); }
+        .stat-card.baz:hover { box-shadow: 0 8px 24px rgba(255, 204, 0, 0.3); }
+        .stat-card.baz .stat-value { color: var(--hud-amber); }
+
+        /* Sonuc Gridi */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        /* Cihaz Karti */
+        .device-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 3px;
+            background: currentColor;
+            opacity: 0.6;
+            box-shadow: -2px 0 8px currentColor;
+        }
+
+        .device-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+        }
+
+        .device-card.wifi { color: var(--accent-primary); border-left: 3px solid var(--accent-primary); }
+        .device-card.wifi:hover { box-shadow: 0 12px 36px rgba(0, 180, 255, 0.3); }
+
+        .device-card.bluetooth { color: var(--accent-purple); border-left: 3px solid var(--accent-purple); }
+        .device-card.bluetooth:hover { box-shadow: 0 12px 36px rgba(136, 85, 255, 0.3); }
+
+        .device-card.ip { color: var(--hud-green); border-left: 3px solid var(--hud-green); }
+        .device-card.ip:hover { box-shadow: 0 12px 36px rgba(0, 255, 136, 0.3); }
+
+        .device-card.iot { color: var(--accent-warning); border-left: 3px solid var(--accent-warning); }
+        .device-card.iot:hover { box-shadow: 0 12px 36px rgba(255, 170, 0, 0.3); }
+
+        .device-card.vuln { color: var(--accent-danger); border-left: 3px solid var(--accent-danger); }
+        .device-card.vuln:hover { box-shadow: 0 12px 36px rgba(255, 51, 85, 0.3); }
+
+        .device-card.baz { color: var(--hud-amber); border-left: 3px solid var(--hud-amber); }
+        .device-card.baz:hover { box-shadow: 0 12px 36px rgba(255, 204, 0, 0.3); }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .device-name {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-bright);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .device-type {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid currentColor;
+        }
+
+        .device-type.wifi { background: rgba(0, 180, 255, 0.15); color: var(--accent-primary); box-shadow: 0 0 8px rgba(0, 180, 255, 0.3); }
+        .device-type.bluetooth { background: rgba(136, 85, 255, 0.15); color: var(--accent-purple); box-shadow: 0 0 8px rgba(136, 85, 255, 0.3); }
+        .device-type.ip { background: rgba(0, 255, 136, 0.15); color: var(--hud-green); box-shadow: 0 0 8px rgba(0, 255, 136, 0.3); }
+        .device-type.iot { background: rgba(255, 170, 0, 0.15); color: var(--accent-warning); box-shadow: 0 0 8px rgba(255, 170, 0, 0.3); }
+        .device-type.vuln { background: rgba(255, 51, 85, 0.15); color: var(--accent-danger); box-shadow: 0 0 8px rgba(255, 51, 85, 0.3); }
+        .device-type.baz { background: rgba(255, 204, 0, 0.15); color: var(--hud-amber); box-shadow: 0 0 8px rgba(255, 204, 0, 0.3); }
+
+        .device-info {
+            font-size: 11px;
+            color: var(--text-dim);
+            line-height: 1.8;
+        }
+
+        .device-info strong {
+            color: var(--text-normal);
+            font-weight: 600;
+        }
+
+        .device-info .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .device-info .row:last-child {
+            border: none;
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .device-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            background: var(--bg-glass);
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .device-btn:hover {
+            border-color: currentColor;
+            color: currentColor;
+            background: rgba(0, 180, 255, 0.1);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.2);
+        }
+
+        /* Sinyal Gostergesi */
+        .signal-bars {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 16px;
+        }
+
+        .signal-bar {
+            width: 3px;
+            background: var(--border-subtle);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .signal-bar.active {
+            background: var(--hud-green);
+            box-shadow: 0 0 6px var(--hud-green);
+        }
+
+        .signal-excellent .signal-bar:nth-child(1),
+        .signal-excellent .signal-bar:nth-child(2),
+        .signal-excellent .signal-bar:nth-child(3),
+        .signal-excellent .signal-bar:nth-child(4) {
+            background: var(--hud-green);
+            box-shadow: 0 0 6px var(--hud-green);
+        }
+
+        .signal-good .signal-bar:nth-child(1),
+        .signal-good .signal-bar:nth-child(2),
+        .signal-good .signal-bar:nth-child(3) {
+            background: var(--hud-amber);
+            box-shadow: 0 0 6px var(--hud-amber);
+        }
+
+        .signal-fair .signal-bar:nth-child(1),
+        .signal-fair .signal-bar:nth-child(2) {
+            background: var(--accent-warning);
+            box-shadow: 0 0 6px var(--accent-warning);
+        }
+
+        .signal-weak .signal-bar:nth-child(1) {
+            background: var(--accent-danger);
+            box-shadow: 0 0 6px var(--accent-danger);
+        }
+
+        /* Detay Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 4, 8, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 750px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 24px 72px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 180, 255, 0.2);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            background: linear-gradient(135deg, rgba(0, 180, 255, 0.1), rgba(136, 85, 255, 0.1));
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-shadow: 0 0 12px rgba(0, 180, 255, 0.5);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: var(--accent-danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(85vh - 140px);
+        }
+
+        .modal-footer {
+            padding: 18px 24px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: var(--bg-glass);
+        }
+
+        /* Detay Sekmeleri */
+        .detail-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 12px;
+        }
+
+        .detail-tab {
+            padding: 10px 18px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-tab.active {
+            background: rgba(0, 180, 255, 0.15);
+            color: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.3);
+        }
+
+        .detail-section {
+            display: none;
+        }
+
+        .detail-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .detail-item {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 14px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-bright);
+            word-break: break-all;
+        }
+
+        /* Islemler */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-normal);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-primary);
+            background: rgba(0, 180, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn .icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        /* Log Panel */
+        .log-list {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .log-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .log-item:hover {
+            background: rgba(0, 180, 255, 0.05);
+        }
+
+        .log-time {
+            color: var(--text-dim);
+            min-width: 70px;
+            font-size: 10px;
+        }
+
+        .log-type {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 60px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-type.info {
+            background: rgba(0, 180, 255, 0.15);
+            color: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
+        }
+
+        .log-type.success {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            border: 1px solid var(--hud-green);
+        }
+
+        .log-type.warning {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--accent-warning);
+            border: 1px solid var(--accent-warning);
+        }
+
+        .log-type.error {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+        }
+
+        .log-msg {
+            flex: 1;
+            color: var(--text-normal);
+            line-height: 1.4;
+        }
+
+        /* Bildirim Sistemi */
+        .notification-container {
+            position: fixed;
+            top: 90px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notification {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 18px;
+            min-width: 320px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(120px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success {
+            border-color: var(--hud-green);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .notification.warning {
+            border-color: var(--accent-warning);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 170, 0, 0.2);
+        }
+
+        .notification.error {
+            border-color: var(--accent-danger);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 51, 85, 0.2);
+        }
+
+        .notification.info {
+            border-color: var(--accent-primary);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 180, 255, 0.2);
+        }
+
+        .notification-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+
+        .notification-msg {
+            font-size: 11px;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .notification-close:hover {
+            color: var(--text-bright);
+            transform: scale(1.2);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 4px;
+            border: 2px solid var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-glow);
+        }
+
+        /* Loading Spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 4, 8, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 70px;
+            height: 70px;
+            border: 4px solid var(--border-subtle);
+            border-top-color: var(--accent-primary);
+            border-right-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 30px rgba(0, 180, 255, 0.3);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 16px rgba(0, 180, 255, 0.5);
+        }
+
+        .loading-progress {
+            width: 280px;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--hud-cyan));
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 12px var(--accent-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Form Elements */
+        select, input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-normal);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        select:hover, input:hover {
+            border-color: var(--border-glow);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .main {
+                grid-template-columns: 280px 1fr 280px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+            .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <h1>TSUNAMI TARAMA</h1>
+            <span>Pentagon-Seviye Siber Istihbarat</span>
+        </div>
+        <nav class="nav-links">
+            <a href="/panel">Panel</a>
+            <a href="/komuta">Komuta</a>
+            <a href="/harita">Harita</a>
+            <a href="/tarama" class="active">Tarama</a>
+            <a href="/osint">OSINT</a>
+            <a href="/araclar">Araclar</a>
+            <a href="/raporlar">Raporlar</a>
+        </nav>
+    </header>
+
+    <!-- Bildirim Container -->
+    <div class="notification-container" id="notifContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Tarama baslatiliyor...</div>
+        <div class="loading-progress"><div class="loading-progress-bar" id="loadingBar"></div></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Sol Panel - Kontroller -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Tarama Kontrolleri</span>
+            </div>
+            <div class="panel-body">
+                <div class="scan-controls">
+                    <button class="scan-btn scan-btn-primary" id="btnFullScan" onclick="tamTarama()">
+                        Tam Tarama Baslat
+                    </button>
+                    <button class="scan-btn scan-btn-secondary" onclick="wifiTara()">
+                        WiFi Aglari Tara
+                    </button>
+                    <button class="scan-btn scan-btn-secondary" onclick="btTara()">
+                        Bluetooth Cihazlar
+                    </button>
+                    <button class="scan-btn scan-btn-secondary" onclick="ipTara()">
+                        Ag IP Tarama
+                    </button>
+                    <button class="scan-btn scan-btn-secondary" onclick="iotTara()">
+                        IoT Cihazlar
+                    </button>
+                    <button class="scan-btn scan-btn-secondary" onclick="portTara()">
+                        Port Tarama
+                    </button>
+                    <button class="scan-btn scan-btn-danger" onclick="taramaDurdur()">
+                        Taramayi Durdur
+                    </button>
+                </div>
+
+                <!-- Istatistikler -->
+                <div class="stats-grid">
+                    <div class="stat-card wifi">
+                        <div class="stat-value" id="statWifi">0</div>
+                        <div class="stat-label">WiFi Agi</div>
+                    </div>
+                    <div class="stat-card bt">
+                        <div class="stat-value" id="statBt">0</div>
+                        <div class="stat-label">Bluetooth</div>
+                    </div>
+                    <div class="stat-card ip">
+                        <div class="stat-value" id="statIp">0</div>
+                        <div class="stat-label">IP Adresi</div>
+                    </div>
+                    <div class="stat-card iot">
+                        <div class="stat-value" id="statIot">0</div>
+                        <div class="stat-label">IoT Cihaz</div>
+                    </div>
+                    <div class="stat-card vuln">
+                        <div class="stat-value" id="statVuln">0</div>
+                        <div class="stat-label">Zafiyet</div>
+                    </div>
+                    <div class="stat-card baz">
+                        <div class="stat-value" id="statBaz">0</div>
+                        <div class="stat-label">Baz Ist.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orta Panel - Sonuclar -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Tarama Sonuclari</span>
+                <select id="filterType" onchange="filterResults()">
+                    <option value="all">Tumu</option>
+                    <option value="wifi">WiFi</option>
+                    <option value="bluetooth">Bluetooth</option>
+                    <option value="ip">IP</option>
+                    <option value="iot">IoT</option>
+                    <option value="vuln">Zafiyetler</option>
+                </select>
+            </div>
+            <div class="panel-body">
+                <div class="results-grid" id="resultsGrid">
+                    <div style="text-align:center;padding:50px;color:var(--text-dim);grid-column:1/-1">
+                        <div style="font-size:48px;margin-bottom:20px;opacity:0.3">⚡</div>
+                        <div style="font-family:'Orbitron',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:1px">Tarama baslatmak icin sol paneli kullanin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sag Panel - Log ve Islemler -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Canli Log</span>
+                <button onclick="logTemizle()" style="background:none;border:1px solid var(--border-subtle);padding:4px 10px;border-radius:4px;color:var(--text-dim);cursor:pointer;font-size:10px;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px">Temizle</button>
+            </div>
+            <div class="panel-body">
+                <div class="log-list" id="logList">
+                    <div class="log-item">
+                        <span class="log-time">--:--:--</span>
+                        <span class="log-type info">INFO</span>
+                        <span class="log-msg">Sistem hazir ve beklemede</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detay Modal -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Cihaz Detaylari</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dinamik icerik -->
+            </div>
+            <div class="modal-footer">
+                <button class="scan-btn scan-btn-secondary" onclick="closeModal()">Kapat</button>
+                <button class="scan-btn scan-btn-primary" onclick="exportDevice()">Rapor Olustur</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global degiskenler
+        let socket;
+        let scanResults = { wifi: [], bluetooth: [], ip: [], iot: [], vulns: [], baz: [] };
+        let isScanning = false;
+        let currentDevice = null;
+
+        // Sayfa yuklendiginde
+        document.addEventListener('DOMContentLoaded', () => {
+            initSocket();
+            log('TSUNAMI Tarama Merkezi baslatildi', 'info');
+            showNotif('Sistem Hazir', 'Tarama merkezi aktif ve calisiyor', 'success');
+        });
+
+        // WebSocket baglantisi
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                log('Sunucu baglantisi kuruldu', 'success');
+            });
+
+            socket.on('tarama_sonuc', data => {
+                handleScanResult(data);
+            });
+
+            socket.on('tarama_ilerleme', data => {
+                updateProgress(data);
+            });
+
+            socket.on('tehdit_algilandi', data => {
+                showNotif('TEHDIT ALGILANDI!', data.mesaj || data.tip, 'error');
+                log(`TEHDIT: ${data.tip} - ${data.hedef}`, 'error');
+            });
+        }
+
+        // Tam Tarama
+        async function tamTarama() {
+            if (isScanning) {
+                showNotif('Uyari', 'Zaten bir tarama devam ediyor', 'warning');
+                return;
+            }
+
+            isScanning = true;
+            document.getElementById('btnFullScan').classList.add('running');
+            showLoading('Kapsamli tarama baslatiliyor...', 0);
+            log('TUM SISTEMLER TARAMASI BASLATILDI', 'info');
+
+            scanResults = { wifi: [], bluetooth: [], ip: [], iot: [], vulns: [], baz: [] };
+            updateStats();
+
+            try {
+                // Paralel tarama baslat
+                showLoading('WiFi aglari taraniyor...', 10);
+                const wifiPromise = fetch('/api/tarama/wifi', { method: 'POST' }).then(r => r.json());
+
+                showLoading('Bluetooth cihazlar taraniyor...', 25);
+                const btPromise = fetch('/api/tarama/bluetooth', { method: 'POST' }).then(r => r.json());
+
+                showLoading('Ag IP taramasi yapiliyor...', 40);
+                const ipPromise = fetch('/api/tarama/ip', { method: 'POST' }).then(r => r.json());
+
+                showLoading('Baz istasyonlari taraniyor...', 60);
+                const bazPromise = fetch('/api/baz/tara', { method: 'POST' }).then(r => r.json());
+
+                // Sonuclari bekle
+                const [wifiData, btData, ipData, bazData] = await Promise.all([
+                    wifiPromise.catch(e => ({ sonuclar: [] })),
+                    btPromise.catch(e => ({ sonuclar: [] })),
+                    ipPromise.catch(e => ({ sonuclar: [] })),
+                    bazPromise.catch(e => ({ sonuclar: [] }))
+                ]);
+
+                showLoading('Sonuclar isleniyor...', 85);
+
+                // Sonuclari isle
+                if (wifiData.sonuclar) {
+                    scanResults.wifi = wifiData.sonuclar;
+                    log(`${scanResults.wifi.length} WiFi agi bulundu`, 'success');
+                }
+                if (btData.sonuclar) {
+                    scanResults.bluetooth = btData.sonuclar;
+                    log(`${scanResults.bluetooth.length} Bluetooth cihaz bulundu`, 'success');
+                }
+                if (ipData.sonuclar) {
+                    scanResults.ip = ipData.sonuclar;
+                    log(`${scanResults.ip.length} IP adresi bulundu`, 'success');
+                }
+                if (bazData.sonuclar) {
+                    scanResults.baz = bazData.sonuclar;
+                    log(`${scanResults.baz.length} baz istasyonu bulundu`, 'success');
+                }
+
+                updateStats();
+                renderResults();
+                hideLoading();
+
+                showNotif('Tarama Tamamlandi',
+                    `${scanResults.wifi.length + scanResults.bluetooth.length + scanResults.ip.length} cihaz bulundu`,
+                    'success');
+
+            } catch (e) {
+                log('Tarama hatasi: ' + e.message, 'error');
+                showNotif('Hata', 'Tarama sirasinda bir hata olustu', 'error');
+            }
+
+            isScanning = false;
+            document.getElementById('btnFullScan').classList.remove('running');
+            hideLoading();
+        }
+
+        // Tekil Taramalar
+        async function wifiTara() {
+            log('WiFi taramasi baslatildi', 'info');
+            showLoading('WiFi aglari taraniyor...', 30);
+            try {
+                const r = await fetch('/api/tarama/wifi', { method: 'POST' });
+                const d = await r.json();
+                scanResults.wifi = d.sonuclar || [];
+                updateStats();
+                renderResults();
+                log(`${scanResults.wifi.length} WiFi agi bulundu`, 'success');
+                showNotif('WiFi Tarama', `${scanResults.wifi.length} ag bulundu`, 'success');
+            } catch (e) {
+                log('WiFi tarama hatasi: ' + e.message, 'error');
+            }
+            hideLoading();
+        }
+
+        async function btTara() {
+            log('Bluetooth taramasi baslatildi', 'info');
+            showLoading('Bluetooth cihazlar taraniyor...', 30);
+            try {
+                const r = await fetch('/api/tarama/bluetooth', { method: 'POST' });
+                const d = await r.json();
+                scanResults.bluetooth = d.sonuclar || [];
+                updateStats();
+                renderResults();
+                log(`${scanResults.bluetooth.length} Bluetooth cihaz bulundu`, 'success');
+                showNotif('Bluetooth Tarama', `${scanResults.bluetooth.length} cihaz bulundu`, 'success');
+            } catch (e) {
+                log('Bluetooth tarama hatasi: ' + e.message, 'error');
+            }
+            hideLoading();
+        }
+
+        async function ipTara() {
+            log('IP taramasi baslatildi', 'info');
+            showLoading('Ag IP taramasi yapiliyor...', 30);
+            try {
+                const r = await fetch('/api/tarama/ip', { method: 'POST' });
+                const d = await r.json();
+                scanResults.ip = d.sonuclar || [];
+                updateStats();
+                renderResults();
+                log(`${scanResults.ip.length} IP adresi bulundu`, 'success');
+                showNotif('IP Tarama', `${scanResults.ip.length} adres bulundu`, 'success');
+            } catch (e) {
+                log('IP tarama hatasi: ' + e.message, 'error');
+            }
+            hideLoading();
+        }
+
+        async function iotTara() {
+            log('IoT taramasi baslatildi', 'info');
+            showLoading('IoT cihazlar taraniyor...', 30);
+            try {
+                const r = await fetch('/api/tarama/iot', { method: 'POST' });
+                const d = await r.json();
+                scanResults.iot = d.sonuclar || [];
+                updateStats();
+                renderResults();
+                log(`${scanResults.iot.length} IoT cihaz bulundu`, 'success');
+                showNotif('IoT Tarama', `${scanResults.iot.length} cihaz bulundu`, 'success');
+            } catch (e) {
+                log('IoT tarama hatasi: ' + e.message, 'error');
+            }
+            hideLoading();
+        }
+
+        async function portTara() {
+            const hedef = prompt('Taranacak hedef IP veya domain:');
+            if (!hedef) return;
+
+            log(`Port taramasi baslatildi: ${hedef}`, 'info');
+            showLoading(`${hedef} port taramasi yapiliyor...`, 30);
+            try {
+                const r = await fetch('/api/yerel/nmap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hedef, argumanlar: '-sV -T4' })
+                });
+                const d = await r.json();
+                log(`Port taramasi tamamlandi: ${hedef}`, 'success');
+                showNotif('Port Tarama', 'Tarama tamamlandi', 'success');
+
+                // Sonucu modal'da goster
+                showPortResult(hedef, d);
+            } catch (e) {
+                log('Port tarama hatasi: ' + e.message, 'error');
+            }
+            hideLoading();
+        }
+
+        function taramaDurdur() {
+            isScanning = false;
+            document.getElementById('btnFullScan').classList.remove('running');
+            hideLoading();
+            log('Tarama durduruldu', 'warning');
+            showNotif('Tarama Durduruldu', 'Aktif tarama iptal edildi', 'warning');
+        }
+
+        // Sonuclari Guncelle
+        function updateStats() {
+            document.getElementById('statWifi').textContent = scanResults.wifi.length;
+            document.getElementById('statBt').textContent = scanResults.bluetooth.length;
+            document.getElementById('statIp').textContent = scanResults.ip.length;
+            document.getElementById('statIot').textContent = scanResults.iot.length;
+            document.getElementById('statVuln').textContent = scanResults.vulns.length;
+            document.getElementById('statBaz').textContent = scanResults.baz.length;
+        }
+
+        function renderResults() {
+            const grid = document.getElementById('resultsGrid');
+            const filter = document.getElementById('filterType').value;
+            let html = '';
+
+            // WiFi
+            if (filter === 'all' || filter === 'wifi') {
+                scanResults.wifi.forEach((w, i) => {
+                    const signal = getSignalClass(w.sinyal || w.sinyal_yuzde || 50);
+                    html += `
+                        <div class="device-card wifi" onclick="showDeviceDetail('wifi', ${i})">
+                            <div class="device-header">
+                                <div class="device-name">${w.ssid || 'Gizli Ag'}</div>
+                                <span class="device-type wifi">WiFi</span>
+                            </div>
+                            <div class="device-info">
+                                <div class="row"><span>BSSID</span><strong>${w.bssid || '-'}</strong></div>
+                                <div class="row"><span>Kanal</span><strong>${w.kanal || '-'}</strong></div>
+                                <div class="row"><span>Sifreleme</span><strong>${w.sifreleme || 'Acik'}</strong></div>
+                                <div class="row"><span>Sinyal</span><div class="signal-bars ${signal}">
+                                    <div class="signal-bar" style="height:4px"></div>
+                                    <div class="signal-bar" style="height:7px"></div>
+                                    <div class="signal-bar" style="height:10px"></div>
+                                    <div class="signal-bar" style="height:14px"></div>
+                                </div></div>
+                            </div>
+                            <div class="device-actions">
+                                <button class="device-btn" onclick="event.stopPropagation();showDeviceDetail('wifi', ${i})">Detay</button>
+                                <button class="device-btn" onclick="event.stopPropagation();analyzeDevice('wifi', ${i})">Analiz</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Bluetooth
+            if (filter === 'all' || filter === 'bluetooth') {
+                scanResults.bluetooth.forEach((b, i) => {
+                    html += `
+                        <div class="device-card bluetooth" onclick="showDeviceDetail('bluetooth', ${i})">
+                            <div class="device-header">
+                                <div class="device-name">${b.ad || 'Bilinmiyor'}</div>
+                                <span class="device-type bluetooth">BT</span>
+                            </div>
+                            <div class="device-info">
+                                <div class="row"><span>MAC</span><strong>${b.mac || '-'}</strong></div>
+                                <div class="row"><span>Tip</span><strong>${b.tip || '-'}</strong></div>
+                                <div class="row"><span>Kategori</span><strong>${b.kategori || '-'}</strong></div>
+                            </div>
+                            <div class="device-actions">
+                                <button class="device-btn" onclick="event.stopPropagation();showDeviceDetail('bluetooth', ${i})">Detay</button>
+                                <button class="device-btn" onclick="event.stopPropagation();analyzeDevice('bluetooth', ${i})">Analiz</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // IP
+            if (filter === 'all' || filter === 'ip') {
+                scanResults.ip.forEach((ip, i) => {
+                    html += `
+                        <div class="device-card ip" onclick="showDeviceDetail('ip', ${i})">
+                            <div class="device-header">
+                                <div class="device-name">${ip.ip || ip.adres || '-'}</div>
+                                <span class="device-type ip">IP</span>
+                            </div>
+                            <div class="device-info">
+                                <div class="row"><span>Hostname</span><strong>${ip.hostname || '-'}</strong></div>
+                                <div class="row"><span>MAC</span><strong>${ip.mac || '-'}</strong></div>
+                                <div class="row"><span>Uretici</span><strong>${ip.uretici || '-'}</strong></div>
+                            </div>
+                            <div class="device-actions">
+                                <button class="device-btn" onclick="event.stopPropagagation();showDeviceDetail('ip', ${i})">Detay</button>
+                                <button class="device-btn" onclick="event.stopPropagation();scanPorts('${ip.ip || ip.adres}')">Port Tara</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (!html) {
+                html = `<div style="text-align:center;padding:50px;color:var(--text-dim);grid-column:1/-1">
+                    <div style="font-size:48px;margin-bottom:20px;opacity:0.3">⚠</div>
+                    <div style="font-family:'Orbitron',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:1px">Sonuc bulunamadi</div>
+                </div>`;
+            }
+
+            grid.innerHTML = html;
+        }
+
+        function filterResults() {
+            renderResults();
+        }
+
+        function getSignalClass(signal) {
+            if (signal >= 80) return 'signal-excellent';
+            if (signal >= 60) return 'signal-good';
+            if (signal >= 40) return 'signal-fair';
+            return 'signal-weak';
+        }
+
+        // Cihaz Detay Modal
+        function showDeviceDetail(type, index) {
+            const device = scanResults[type][index];
+            currentDevice = { type, device };
+
+            document.getElementById('modalTitle').textContent =
+                device.ssid || device.ad || device.ip || device.adres || 'Cihaz Detaylari';
+
+            let html = '<div class="detail-grid">';
+            for (const [key, value] of Object.entries(device)) {
+                if (value && key !== 'raw') {
+                    html += `
+                        <div class="detail-item">
+                            <div class="detail-label">${formatLabel(key)}</div>
+                            <div class="detail-value">${typeof value === 'object' ? JSON.stringify(value) : value}</div>
+                        </div>
+                    `;
+                }
+            }
+            html += '</div>';
+
+            html += `
+                <div class="actions-grid">
+                    <div class="action-btn" onclick="analyzeDevice('${type}', ${index})">
+                        <div class="icon">ANALIZ</div>
+                        <div>Detayli Analiz</div>
+                    </div>
+                    <div class="action-btn" onclick="showOnMap('${type}', ${index})">
+                        <div class="icon">HARITA</div>
+                        <div>Haritada Goster</div>
+                    </div>
+                    <div class="action-btn" onclick="addToMonitor('${type}', ${index})">
+                        <div class="icon">IZLE</div>
+                        <div>Izlemeye Al</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function formatLabel(key) {
+            const labels = {
+                ssid: 'SSID', bssid: 'BSSID', mac: 'MAC Adresi', ip: 'IP Adresi',
+                kanal: 'Kanal', sinyal: 'Sinyal', sifreleme: 'Sifreleme', tip: 'Tip',
+                ad: 'Cihaz Adi', kategori: 'Kategori', uretici: 'Uretici', hostname: 'Hostname',
+                enlem: 'Enlem', boylam: 'Boylam', ilk_gorulme: 'Ilk Gorulme', son_gorulme: 'Son Gorulme'
+            };
+            return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+        }
+
+        // Cihaz Islemleri
+        async function analyzeDevice(type, index) {
+            const device = scanResults[type][index];
+            log(`Cihaz analizi baslatildi: ${device.ssid || device.ad || device.ip}`, 'info');
+            showNotif('Analiz', 'Cihaz analiz ediliyor...', 'info');
+
+            // AI ile analiz yap
+            try {
+                const r = await fetch('/api/ai/komut', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mesaj: `${JSON.stringify(device)} bu cihazi analiz et` })
+                });
+                const d = await r.json();
+                if (d.cikti) {
+                    showNotif('Analiz Tamamlandi', 'Sonuclar modal\'da', 'success');
+                    alert(d.cikti);
+                }
+            } catch (e) {
+                log('Analiz hatasi: ' + e.message, 'error');
+            }
+        }
+
+        function showOnMap(type, index) {
+            const device = scanResults[type][index];
+            const lat = device.enlem || device.trilat;
+            const lng = device.boylam || device.trilong;
+
+            if (lat && lng) {
+                window.location.href = `/harita?lat=${lat}&lng=${lng}&zoom=16`;
+            } else {
+                showNotif('Konum Yok', 'Bu cihazin konum bilgisi mevcut degil', 'warning');
+            }
+        }
+
+        function addToMonitor(type, index) {
+            const device = scanResults[type][index];
+            log(`Izlemeye eklendi: ${device.ssid || device.ad || device.ip}`, 'success');
+            showNotif('Izleme', 'Cihaz izleme listesine eklendi', 'success');
+        }
+
+        function exportDevice() {
+            if (currentDevice) {
+                const dataStr = JSON.stringify(currentDevice.device, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `cihaz_rapor_${Date.now()}.json`;
+                link.click();
+                showNotif('Rapor Olusturuldu', 'Cihaz raporu indirildi', 'success');
+            }
+        }
+
+        // Log Sistemi
+        function log(msg, type = 'info') {
+            const list = document.getElementById('logList');
+            const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-type ${type}">${type.toUpperCase()}</span>
+                <span class="log-msg">${msg}</span>
+            `;
+            list.insertBefore(item, list.firstChild);
+
+            // Max 100 log tut
+            while (list.children.length > 100) {
+                list.removeChild(list.lastChild);
+            }
+        }
+
+        function logTemizle() {
+            document.getElementById('logList').innerHTML = '';
+            log('Log temizlendi', 'info');
+        }
+
+        // Bildirim Sistemi
+        function showNotif(title, msg, type = 'info') {
+            const container = document.getElementById('notifContainer');
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'i' };
+
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `
+                <span class="notification-icon">${icons[type]}</span>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-msg">${msg}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(notif);
+
+            // 5 saniye sonra otomatik kapat
+            setTimeout(() => {
+                if (notif.parentElement) {
+                    notif.style.opacity = '0';
+                    setTimeout(() => notif.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Loading
+        function showLoading(text, progress) {
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingBar').style.width = progress + '%';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function updateProgress(data) {
+            if (data.progress) {
+                document.getElementById('loadingBar').style.width = data.progress + '%';
+            }
+            if (data.message) {
+                document.getElementById('loadingText').textContent = data.message;
+            }
+        }
+
+        // Port Tarama Sonucu
+        function showPortResult(hedef, data) {
+            document.getElementById('modalTitle').textContent = `Port Tarama: ${hedef}`;
+            document.getElementById('modalBody').innerHTML = `
+                <pre style="background:var(--bg-card);padding:18px;border-radius:8px;font-size:11px;overflow-x:auto;color:var(--hud-cyan);border:1px solid var(--border-subtle)">${data.cikti || 'Sonuc yok'}</pre>
+            `;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        // Klavye kisayollari
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'F5') { e.preventDefault(); tamTarama(); }
+        });
+    </script>
+    <script src="/static/theme-switcher.js"></script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

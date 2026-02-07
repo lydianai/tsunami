@@ -1,0 +1,114 @@
+# Shannon AI Pentester - XSS Response Playbook
+# Automatically triggered when Shannon detects verified XSS vulnerabilities
+
+id: shannon_xss_response
+name: Shannon XSS Response
+description: Automated response to Cross-Site Scripting vulnerabilities found by Shannon AI
+version: "1.0.0"
+author: TSUNAMI Security Team
+category: vulnerability_response
+severity: high
+enabled: true
+
+triggers:
+  - type: shannon_finding
+    conditions:
+      vulnerability_type: xss
+      exploited: true
+
+variables:
+  notification_channel: "#security-alerts"
+  csp_policy: "default-src 'self'; script-src 'self'"
+
+steps:
+  - id: log_xss_detection
+    name: Log XSS Detection
+    type: action
+    action: audit_log
+    params:
+      event: shannon_xss_detected
+      severity: high
+      message: "Shannon AI detected verified XSS at {{ location }}"
+
+  - id: notify_team
+    name: Notify Security Team
+    type: action
+    action: send_notification
+    params:
+      channel: "{{ notification_channel }}"
+      priority: high
+      data:
+        title: "⚠️ XSS Vulnerability Detected by Shannon"
+        finding_id: "{{ finding_id }}"
+        location: "{{ location }}"
+
+  - id: check_xss_type
+    name: Determine XSS Type
+    type: switch
+    switch_variable: "{{ xss_type }}"
+    switch_cases:
+      stored:
+        - id: stored_xss_response
+          name: Stored XSS Response
+          type: action
+          action: database_sanitize_check
+          params:
+            table: "{{ affected_table }}"
+            column: "{{ affected_column }}"
+      reflected:
+        - id: reflected_xss_response
+          name: Reflected XSS Response
+          type: action
+          action: waf_add_rule
+          params:
+            rule_type: block_xss_reflected
+            target_path: "{{ location }}"
+      dom:
+        - id: dom_xss_response
+          name: DOM XSS Response
+          type: action
+          action: csp_header_update
+          params:
+            policy: "{{ csp_policy }}"
+
+  - id: deploy_xss_filter
+    name: Deploy XSS Filter
+    type: action
+    action: waf_add_rule
+    params:
+      rule_type: xss_filter
+      target_path: "{{ location }}"
+      filter_patterns: ["<script", "javascript:", "onerror=", "onload="]
+      comment: "Shannon XSS mitigation - {{ finding_id }}"
+
+  - id: create_ticket
+    name: Create Remediation Ticket
+    type: action
+    action: create_ticket
+    params:
+      system: jira
+      priority: High
+      title: "[SHANNON] XSS Vulnerability - {{ location }}"
+      description: |
+        ## XSS Vulnerability
+        - **Location:** {{ method }} {{ location }}
+        - **Type:** {{ xss_type | default('unknown') }}
+        - **Verified:** Yes (Shannon AI)
+
+        ## Remediation
+        1. Encode all user outputs
+        2. Implement Content Security Policy
+        3. Use HttpOnly cookies
+      labels: [shannon, xss, security]
+
+  - id: update_status
+    name: Update Incident
+    type: action
+    action: update_incident
+    params:
+      incident_id: "{{ incident_id }}"
+      status: mitigated
+      notes: "XSS filter deployed, CSP updated"
+
+metadata:
+  tags: [shannon, xss, automated-response]

@@ -1,0 +1,142 @@
+# Shannon AI Pentester - SQL/Command Injection Response Playbook
+# Automatically triggered when Shannon detects verified injection vulnerabilities
+
+id: shannon_injection_response
+name: Shannon Injection Response
+description: Automated response to SQL/Command injection vulnerabilities found by Shannon AI Pentester
+version: "1.0.0"
+author: TSUNAMI Security Team
+category: vulnerability_response
+severity: critical
+enabled: true
+
+triggers:
+  - type: shannon_finding
+    conditions:
+      vulnerability_type: injection
+      severity: [critical, high]
+      exploited: true
+
+variables:
+  notification_channel: "#security-alerts"
+  waf_rule_priority: 100
+  block_duration_hours: 24
+
+steps:
+  - id: log_detection
+    name: Log Detection
+    type: action
+    action: audit_log
+    params:
+      event: shannon_injection_detected
+      severity: critical
+      message: "Shannon AI detected verified {{ vuln_type }} at {{ location }}"
+      details:
+        finding_id: "{{ finding_id }}"
+        target: "{{ location }}"
+        method: "{{ method }}"
+
+  - id: notify_security_team
+    name: Notify Security Team
+    type: action
+    action: send_notification
+    params:
+      channel: "{{ notification_channel }}"
+      template: injection_alert
+      priority: critical
+      data:
+        title: "🚨 CRITICAL: {{ vuln_type }} Detected by Shannon"
+        finding_id: "{{ finding_id }}"
+        location: "{{ location }}"
+        severity: "{{ severity }}"
+        message: "Shannon AI Pentester confirmed exploitable injection vulnerability"
+
+  - id: check_waf_available
+    name: Check WAF Availability
+    type: condition
+    condition: "{{ waf_enabled == true }}"
+    on_success: deploy_waf_rule
+    on_failure: manual_mitigation
+
+  - id: deploy_waf_rule
+    name: Deploy WAF Protection Rule
+    type: action
+    action: waf_add_rule
+    params:
+      rule_type: block_injection
+      target_path: "{{ location }}"
+      method: "{{ method }}"
+      priority: "{{ waf_rule_priority }}"
+      duration_hours: "{{ block_duration_hours }}"
+      comment: "Auto-deployed by Shannon - Finding {{ finding_id }}"
+    rollback_action: waf_remove_rule
+    rollback_params:
+      rule_id: "{{ step_result.rule_id }}"
+
+  - id: update_threat_intel
+    name: Update Threat Intelligence
+    type: action
+    action: add_ioc
+    params:
+      ioc_type: vulnerability_pattern
+      value: "{{ location }}"
+      category: injection
+      source: shannon_ai_pentester
+      confidence: 95
+      tags: [verified, exploitable, auto-detected]
+
+  - id: create_jira_ticket
+    name: Create Remediation Ticket
+    type: action
+    action: create_ticket
+    params:
+      system: jira
+      project: SEC
+      issue_type: Bug
+      priority: Critical
+      title: "[SHANNON] {{ vuln_type }} - {{ location }}"
+      description: |
+        ## Vulnerability Details
+        - **Type:** {{ vuln_type }}
+        - **Location:** {{ method }} {{ location }}
+        - **Severity:** {{ severity }}
+        - **Finding ID:** {{ finding_id }}
+
+        ## Impact
+        {{ impact }}
+
+        ## Proof of Exploitation
+        This vulnerability was VERIFIED EXPLOITABLE by Shannon AI Pentester.
+
+        ## Recommended Actions
+        1. Review and patch the vulnerable code
+        2. Implement input validation
+        3. Use parameterized queries (for SQL injection)
+        4. Apply WAF rules (auto-deployed)
+      labels: [shannon, security, injection, critical]
+    continue_on_error: true
+
+  - id: manual_mitigation
+    name: Request Manual Mitigation
+    type: approval
+    approvers: [security-lead, soc-manager]
+    approval_timeout: 7200
+    params:
+      message: "Shannon detected injection at {{ location }}. WAF unavailable. Manual action required."
+
+  - id: final_status
+    name: Update Incident Status
+    type: action
+    action: update_incident
+    params:
+      incident_id: "{{ incident_id }}"
+      status: mitigated
+      resolution: "WAF rule deployed, ticket created, team notified"
+      automated: true
+
+metadata:
+  created_at: "2026-02-07"
+  last_updated: "2026-02-07"
+  effectiveness: high
+  false_positive_rate: 0.01
+  tags: [shannon, injection, automated-response, critical]

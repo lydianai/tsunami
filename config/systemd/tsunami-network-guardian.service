@@ -1,0 +1,93 @@
+# ==============================================================================
+# TSUNAMI NETWORK GUARDIAN - Systemd Service
+# ==============================================================================
+# 7/24 aktif ag ve WiFi koruma daemon'u
+#
+# KURULUM:
+#   sudo cp /home/lydian/Desktop/TSUNAMI/config/systemd/tsunami-network-guardian.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable tsunami-network-guardian
+#   sudo systemctl start tsunami-network-guardian
+#
+# DURUM:
+#   sudo systemctl status tsunami-network-guardian
+#   sudo journalctl -u tsunami-network-guardian -f
+#
+# ==============================================================================
+
+[Unit]
+Description=TSUNAMI Network Guardian - Ag ve WiFi Korumasi (7/24)
+Documentation=https://github.com/tsunami-security/network-guardian
+
+# Bagimlilıklar
+After=network.target network-online.target NetworkManager.service
+Wants=network-online.target
+Requires=network.target
+
+# Tsunami Defender ile birlikte calis
+Wants=tsunami-defender.service
+After=tsunami-defender.service
+
+[Service]
+# Servis tipi
+Type=simple
+
+# Kullanici - root gerekli ARP ve WiFi taramasi icin
+User=root
+Group=root
+
+# Calisma dizini
+WorkingDirectory=/home/lydian/Desktop/TSUNAMI
+
+# Ana komutlar
+ExecStart=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/scripts/network_guardian.py start
+ExecStop=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/scripts/network_guardian.py stop
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Yeniden baslatma politikasi - 7/24 koruma icin kritik
+Restart=always
+RestartSec=15
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Watchdog
+WatchdogSec=180
+NotifyAccess=main
+
+# Guvenlik ayarlari
+# Root olarak calistiginda ProtectSystem kapatilmali
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+PrivateTmp=true
+
+# Network yetenekleri - AG TARAMASI ICIN GEREKLI
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_SYS_PTRACE
+
+# Kaynak limitleri
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Log ayarlari
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tsunami-network-guardian
+SyslogFacility=daemon
+SyslogLevel=info
+
+# Ortam degiskenleri
+Environment=PYTHONUNBUFFERED=1
+Environment=TSUNAMI_CONFIG=/home/lydian/Desktop/TSUNAMI/tsunami_config.json
+Environment=TSUNAMI_ENV=production
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+# OOM killer'dan koru
+OOMScoreAdjust=-400
+
+[Install]
+WantedBy=multi-user.target

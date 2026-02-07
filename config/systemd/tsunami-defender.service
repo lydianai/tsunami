@@ -1,0 +1,100 @@
+# ==============================================================================
+# TSUNAMI DEFENDER - Systemd Service
+# ==============================================================================
+# 7/24 aktif sistem koruma daemon'u
+#
+# KURULUM:
+#   sudo cp /home/lydian/Desktop/TSUNAMI/config/systemd/tsunami-defender.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable tsunami-defender
+#   sudo systemctl start tsunami-defender
+#
+# DURUM:
+#   sudo systemctl status tsunami-defender
+#   sudo journalctl -u tsunami-defender -f
+#
+# ==============================================================================
+
+[Unit]
+Description=TSUNAMI Defender - Gercek Zamanli Sistem Koruma (7/24)
+Documentation=https://github.com/tsunami-security/defender
+
+# Bagimlilıklar
+After=network.target network-online.target syslog.target
+Wants=network-online.target
+
+# Hata durumunda diger servisleri etkilememe
+DefaultDependencies=yes
+
+[Service]
+# Servis tipi
+Type=simple
+
+# Kullanici - root gerekli tam koruma icin
+# Root olmadan da calisabilir ama sinirli ozellikler
+User=root
+Group=root
+
+# Calisma dizini
+WorkingDirectory=/home/lydian/Desktop/TSUNAMI
+
+# Python virtual environment (varsa)
+# Environment=PATH=/home/lydian/Desktop/TSUNAMI/venv/bin:$PATH
+
+# Ana komutlar
+ExecStart=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/scripts/tsunami_defender.py start
+ExecStop=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/scripts/tsunami_defender.py stop
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Yeniden baslatma politikasi - 7/24 koruma icin kritik
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Watchdog - servisin saglikli calistigini kontrol et
+WatchdogSec=120
+NotifyAccess=main
+
+# Guvenlik ayarlari
+# Not: Root olarak calistiginda ProtectSystem ve ProtectHome kapatilmali
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+PrivateTmp=true
+
+# Kaynak limitleri
+LimitNOFILE=65536
+LimitNPROC=4096
+LimitCORE=infinity
+
+# Bellek limiti (opsiyonel)
+# MemoryMax=2G
+
+# CPU limiti (opsiyonel)
+# CPUQuota=150%
+
+# Log ayarlari
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tsunami-defender
+SyslogFacility=daemon
+SyslogLevel=info
+
+# Ortam degiskenleri
+Environment=PYTHONUNBUFFERED=1
+Environment=TSUNAMI_CONFIG=/home/lydian/Desktop/TSUNAMI/tsunami_config.json
+Environment=TSUNAMI_ENV=production
+
+# Graceful shutdown icin zaman tanı
+TimeoutStopSec=30
+
+# Kill mode
+KillMode=mixed
+KillSignal=SIGTERM
+
+# OOM killer'dan koru (yuksek oncelik)
+OOMScoreAdjust=-500
+
+[Install]
+WantedBy=multi-user.target

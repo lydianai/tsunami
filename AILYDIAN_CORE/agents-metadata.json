@@ -1,0 +1,171 @@
+{
+  "version": "2.0.0",
+  "updated": "2026-02-03T00:00:00Z",
+  "totalAgents": 220,
+  "categories": [
+    "memory",
+    "training",
+    "skills",
+    "development",
+    "creative",
+    "design",
+    "security",
+    "research",
+    "automation",
+    "intelligence"
+  ],
+  "agents": [
+    {
+      "id": "claude-mem-agent",
+      "name": "Memory Agent",
+      "turkce_ad": "Bellek Ajanı",
+      "category": "memory",
+      "turkce_kategori": "bellek",
+      "capabilities": ["memory_search", "context_injection", "observation_capture", "session_tracking", "vector_search"],
+      "specialization": "Persistent memory management with semantic search and context injection across sessions",
+      "description": "Manages persistent memory using claude-mem technology. Captures observations, generates summaries, and injects relevant context.",
+      "tags": ["memory", "context", "recall", "history", "search"],
+      "status": "active",
+      "success_rate": 0.95,
+      "source": "claude-mem",
+      "slash_command": "/claude-mem"
+    },
+    {
+      "id": "agent-lightning-trainer",
+      "name": "Agent Trainer",
+      "turkce_ad": "Ajan Eğitmeni",
+      "category": "training",
+      "turkce_kategori": "eğitim",
+      "capabilities": ["rl_training", "sft", "prompt_optimization", "reward_modeling", "evaluation"],
+      "specialization": "AI agent training and optimization using reinforcement learning and prompt tuning",
+      "description": "Trains and optimizes AI agents using Microsoft's Agent Lightning framework with RL, SFT, and prompt optimization.",
+      "tags": ["training", "optimization", "rl", "fine-tune", "agent"],
+      "status": "active",
+      "success_rate": 0.92,
+      "source": "agent-lightning",
+      "slash_command": "/agent-lightning"
+    },
+    {
+      "id": "agent-lightning-evaluator",
+      "name": "Agent Evaluator",
+      "turkce_ad": "Ajan Değerlendiricisi",
+      "category": "training",
+      "turkce_kategori": "eğitim",
+      "capabilities": ["benchmark", "performance_metrics", "accuracy_testing", "latency_analysis", "cost_analysis"],
+      "specialization": "Evaluates agent performance with comprehensive benchmarks and metrics",
+      "description": "Runs performance benchmarks on agents to measure accuracy, latency, cost, and quality.",
+      "tags": ["evaluation", "benchmark", "metrics", "performance"],
+      "status": "active",
+      "success_rate": 0.94,
+      "source": "agent-lightning",
+      "slash_command": "/agent-lightning evaluate"
+    },
+    {
+      "id": "agent-lightning-optimizer",
+      "name": "Prompt Optimizer",
+      "turkce_ad": "Prompt Optimizörü",
+      "category": "training",
+      "turkce_kategori": "eğitim",
+      "capabilities": ["prompt_tuning", "automatic_optimization", "objective_maximization"],
+      "specialization": "Automatically optimizes prompts for better agent performance",
+      "description": "Uses automatic prompt optimization algorithms to improve agent responses and accuracy.",
+      "tags": ["prompt", "optimization", "tuning", "automatic"],
+      "status": "active",
+      "success_rate": 0.91,
+      "source": "agent-lightning",
+      "slash_command": "/agent-lightning optimize"
+    },
+    {
+      "id": "skill-hub-manager",
+      "name": "Skill Hub Manager",
+      "turkce_ad": "Yetenek Merkezi Yöneticisi",
+      "category": "skills",
+      "turkce_kategori": "yetenekler",
+      "capabilities": ["skill_install", "skill_search", "skill_management", "skill_update", "catalog_browse"],
+      "specialization": "Manages skills marketplace with 33+ skills from awesome-claude-skills collection",
+      "description": "Installs, searches, and manages skills from Composio's awesome-claude-skills collection.",
+      "tags": ["skills", "install", "marketplace", "manage"],
+      "status": "active",
+      "success_rate": 0.96,
+      "source": "skill-hub",
+      "slash_command": "/skill-hub"
+    },
+    {
+      "id": "erpnext-developer",
+      "name": "ERPNext Developer",
+      "turkce_ad": "ERPNext Geliştiricisi",
+      "category": "development",
+      "turkce_kategori": "geliştirme",
+      "capabilities": ["frappe_development", "doctype_creation", "script_generation", "hooks_configuration", "api_development"],
+      "specialization": "Production-ready ERPNext/Frappe code generation with 28 deterministic skills",
+      "description": "Generates ERPNext client scripts, server scripts, DocTypes, and controllers using OpenAEC Foundation patterns.",
+      "tags": ["erpnext", "frappe", "doctype", "script", "erp"],
+      "status": "active",
+      "success_rate": 0.93,
+      "source": "erpnext-skill-package",
+      "slash_command": "/erpnext"
+    },
+    {
+      "id": "trellis-3d-generator",
+      "name": "3D Asset Generator",
+      "turkce_ad": "3D Varlık Üreticisi",
+      "category": "creative",
+      "turkce_kategori": "yaratıcı",
+      "capabilities": ["text_to_3d", "image_to_3d", "mesh_generation", "texture_generation", "3d_editing"],
+      "specialization": "High-quality 3D asset generation from text or images using Microsoft TRELLIS",
+      "description": "Creates 3D models from text descriptions or images using TRELLIS 2B parameter model. Outputs GLB, PLY, and radiance fields.",
+      "tags": ["3d", "mesh", "model", "generate", "trellis"],
+      "status": "active",
+      "success_rate": 0.89,
+      "source": "trellis",
+      "slash_command": "/trellis"
+    },
+    {
+      "id": "gpui-designer",
+      "name": "GPUI Designer",
+      "turkce_ad": "GPUI Tasarımcısı",
+      "category": "design",
+      "turkce_kategori": "tasarım",
+      "capabilities": ["rust_ui", "component_design", "theme_creation", "layout_design", "editor_integration"],
+      "specialization": "Rust UI component design for desktop applications using GPUI framework",
+      "description": "Creates GPUI components for Rust desktop apps with 60+ components including virtualized tables and code editor with LSP.",
+      "tags": ["rust", "ui", "component", "desktop", "gpui"],
+      "status": "active",
+      "success_rate": 0.90,
+      "source": "gpui-component",
+      "slash_command": "/gpui"
+    }
+  ],
+  "integrationSources": {
+    "claude-mem": {
+      "repository": "https://github.com/thedotmack/claude-mem",
+      "license": "AGPL-3.0",
+      "description": "Persistent memory compression system for Claude"
+    },
+    "agent-lightning": {
+      "repository": "https://github.com/microsoft/agent-lightning",
+      "license": "MIT",
+      "description": "Microsoft's agent training and optimization framework"
+    },
+    "skill-hub": {
+      "repository": "https://github.com/ComposioHQ/awesome-claude-skills",
+      "license": "Various",
+      "description": "Collection of 33+ Claude skills"
+    },
+    "erpnext-skill-package": {
+      "repository": "https://github.com/OpenAEC-Foundation/ERPNext_Anthropic_Claude_Development_Skill_Package",
+      "license": "MIT",
+      "description": "28 deterministic ERPNext/Frappe skills"
+    },
+    "trellis": {
+      "repository": "https://github.com/microsoft/TRELLIS",
+      "license": "MIT",
+      "description": "Microsoft's 3D asset generation model"
+    },
+    "gpui-component": {
+      "repository": "https://github.com/longbridge/gpui-component",
+      "license": "Apache-2.0",
+      "description": "60+ Rust UI components for GPUI"
+    }
+  }
+}

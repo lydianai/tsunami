@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI v3.0 - Giris [210100]</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-danger: #ff3355;
+        }
+        /* F-35 KOKPİT - SİYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-danger: #ff2222;
+        }
+        [data-theme="cockpit-bw"] .aurora { display: none; }
+        [data-theme="cockpit-bw"] .login-container {
+            border-color: rgba(255,255,255,0.4) !important;
+            box-shadow: 0 0 50px rgba(255,255,255,0.15), 0 0 100px rgba(255,255,255,0.05) !important;
+        }
+        [data-theme="cockpit-bw"] .btn-submit {
+            background: linear-gradient(135deg, #fff, #aaa) !important;
+            color: #000 !important;
+            box-shadow: 0 0 30px rgba(255,255,255,0.4) !important;
+        }
+        [data-theme="cockpit-bw"] .btn-submit:hover {
+            box-shadow: 0 0 50px rgba(255,255,255,0.6), 0 0 80px rgba(255,255,255,0.3) !important;
+        }
+        [data-theme="cockpit-bw"] input {
+            border-color: rgba(255,255,255,0.3) !important;
+            background: rgba(0,0,0,0.8) !important;
+        }
+        [data-theme="cockpit-bw"] input:focus {
+            border-color: rgba(255,255,255,0.6) !important;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2) !important;
+        }
+        /* Tek Toggle Tema Butonu */
+        .theme-toggle {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 2px solid var(--border-glow); cursor: pointer;
+            transition: all 0.3s; background: var(--bg-panel);
+            backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;
+        }
+        .theme-toggle:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--accent-primary); }
+        .theme-toggle svg { width: 22px; height: 22px; fill: var(--accent-primary); transition: all 0.3s; }
+        [data-theme="cyan"] .theme-toggle { background: linear-gradient(135deg, rgba(0,180,255,0.2), rgba(136,85,255,0.2)); border-color: rgba(0,180,255,0.5); }
+        [data-theme="cyan"] .theme-toggle .icon-moon { display: block; }
+        [data-theme="cyan"] .theme-toggle .icon-sun { display: none; }
+        [data-theme="cockpit-bw"] .theme-toggle { background: rgba(0,0,0,0.9) !important; border-color: rgba(255,255,255,0.5) !important; box-shadow: 0 0 15px rgba(255,255,255,0.2) !important; }
+        [data-theme="cockpit-bw"] .theme-toggle:hover { box-shadow: 0 0 25px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] .theme-toggle svg { fill: #fff !important; filter: drop-shadow(0 0 5px #fff); }
+        [data-theme="cockpit-bw"] .theme-toggle .icon-moon { display: none; }
+        [data-theme="cockpit-bw"] .theme-toggle .icon-sun { display: block; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-void);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-normal);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Aurora Background Animation */
+        .aurora {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .aurora::before,
+        .aurora::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+        }
+
+        .aurora::before {
+            background: radial-gradient(circle, rgba(0, 180, 255, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle, rgba(0, 255, 157, 0.1) 0%, transparent 60%);
+            animation: aurora-1 20s ease-in-out infinite;
+        }
+
+        .aurora::after {
+            background: radial-gradient(circle, rgba(0, 100, 255, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle, rgba(0, 180, 255, 0.08) 0%, transparent 70%);
+            animation: aurora-2 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes aurora-1 {
+            0%, 100% {
+                transform: translate(0%, 0%) rotate(0deg);
+                opacity: 0.8;
+            }
+            33% {
+                transform: translate(30%, -20%) rotate(120deg);
+                opacity: 1;
+            }
+            66% {
+                transform: translate(-20%, 30%) rotate(240deg);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes aurora-2 {
+            0%, 100% {
+                transform: translate(0%, 0%) rotate(0deg);
+                opacity: 0.7;
+            }
+            50% {
+                transform: translate(-30%, 20%) rotate(180deg);
+                opacity: 1;
+            }
+        }
+
+        /* Grid Overlay */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.4;
+        }
+
+        /* Scanlines Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.3;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--border-glow);
+            border-radius: 4px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow:
+                0 0 60px rgba(0, 180, 255, 0.2),
+                0 25px 50px rgba(0, 0, 0, 0.6),
+                inset 0 0 80px rgba(0, 180, 255, 0.03);
+        }
+
+        /* HUD Corner Decorations */
+        .login-container::before,
+        .login-container::after,
+        .hud-corner-tl,
+        .hud-corner-tr,
+        .hud-corner-bl,
+        .hud-corner-br {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--accent-primary);
+            pointer-events: none;
+        }
+
+        .hud-corner-tl {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+            border-top-left-radius: 4px;
+        }
+
+        .hud-corner-tr {
+            top: -2px;
+            right: -2px;
+            border-left: none;
+            border-bottom: none;
+            border-top-right-radius: 4px;
+        }
+
+        .hud-corner-bl {
+            bottom: -2px;
+            left: -2px;
+            border-right: none;
+            border-top: none;
+            border-bottom-left-radius: 4px;
+        }
+
+        .hud-corner-br {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Animated HUD Corners */
+        @keyframes hud-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .hud-corner-tl,
+        .hud-corner-tr,
+        .hud-corner-bl,
+        .hud-corner-br {
+            animation: hud-pulse 3s ease-in-out infinite;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--accent-primary), #0066cc);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 0 30px rgba(0, 180, 255, 0.4),
+                0 0 60px rgba(0, 180, 255, 0.2);
+            border: 1px solid var(--border-glow);
+        }
+
+        .logo-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: #fff;
+        }
+
+        .logo h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--accent-primary);
+            letter-spacing: 8px;
+            text-shadow:
+                0 0 20px rgba(0, 180, 255, 0.6),
+                0 0 40px rgba(0, 180, 255, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .logo p {
+            color: var(--text-dim);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .error-box {
+            background: rgba(255, 51, 85, 0.1);
+            border: 1px solid var(--accent-danger);
+            border-left: 4px solid var(--accent-danger);
+            color: var(--accent-danger);
+            padding: 14px 18px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 0 20px rgba(255, 51, 85, 0.15);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 18px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-bright);
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow:
+                0 0 0 3px rgba(0, 180, 255, 0.1),
+                0 0 30px rgba(0, 180, 255, 0.2),
+                inset 0 0 20px rgba(0, 180, 255, 0.05);
+            background: rgba(12, 24, 36, 0.8);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-dim);
+            opacity: 0.5;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-primary), #0088cc);
+            border: 1px solid var(--accent-primary);
+            border-radius: 4px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow:
+                0 0 20px rgba(0, 180, 255, 0.3),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 0 40px rgba(0, 180, 255, 0.5),
+                0 8px 25px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-secondary);
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .footer-text {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+        }
+
+        .footer-text p {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer-text .warning {
+            color: #f39c12;
+            margin-top: 10px;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.3);
+        }
+
+        .version {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            z-index: 100;
+            letter-spacing: 1px;
+            opacity: 0.5;
+        }
+
+        /* Glow Animation */
+        @keyframes glow-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 20px rgba(0, 180, 255, 0.2),
+                    0 25px 50px rgba(0, 0, 0, 0.6),
+                    inset 0 0 80px rgba(0, 180, 255, 0.03);
+            }
+            50% {
+                box-shadow:
+                    0 0 40px rgba(0, 180, 255, 0.3),
+                    0 25px 50px rgba(0, 0, 0, 0.6),
+                    inset 0 0 100px rgba(0, 180, 255, 0.05);
+            }
+        }
+
+        .login-container {
+            animation: glow-pulse 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="aurora"></div>
+    <div class="bg-grid"></div>
+    <div class="scanlines"></div>
+
+    <div class="login-container">
+        <div class="hud-corner-tl"></div>
+        <div class="hud-corner-tr"></div>
+        <div class="hud-corner-bl"></div>
+        <div class="hud-corner-br"></div>
+
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <h1>TSUNAMI</h1>
+            <p>Kablosuz Sinyal Istihbarat Platformu</p>
+        </div>
+
+        {% if hata %}
+        <div class="error-box">
+            [!] {{ hata }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/giris">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token if csrf_token is defined else '' }}">
+            <div class="form-group">
+                <label>Kullanici Adi</label>
+                <input type="text" name="username" placeholder="Kullanici adinizi girin" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label>Sifre</label>
+                <input type="password" name="password" placeholder="Sifrenizi girin" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit">Giris Yap</button>
+        </form>
+
+        <div class="footer-text">
+            <p>Tum baglantilar sifrelenmistir</p>
+            <p class="warning">[!] Sadece yetkili kullanim icin</p>
+        </div>
+    </div>
+
+    <div class="version">v5.0.0</div>
+
+    <button class="theme-toggle" onclick="toggleTheme()" title="Tema Değiştir">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+    </button>
+
+    <script>
+        function initTheme() {
+            const saved = localStorage.getItem('tsunami-theme') || 'cyan';
+            document.documentElement.setAttribute('data-theme', saved);
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'cyan';
+            const newTheme = current === 'cyan' ? 'cockpit-bw' : 'cyan';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('tsunami-theme', newTheme);
+        }
+        initTheme();
+    </script>
+</body>
+</html>

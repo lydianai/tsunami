@@ -1,0 +1,245 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "İstanbul", "number": "34", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[28.5, 41.3], [29.5, 41.3], [29.5, 40.8], [28.5, 40.8], [28.5, 41.3]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Ankara", "number": "06", "region": "İç Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[31.5, 40.3], [33.5, 40.3], [33.5, 39.0], [31.5, 39.0], [31.5, 40.3]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "İzmir", "number": "35", "region": "Ege"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[26.5, 39.0], [28.0, 39.0], [28.0, 37.8], [26.5, 37.8], [26.5, 39.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Antalya", "number": "07", "region": "Akdeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[29.5, 37.5], [32.5, 37.5], [32.5, 36.0], [29.5, 36.0], [29.5, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Bursa", "number": "16", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[28.5, 40.5], [30.0, 40.5], [30.0, 39.8], [28.5, 39.8], [28.5, 40.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Adana", "number": "01", "region": "Akdeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[34.5, 38.0], [36.5, 38.0], [36.5, 36.5], [34.5, 36.5], [34.5, 38.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Konya", "number": "42", "region": "İç Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[31.5, 39.0], [34.5, 39.0], [34.5, 36.8], [31.5, 36.8], [31.5, 39.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Gaziantep", "number": "27", "region": "Güneydoğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.5, 37.5], [38.0, 37.5], [38.0, 36.5], [36.5, 36.5], [36.5, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Diyarbakır", "number": "21", "region": "Güneydoğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[39.5, 38.5], [41.5, 38.5], [41.5, 37.5], [39.5, 37.5], [39.5, 38.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Kayseri", "number": "38", "region": "İç Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[34.5, 39.5], [36.5, 39.5], [36.5, 38.0], [34.5, 38.0], [34.5, 39.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Eskişehir", "number": "26", "region": "İç Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[29.5, 40.2], [31.5, 40.2], [31.5, 39.2], [29.5, 39.2], [29.5, 40.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Mersin", "number": "33", "region": "Akdeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[32.5, 37.5], [35.0, 37.5], [35.0, 36.0], [32.5, 36.0], [32.5, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Samsun", "number": "55", "region": "Karadeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[35.0, 41.8], [37.0, 41.8], [37.0, 40.8], [35.0, 40.8], [35.0, 41.8]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Trabzon", "number": "61", "region": "Karadeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.5, 41.5], [40.5, 41.5], [40.5, 40.5], [38.5, 40.5], [38.5, 41.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Erzurum", "number": "25", "region": "Doğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[40.0, 40.5], [42.5, 40.5], [42.5, 39.0], [40.0, 39.0], [40.0, 40.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Van", "number": "65", "region": "Doğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[42.5, 39.5], [44.5, 39.5], [44.5, 38.0], [42.5, 38.0], [42.5, 39.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Malatya", "number": "44", "region": "Doğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[37.5, 39.0], [39.5, 39.0], [39.5, 37.8], [37.5, 37.8], [37.5, 39.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Kahramanmaraş", "number": "46", "region": "Akdeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.0, 38.2], [37.5, 38.2], [37.5, 37.2], [36.0, 37.2], [36.0, 38.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Hatay", "number": "31", "region": "Akdeniz"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[35.5, 37.0], [36.8, 37.0], [36.8, 35.8], [35.5, 35.8], [35.5, 37.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Şanlıurfa", "number": "63", "region": "Güneydoğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.0, 38.0], [40.5, 38.0], [40.5, 36.5], [38.0, 36.5], [38.0, 38.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Muğla", "number": "48", "region": "Ege"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.5, 37.5], [29.5, 37.5], [29.5, 36.3], [27.5, 36.3], [27.5, 37.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Denizli", "number": "20", "region": "Ege"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[28.5, 38.2], [30.0, 38.2], [30.0, 37.2], [28.5, 37.2], [28.5, 38.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Balıkesir", "number": "10", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.0, 40.3], [28.8, 40.3], [28.8, 39.3], [27.0, 39.3], [27.0, 40.3]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Manisa", "number": "45", "region": "Ege"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[27.5, 39.2], [29.0, 39.2], [29.0, 38.2], [27.5, 38.2], [27.5, 39.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Kocaeli", "number": "41", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[29.3, 41.0], [30.3, 41.0], [30.3, 40.5], [29.3, 40.5], [29.3, 41.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Sakarya", "number": "54", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[29.8, 41.0], [30.8, 41.0], [30.8, 40.3], [29.8, 40.3], [29.8, 41.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Tekirdağ", "number": "59", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[26.8, 41.5], [28.2, 41.5], [28.2, 40.8], [26.8, 40.8], [26.8, 41.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Edirne", "number": "22", "region": "Marmara"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[26.0, 42.0], [27.0, 42.0], [27.0, 41.2], [26.0, 41.2], [26.0, 42.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Sivas", "number": "58", "region": "İç Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.0, 40.2], [38.5, 40.2], [38.5, 38.8], [36.0, 38.8], [36.0, 40.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "Elazığ", "number": "23", "region": "Doğu Anadolu"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.5, 39.2], [40.0, 39.2], [40.0, 38.2], [38.5, 38.2], [38.5, 39.2]]]
+      }
+    }
+  ]
+}

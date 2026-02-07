@@ -1,0 +1,120 @@
+# Shannon AI Pentester - Authorization/IDOR Response Playbook
+# Automatically triggered when Shannon detects IDOR or authorization vulnerabilities
+
+id: shannon_authz_response
+name: Shannon Authorization Response
+description: Automated response to IDOR and authorization vulnerabilities
+version: "1.0.0"
+author: TSUNAMI Security Team
+category: vulnerability_response
+severity: high
+enabled: true
+
+triggers:
+  - type: shannon_finding
+    conditions:
+      vulnerability_type: [authz, idor]
+      exploited: true
+
+steps:
+  - id: log_authz_vuln
+    name: Log Authorization Vulnerability
+    type: action
+    action: audit_log
+    params:
+      event: shannon_authz_detected
+      severity: high
+      message: "Authorization bypass/IDOR confirmed at {{ location }}"
+
+  - id: notify_team
+    name: Notify Security Team
+    type: action
+    action: send_notification
+    params:
+      channel: "#security-alerts"
+      priority: high
+      data:
+        title: "⚠️ Authorization Vulnerability - Shannon AI"
+        message: "IDOR/AuthZ bypass at {{ location }} allows unauthorized data access"
+
+  - id: identify_affected_resources
+    name: Identify Affected Resources
+    type: action
+    action: api_analyze_endpoint
+    params:
+      endpoint: "{{ location }}"
+      analyze: [parameters, resources, access_patterns]
+
+  - id: enable_access_logging
+    name: Enable Detailed Access Logging
+    type: action
+    action: enable_access_audit
+    params:
+      endpoint: "{{ location }}"
+      log_user_id: true
+      log_resource_id: true
+      log_action: true
+      alert_cross_user_access: true
+
+  - id: deploy_rate_limit
+    name: Deploy Rate Limiting
+    type: action
+    action: rate_limit_endpoint
+    params:
+      endpoint: "{{ location }}"
+      limit: 10
+      window_seconds: 60
+      comment: "IDOR protection - {{ finding_id }}"
+
+  - id: check_data_exposure
+    name: Check Historical Data Exposure
+    type: action
+    action: siem_query
+    params:
+      query: |
+        endpoint="{{ location }}"
+        | eval resource_user = mvindex(split(uri_path, "/"), -1)
+        | where user_id != resource_user
+        | stats count by user_id, src_ip
+      timerange: "-7d"
+
+  - id: evaluate_exposure
+    name: Evaluate Data Exposure
+    type: condition
+    condition: "{{ step_result.count > 100 }}"
+    on_success: escalate_data_breach
+    on_failure: standard_ticket
+
+  - id: escalate_data_breach
+    name: Escalate Potential Data Breach
+    type: action
+    action: escalate_incident
+    params:
+      severity: critical
+      category: data_breach
+      reason: "IDOR with significant unauthorized access detected"
+
+  - id: standard_ticket
+    name: Create Remediation Ticket
+    type: action
+    action: create_ticket
+    params:
+      priority: High
+      title: "[SHANNON] IDOR/AuthZ Bypass - {{ location }}"
+      description: |
+        ## Authorization Vulnerability (Verified)
+
+        ### Details
+        - **Type:** {{ vuln_type }}
+        - **Endpoint:** {{ method }} {{ location }}
+        - **Impact:** Unauthorized access to other users' data
+
+        ### Recommended Fix
+        1. Implement proper authorization checks
+        2. Validate user owns requested resource
+        3. Use indirect reference maps
+        4. Add access control middleware
+      labels: [shannon, idor, authz, security]
+
+metadata:
+  tags: [shannon, authorization, idor, data-access]

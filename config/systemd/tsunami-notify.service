@@ -1,0 +1,60 @@
+# ==============================================================================
+# TSUNAMI NOTIFICATION DAEMON - Systemd Service (User Mode)
+# ==============================================================================
+# Gercek zamanli tehdit bildirimi daemon'u
+# NOT: Bu servis user mode'da calisir (desktop bildirimler icin)
+#
+# KURULUM:
+#   mkdir -p ~/.config/systemd/user
+#   cp tsunami-notify.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable tsunami-notify
+#   systemctl --user start tsunami-notify
+#
+# DURUM:
+#   systemctl --user status tsunami-notify
+#   journalctl --user -u tsunami-notify -f
+#
+# ==============================================================================
+
+[Unit]
+Description=TSUNAMI Bildirim Daemon - Tehdit Bildirimleri (7/24)
+Documentation=https://github.com/tsunami-security/dashboard
+
+# Bagimlilıklar - Desktop session gerekli
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+# Servis tipi
+Type=simple
+
+# Calisma dizini
+WorkingDirectory=/home/lydian/Desktop/TSUNAMI
+
+# Ana komutlar
+ExecStart=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/tsunami_notify.py start
+ExecStop=/usr/bin/python3 /home/lydian/Desktop/TSUNAMI/tsunami_notify.py stop
+
+# Yeniden baslatma
+Restart=on-failure
+RestartSec=10
+
+# Log ayarlari
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tsunami-notify
+
+# Ortam degiskenleri
+Environment=PYTHONUNBUFFERED=1
+Environment=DISPLAY=:0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+# Graceful shutdown
+TimeoutStopSec=15
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,49 @@
+
+# Güvenlik - API anahtarları
+.env
+.env.*
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Test & Cache
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Runtime veritabanlari & loglar
+*.db
+*.log
+*.csv
+
+# Backup dosyalari
+*.backup
+*.bak
+
+# Test artifacts
+test_user_*.txt
+testuser*.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SSH keys
+scripts/858687
+scripts/858687.pub
+
+# IDE
+# (already above)
+
+# OS
+.DS_Store
+Thumbs.db

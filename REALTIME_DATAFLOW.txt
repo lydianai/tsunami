@@ -1,0 +1,371 @@
+================================================================================
+           TSUNAMI REAL-TIME DATA FLOW VISUALIZATION
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        LIVE ATTACK FEED FLOW                             │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  Client (Browser)          WebSocket           Server Thread           BEYIN
+  ────────────────          ─────────          ─────────────          ──────
+
+       │                       │                      │                   │
+       │  emit:                │                      │                   │
+       │  'saldiri_akisi       │                      │                   │
+       │  _baslat'             │                      │                   │
+       ├──────────────────────►│                      │                   │
+       │                       │   @socketio.on()     │                   │
+       │                       ├─────────────────────►│                   │
+       │                       │                      │                   │
+       │                       │              Start Background Thread     │
+       │                       │                      │                   │
+       │                       │              ┌───────▼────────┐          │
+       │                       │              │  Attack Loop   │          │
+       │                       │              │  (every 2-5s)  │          │
+       │                       │              └───────┬────────┘          │
+       │                       │                      │                   │
+       │                       │         Generate Attack Data             │
+       │                       │                      │                   │
+       │                       │         ┌────────────▼──────────┐        │
+       │                       │         │ CanliSaldiriVerisi    │        │
+       │                       │         │   .saldiri_uret()     │        │
+       │                       │         └────────────┬──────────┘        │
+       │                       │                      │                   │
+       │                       │         Notify BEYIN ├──────────────────►│
+       │                       │         tehdit_bildir()                  │
+       │                       │                      │    ┌──────────────▼────┐
+       │                       │                      │    │ Calculate DEFCON  │
+       │                       │                      │    │ Update threat     │
+       │                       │                      │    │ scores            │
+       │                       │                      │    └──────────────┬────┘
+       │                       │         socketio.emit()                  │
+       │  on:                  │◄─────────────────────┤    If critical:  │
+       │  'canli_saldiri'      │    'canli_saldiri'   │    emit alarm    │
+       │◄──────────────────────┤                      │◄─────────────────┤
+       │                       │                      │                   │
+       │  Update Map           │                      │                   │
+       │  Add Marker           │                      │                   │
+       │  Show Notification    │                      │                   │
+       │                       │                      │                   │
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                      BEYIN AUTONOMOUS LOOP FLOW                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+   Startup                  BEYIN Thread              SocketIO         Clients
+   ───────                  ────────────              ────────         ───────
+
+      │                          │                        │                │
+      │  beyin = beyin_al()      │                        │                │
+      ├─────────────────────────►│                        │                │
+      │                          │                        │                │
+      │  beyin.socketio_ayarla() │                        │                │
+      ├─────────────────────────►│   Store socketio       │                │
+      │                          │   reference            │                │
+      │                          │                        │                │
+      │  beyin.baslat()          │                        │                │
+      ├─────────────────────────►│   Start autonomous     │                │
+      │                          │   loop thread          │                │
+      │                          │                        │                │
+      │                      ┌───▼────────────────┐       │                │
+      │                      │  while _aktif:     │       │                │
+      │                      │                    │       │                │
+      │                      │  1. Heartbeat      │       │                │
+      │                      │  2. Calc DEFCON    │       │                │
+      │                      │  3. Adjust Stealth │       │                │
+      │                      │  4. Process        │       │                │
+      │                      │     Threats        │       │                │
+      │                      │  5. Make Decisions │       │                │
+      │                      │  6. Broadcast      ├──────►│                │
+      │                      │     Status         │       │  'beyin_durum' │
+      │                      │                    │       ├───────────────►│
+      │                      │  sleep(5s)         │       │                │
+      │                      │                    │       │  Update HUD    │
+      │                      └────────────────────┘       │  Show DEFCON   │
+      │                          │                        │                │
+      │                          │   On Critical Threat:  │                │
+      │                          ├───────────────────────►│  'beyin_alarm' │
+      │                          │                        ├───────────────►│
+      │                          │                        │  Alert Sound   │
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                       MAP REAL-TIME UPDATES FLOW                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+   Client Map               SocketIO            Server Handler        APIs
+   ──────────               ────────            ──────────────        ────
+
+       │                       │                      │                 │
+       │  User clicks map      │                      │                 │
+       │  at coordinates       │                      │                 │
+       │                       │                      │                 │
+       │  emit:                │                      │                 │
+       │  'konum_ara'          │                      │                 │
+       │  {lat, lng}           │                      │                 │
+       ├──────────────────────►│                      │                 │
+       │                       │   @socketio.on()     │                 │
+       │                       ├─────────────────────►│                 │
+       │                       │                      │                 │
+       │  on:                  │                      │  Query Wigle    │
+       │  'arama_ilerleme'     │◄─────────────────────┤────────────────►│
+       │◄──────────────────────┤  emit progress       │                 │
+       │  Show "Searching..."  │                      │                 │
+       │                       │                      │  Query OpenCell │
+       │  on:                  │                      │────────────────►│
+       │  'arama_ilerleme'     │◄─────────────────────┤                 │
+       │◄──────────────────────┤                      │                 │
+       │  Update progress      │                      │  Query Shodan   │
+       │                       │                      │────────────────►│
+       │  on:                  │                      │                 │
+       │  'arama_ilerleme'     │◄─────────────────────┤                 │
+       │◄──────────────────────┤                      │                 │
+       │                       │                      │                 │
+       │  on:                  │                      │  Aggregate      │
+       │  'arama_sonuc'        │◄─────────────────────┤  results        │
+       │◄──────────────────────┤  {wifi, bt, iot...}  │                 │
+       │                       │                      │                 │
+       │  Add markers to map   │                      │                 │
+       │  - WiFi (blue)        │                      │                 │
+       │  - Bluetooth (purple) │                      │                 │
+       │  - Cells (green)      │                      │                 │
+       │  - IoT (orange)       │                      │                 │
+       │                       │                      │                 │
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     MANUAL COMMAND EXECUTION FLOW                        │
+└──────────────────────────────────────────────────────────────────────────┘
+
+   BEYIN Dashboard          SocketIO              BEYIN              Action
+   ───────────────          ────────              ─────              ──────
+
+       │                       │                      │                 │
+       │  User enters:         │                      │                 │
+       │  "ip_engelle"         │                      │                 │
+       │  IP: 1.2.3.4          │                      │                 │
+       │                       │                      │                 │
+       │  emit:                │                      │                 │
+       │  'beyin_komut'        │                      │                 │
+       │  {komut, parametre}   │                      │                 │
+       ├──────────────────────►│                      │                 │
+       │                       │   @socketio.on()     │                 │
+       │                       ├─────────────────────►│                 │
+       │                       │                      │                 │
+       │                       │         manuel_komut()                 │
+       │                       │                      │                 │
+       │                       │         ┌────────────▼──────────┐      │
+       │                       │         │  Validate command     │      │
+       │                       │         │  Execute action       │      │
+       │                       │         └────────────┬──────────┘      │
+       │                       │                      │                 │
+       │                       │         IP Blocking: ├────────────────►│
+       │                       │                      │  iptables -A    │
+       │                       │                      │  INPUT -s IP    │
+       │                       │                      │  -j DROP        │
+       │                       │                      │                 │
+       │                       │         Log to audit │                 │
+       │                       │         denetim.log  │                 │
+       │                       │                      │                 │
+       │  on:                  │         emit result  │                 │
+       │  'beyin_komut_sonuc'  │◄─────────────────────┤                 │
+       │◄──────────────────────┤  {basarili: true}    │                 │
+       │                       │                      │                 │
+       │  Show success message │         Broadcast:   │                 │
+       │  "IP blocked"         │  'ip_engellendi'     │                 │
+       │                       │  to all clients      │                 │
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    MULTI-MODULE INTEGRATION FLOW                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Attack Feed Thread    BEYIN          GEO Module    GNN Module    SocketIO
+──────────────────    ─────          ──────────    ──────────    ────────
+
+       │                │                 │             │            │
+       │  Generate      │                 │             │            │
+       │  Attack        │                 │             │            │
+       │                │                 │             │            │
+       │  Notify ──────►│                 │             │            │
+       │  BEYIN         │                 │             │            │
+       │                │                 │             │            │
+       │                ├─ Calculate      │             │            │
+       │                │  threat score   │             │            │
+       │                │                 │             │            │
+       │  Add to ───────┴────────────────►│             │            │
+       │  GEO                 Spatial     │             │            │
+       │                      analysis    │             │            │
+       │                                  │             │            │
+       │  Add to ─────────────────────────┴────────────►│            │
+       │  GNN                        Graph analysis     │            │
+       │                                                 │            │
+       │                                  High risk?    │            │
+       │                                     (>70%)     │            │
+       │                                                 │            │
+       │  Emit ──────────────────────────────────────────┴───────────►│
+       │  'canli_saldiri'                                             │
+       │                                                               │
+       │  If GNN high risk: ──────────────────────────────────────────►│
+       │  emit 'gnn_alarm'                                             │
+       │                                                               │
+       │  If critical: ───────────────────────────────────────────────►│
+       │  emit 'beyin_alarm'                                           │
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        CONNECTION LIFECYCLE                              │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Client Browser              SocketIO Server                   BEYIN
+──────────────              ───────────────                   ─────
+
+      │                           │                              │
+      │  io()                     │                              │
+      ├──────────────────────────►│                              │
+      │  WebSocket handshake      │                              │
+      │                           │                              │
+      │◄──────────────────────────┤  Check session               │
+      │  101 Switching Protocols  │  authentication              │
+      │                           │                              │
+      │                           │  Session valid?              │
+      │                           ├─ Yes ──────────┐             │
+      │◄──────────────────────────┤                │             │
+      │  emit: 'baglandi'         │                │             │
+      │  {versiyon: v3.0}         │                │             │
+      │                           │                │             │
+      │                           │◄───────────────┘             │
+      │                           │                              │
+      │  Auto-subscribe to:       │                              │
+      │  - beyin_durum ───────────┼─────────────────────────────►│
+      │  - bildirim               │    Request initial status     │
+      │  - canli_saldiri          │                              │
+      │                           │                              │
+      │◄──────────────────────────┤◄─────────────────────────────┤
+      │  'beyin_durum'            │  Current status              │
+      │  {defcon: 5, ...}         │                              │
+      │                           │                              │
+      │  ──── Active Session ────►│◄──── Real-time Events ──────►│
+      │                           │                              │
+      │                           │  Every 5 seconds:            │
+      │◄──────────────────────────┤◄─────────────────────────────┤
+      │  'beyin_durum'            │  Loop broadcast              │
+      │                           │                              │
+      │  On page unload:          │                              │
+      │  disconnect()             │                              │
+      ├──────────────────────────►│                              │
+      │                           │  Cleanup session             │
+
+================================================================================
+DATA STRUCTURES
+================================================================================
+
+Attack Object:
+{
+  "id": "ATK-1770228646571",
+  "zaman": "2026-02-04T21:10:46",
+  "saldiri": {
+    "tip": "DDoS",
+    "ciddiyet": "critical",
+    "protokol": "TCP",
+    "port": 80
+  },
+  "kaynak": {
+    "ip": "185.141.63.237",
+    "ulke": "Rusya",
+    "sehir": "Moscow",
+    "lat": 55.7558,
+    "lng": 37.6173
+  },
+  "hedef": {
+    "sehir": "Antalya",
+    "lat": 36.8969,
+    "lng": 30.7133,
+    "altyapi": "Turk Telekom"
+  }
+}
+
+BEYIN Status:
+{
+  "aktif": true,
+  "zaman": "2026-02-04T21:10:46",
+  "defcon": {
+    "defcon_numara": 5,
+    "aciklama": "Guvenli"
+  },
+  "gizli_mod": "hayalet",
+  "saglik": {
+    "kalp_atisi": "2026-02-04T21:10:46",
+    "hata_sayisi": 0,
+    "uptime": "5.2s"
+  },
+  "son_kararlar": [
+    {
+      "id": "DEC-123",
+      "aksiyon": "ip_engelle",
+      "zaman": "2026-02-04T21:10:40",
+      "yurutuldu": true
+    }
+  ]
+}
+
+Notification:
+{
+  "baslik": "Security Alert",
+  "mesaj": "Critical attack detected from Russia",
+  "tip": "kritik",
+  "zaman": "2026-02-04T21:10:46"
+}
+
+================================================================================
+TIMING DIAGRAM
+================================================================================
+
+Time (s)    Attack Feed    BEYIN Loop    SocketIO Emissions
+────────    ───────────    ──────────    ──────────────────
+
+  0.0       Start thread   Start loop    -
+  2.3       Generate #1    -             → 'canli_saldiri' #1
+  4.7       Generate #2    -             → 'canli_saldiri' #2
+  5.0       -              Cycle #1      → 'beyin_durum' (DEFCON 5)
+  6.9       Generate #3    -             → 'canli_saldiri' #3
+  9.2       Generate #4    -             → 'canli_saldiri' #4 (critical!)
+                                         → 'beyin_alarm' (critical threat)
+ 10.0       -              Cycle #2      → 'beyin_durum' (DEFCON 3)
+ 11.5       Generate #5    -             → 'canli_saldiri' #5
+ 14.1       Generate #6    -             → 'canli_saldiri' #6
+ 15.0       -              Cycle #3      → 'beyin_durum' (DEFCON 4)
+ ...        ...            ...           ...
+
+Intervals:
+  - Attack Feed: 2-5 seconds (randomized)
+  - BEYIN Loop: Exactly 5 seconds
+  - SocketIO: Instant upon data ready
+
+================================================================================
+ERROR HANDLING
+================================================================================
+
+Connection Errors:
+  Client disconnects → Server cleans up session
+  Server restarts → Clients auto-reconnect
+  Network timeout → Exponential backoff retry
+
+Thread Errors:
+  Attack feed exception → Log and continue loop
+  BEYIN exception → Log to _saglik, continue loop
+  SocketIO exception → Graceful degradation
+
+Data Errors:
+  Invalid attack data → Skip and generate new
+  Missing BEYIN status → Return cached status
+  API timeout → Use fallback data
+
+Security Errors:
+  Unauthenticated request → Reject with 401
+  Rate limit exceeded → Throttle client
+  CORS violation → Block request
+
+================================================================================
+
+Created: 2026-02-04
+Auditor: Claude Code (Frontend Developer Agent)
+Platform: TSUNAMI v3.0
+
+================================================================================

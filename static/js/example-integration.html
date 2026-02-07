@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="csp-nonce" content="REPLACE_WITH_SERVER_NONCE">
+    <title>TSUNAMI Security Modules - Example Integration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        h1 { color: #2c3e50; }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        .example-section {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        input.is-valid {
+            border-color: #28a745;
+            background-color: #f0fff4;
+        }
+
+        input.is-invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+
+        .validation-feedback {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+
+        .user-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-box {
+            background: #e8f4f8;
+            border: 1px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .status-box h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .log-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+
+        .log-entry.error {
+            border-left-color: #e74c3c;
+        }
+
+        .log-entry.warn {
+            border-left-color: #f39c12;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>TSUNAMI Security Modules</h1>
+    <p>Example integration demonstrating XSS Protection, Input Validator, Error Boundary, and Logger modules.</p>
+
+    <!-- Example 1: Input Validation -->
+    <h2>1. Input Validation</h2>
+    <div class="example-section">
+        <p>Real-time validation with visual feedback. Try entering valid/invalid data:</p>
+
+        <form data-validate-form id="validation-form">
+            <label for="ip-input">IP Address (IPv4 or IPv6)</label>
+            <input
+                type="text"
+                id="ip-input"
+                data-validate="ip"
+                placeholder="192.168.1.1 or 2001:db8::1"
+            >
+
+            <label for="email-input">Email Address</label>
+            <input
+                type="email"
+                id="email-input"
+                data-validate="email"
+                placeholder="user@example.com"
+                required
+            >
+
+            <label for="domain-input">Domain Name</label>
+            <input
+                type="text"
+                id="domain-input"
+                data-validate="domain"
+                placeholder="example.com"
+            >
+
+            <label for="port-input">Port Number</label>
+            <input
+                type="text"
+                id="port-input"
+                data-validate="port"
+                placeholder="80 or 443"
+            >
+
+            <button type="submit">Validate Form</button>
+        </form>
+    </div>
+
+    <!-- Example 2: XSS Protection -->
+    <h2>2. XSS Protection</h2>
+    <div class="example-section">
+        <p>Test XSS sanitization. Try entering malicious HTML:</p>
+
+        <form id="xss-test-form">
+            <label for="xss-input">User Input (try adding &lt;script&gt; tags)</label>
+            <textarea
+                id="xss-input"
+                rows="3"
+                placeholder="<script>alert('XSS')</script> or <img src=x onerror=alert('XSS')>"
+            ></textarea>
+
+            <button type="button" onclick="testXSSSanitize()">Sanitize & Display</button>
+            <button type="button" onclick="testXSSUnsafe()" class="btn-danger">Unsafe Display (DON'T USE)</button>
+        </form>
+
+        <div id="xss-output"></div>
+    </div>
+
+    <!-- Example 3: Dynamic Content with Event Delegation -->
+    <h2>3. Safe Event Delegation</h2>
+    <div class="example-section">
+        <p>Dynamic content with safe event handling (no inline onclick):</p>
+
+        <button type="button" onclick="addUser()">Add User</button>
+        <button type="button" onclick="clearUsers()">Clear All</button>
+
+        <div id="user-list"></div>
+    </div>
+
+    <!-- Example 4: Error Boundary -->
+    <h2>4. Error Handling</h2>
+    <div class="example-section">
+        <p>Test global error handling and user-friendly messages:</p>
+
+        <button type="button" onclick="triggerError()">Trigger Error</button>
+        <button type="button" onclick="triggerPromiseError()">Trigger Promise Rejection</button>
+        <button type="button" onclick="triggerNetworkError()">Simulate Network Error</button>
+        <button type="button" onclick="showErrorStats()">Show Error Stats</button>
+    </div>
+
+    <!-- Example 5: Logger -->
+    <h2>5. Logging System</h2>
+    <div class="example-section">
+        <p>Structured logging with different levels:</p>
+
+        <button type="button" onclick="testLogging()">Generate Logs</button>
+        <button type="button" onclick="showLogStats()">Show Log Stats</button>
+        <button type="button" onclick="clearLogs()">Clear Logs</button>
+        <button type="button" onclick="downloadLogs()" class="btn-success">Download Logs</button>
+
+        <div id="log-display" class="log-output"></div>
+    </div>
+
+    <!-- Status Box -->
+    <div class="status-box">
+        <h3>Module Status</h3>
+        <div id="module-status">Initializing...</div>
+    </div>
+
+    <!-- Load Security Modules -->
+    <script src="utils/logger.js"></script>
+    <script src="utils/error-boundary.js"></script>
+    <script src="security/xss-protection.js"></script>
+    <script src="security/input-validator.js"></script>
+    <script src="main.js"></script>
+
+    <!-- Example Code -->
+    <script>
+        // Wait for initialization
+        window.addEventListener('app:initialized', function(event) {
+            updateModuleStatus();
+            Logger.info('Example page loaded', { timestamp: new Date().toISOString() });
+        });
+
+        // Update module status display
+        function updateModuleStatus() {
+            const status = document.getElementById('module-status');
+            const modules = [
+                { name: 'Logger', loaded: typeof Logger !== 'undefined' },
+                { name: 'ErrorBoundary', loaded: typeof ErrorBoundary !== 'undefined' },
+                { name: 'XSSProtection', loaded: typeof XSSProtection !== 'undefined' },
+                { name: 'InputValidator', loaded: typeof InputValidator !== 'undefined' }
+            ];
+
+            const html = modules.map(m => {
+                const icon = m.loaded ? '✅' : '❌';
+                return `<div>${icon} ${m.name}: ${m.loaded ? 'Loaded' : 'Not Loaded'}</div>`;
+            }).join('');
+
+            status.innerHTML = html;
+        }
+
+        // Example 1: Form validation
+        document.getElementById('validation-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            Logger.logUserAction('form_submit', { form: 'validation-form' });
+            alert('Form is valid and ready to submit!');
+        });
+
+        // Example 2: XSS Protection
+        function testXSSSanitize() {
+            const input = document.getElementById('xss-input').value;
+            const output = document.getElementById('xss-output');
+
+            // Sanitize and display
+            const sanitized = XSSProtection.sanitize(input);
+            XSSProtection.setSafeHTML(output, `
+                <h4>Sanitized Output:</h4>
+                <div style="padding: 10px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 4px;">
+                    ${sanitized}
+                </div>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                    ✅ Safe: Dangerous tags and attributes were removed.
+                </p>
+            `);
+
+            Logger.info('XSS sanitization test', { inputLength: input.length });
+        }
+
+        function testXSSUnsafe() {
+            const input = document.getElementById('xss-input').value;
+            const output = document.getElementById('xss-output');
+
+            // UNSAFE - for demonstration only!
+            output.innerHTML = `
+                <h4>⚠️ Unsafe Output (for demonstration):</h4>
+                <div style="padding: 10px; background: #ffebee; border: 1px solid #f44336; border-radius: 4px;">
+                    ${input}
+                </div>
+                <p style="color: #d32f2f; font-size: 14px; margin-top: 10px;">
+                    ❌ Unsafe: Scripts may execute! Never use innerHTML with user input.
+                </p>
+            `;
+
+            Logger.warn('Unsafe XSS test executed', { inputLength: input.length });
+        }
+
+        // Example 3: Event Delegation
+        let userIdCounter = 1;
+
+        // Setup event delegation for delete buttons
+        XSSProtection.delegateEvent('[data-delete-user]', 'click', function(event) {
+            event.preventDefault();
+            const userId = this.getAttribute('data-delete-user');
+            const userName = this.getAttribute('data-user-name');
+
+            Logger.logUserAction('delete_user', { userId: userId, userName: userName });
+
+            if (confirm(`Delete user ${userName}?`)) {
+                this.parentElement.remove();
+                Logger.info('User deleted', { userId: userId });
+            }
+        });
+
+        function addUser() {
+            const container = document.getElementById('user-list');
+            const userId = userIdCounter++;
+            const userName = `User ${userId}`;
+
+            // Create user card safely
+            const userCard = XSSProtection.createSafeElement('div', {
+                class: 'user-card'
+            });
+
+            const nameSpan = XSSProtection.createSafeElement('span', {}, userName);
+
+            const deleteBtn = XSSProtection.createSafeElement('button', {
+                'data-delete-user': userId,
+                'data-user-name': userName,
+                class: 'btn-danger'
+            }, 'Delete');
+
+            userCard.appendChild(nameSpan);
+            userCard.appendChild(deleteBtn);
+            container.appendChild(userCard);
+
+            Logger.info('User added', { userId: userId, userName: userName });
+        }
+
+        function clearUsers() {
+            document.getElementById('user-list').innerHTML = '';
+            userIdCounter = 1;
+            Logger.info('All users cleared');
+        }
+
+        // Example 4: Error Handling
+        function triggerError() {
+            throw new Error('Test error for error boundary');
+        }
+
+        function triggerPromiseError() {
+            Promise.reject(new Error('Test promise rejection'));
+        }
+
+        function triggerNetworkError() {
+            fetch('/nonexistent-endpoint')
+                .then(res => res.json())
+                .catch(err => {
+                    Logger.error('Network request failed', err);
+                });
+        }
+
+        function showErrorStats() {
+            const stats = ErrorBoundary.getStats();
+            alert(`Total Errors: ${stats.total}\n\nBy Type:\n${JSON.stringify(stats.byType, null, 2)}`);
+        }
+
+        // Example 5: Logging
+        function testLogging() {
+            Logger.debug('This is a debug message', { detail: 'verbose info' });
+            Logger.info('This is an info message');
+            Logger.warn('This is a warning', { reason: 'something suspicious' });
+            Logger.error('This is an error', new Error('Test error'));
+
+            Logger.logAPI('GET', '/api/users', { status: 200, duration: 123.45 });
+            Logger.logUserAction('button_click', { button: 'test_logging' });
+            Logger.logPerformance('operation', 456.78);
+
+            updateLogDisplay();
+        }
+
+        function showLogStats() {
+            const stats = Logger.getStats();
+            const message = `
+Total Logs: ${stats.total}
+
+By Level:
+- DEBUG: ${stats.byLevel.DEBUG}
+- INFO: ${stats.byLevel.INFO}
+- WARN: ${stats.byLevel.WARN}
+- ERROR: ${stats.byLevel.ERROR}
+            `;
+            alert(message);
+        }
+
+        function clearLogs() {
+            Logger.clearLogs();
+            updateLogDisplay();
+            Logger.info('Logs cleared');
+        }
+
+        function downloadLogs() {
+            Logger.downloadLogs('tsunami-example-logs.json');
+        }
+
+        function updateLogDisplay() {
+            const logs = Logger.getLogs().slice(-20).reverse(); // Last 20 logs
+            const display = document.getElementById('log-display');
+
+            if (logs.length === 0) {
+                display.innerHTML = '<div style="color: #95a5a6;">No logs yet. Click "Generate Logs" to create some.</div>';
+                return;
+            }
+
+            const html = logs.map(log => {
+                const className = log.level.toLowerCase();
+                const data = log.data ? JSON.stringify(log.data) : '';
+                return `
+                    <div class="log-entry ${className}">
+                        <strong>[${log.level}]</strong>
+                        ${log.timestamp ? `<span style="color: #95a5a6;">${new Date(log.timestamp).toLocaleTimeString()}</span>` : ''}
+                        ${log.message}
+                        ${data ? `<br><span style="color: #95a5a6;">${data}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            display.innerHTML = html;
+        }
+
+        // Update log display periodically
+        setInterval(updateLogDisplay, 2000);
+
+        // Initial display
+        setTimeout(updateModuleStatus, 100);
+    </script>
+</body>
+</html>

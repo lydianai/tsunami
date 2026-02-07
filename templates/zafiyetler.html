@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI - Zafiyetler</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <style>
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+        }
+        [data-theme="cockpit-bw"] header, [data-theme="cockpit-bw"] .header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] h1, [data-theme="cockpit-bw"] h2 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card, [data-theme="cockpit-bw"] .panel { border-color: rgba(255,255,255,0.2) !important; background: rgba(0,0,0,0.9) !important; }
+        [data-theme="cockpit-bw"] nav, [data-theme="cockpit-bw"] .nav-panel { background: rgba(0,0,0,0.98) !important; }
+        [data-theme="cockpit-bw"] .nav-item:hover, [data-theme="cockpit-bw"] .nav-item.active { background: rgba(255,255,255,0.1) !important; }
+        [data-theme="cockpit-bw"] input, [data-theme="cockpit-bw"] select, [data-theme="cockpit-bw"] textarea { background: rgba(0,0,0,0.8) !important; border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-void);
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(0, 180, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(136, 85, 255, 0.02) 0%, transparent 50%);
+            min-height: 100vh;
+            color: var(--text-normal);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-panel);
+            border-bottom: 2px solid var(--border-glow);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.5);
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(0, 180, 255, 0.6), 0 0 40px rgba(0, 180, 255, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            font-family: 'Orbitron', monospace;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-primary);
+            border-color: var(--border-glow);
+            background: var(--bg-glass);
+            text-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .nav-links a.active {
+            color: var(--text-bright);
+            border-color: var(--accent-primary);
+            background: var(--bg-glass);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+        }
+
+        /* Container */
+        .container {
+            padding: 30px;
+            padding-bottom: 100px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 30px 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .summary-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 25px rgba(0, 180, 255, 0.15), inset 0 0 20px rgba(0, 180, 255, 0.05);
+            transform: translateY(-3px);
+        }
+
+        .summary-card:hover::before {
+            opacity: 1;
+        }
+
+        .summary-value {
+            font-size: 48px;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px currentColor;
+        }
+
+        .summary-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            padding: 18px 25px;
+            border-bottom: 2px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-panel);
+            box-shadow: 0 2px 10px rgba(0, 180, 255, 0.1);
+        }
+
+        .card-header h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 180, 255, 0.4);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 12px;
+        }
+
+        th {
+            background: var(--bg-panel);
+            color: var(--hud-cyan);
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            border-bottom: 2px solid var(--border-glow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-glass);
+            box-shadow: inset 0 0 15px rgba(0, 180, 255, 0.08);
+        }
+
+        td {
+            color: var(--text-normal);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid currentColor;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .badge.kritik {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+            text-shadow: 0 0 8px var(--accent-danger);
+        }
+
+        .badge.yuksek {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--accent-warning);
+            border-color: var(--accent-warning);
+            text-shadow: 0 0 8px var(--accent-warning);
+        }
+
+        .badge.orta {
+            background: rgba(255, 204, 0, 0.15);
+            color: var(--hud-amber);
+            border-color: var(--hud-amber);
+            text-shadow: 0 0 8px var(--hud-amber);
+        }
+
+        .badge.dusuk {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            border-color: var(--hud-green);
+            text-shadow: 0 0 8px var(--hud-green);
+        }
+
+        .badge.acik {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+            text-shadow: 0 0 8px var(--accent-danger);
+        }
+
+        .badge.kapali {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            border-color: var(--hud-green);
+            text-shadow: 0 0 8px var(--hud-green);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: 2px solid var(--accent-primary);
+            border-radius: 6px;
+            font-family: 'Orbitron', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--bg-glass);
+            color: var(--accent-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(0, 180, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s ease, height 0.5s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 180, 255, 0.5), 0 5px 20px rgba(0, 0, 0, 0.4);
+            border-color: var(--hud-cyan);
+            color: var(--text-bright);
+            text-shadow: 0 0 10px rgba(0, 180, 255, 0.8);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(0, 180, 255, 0.2), rgba(0, 102, 204, 0.2));
+            color: var(--text-bright);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 10px;
+        }
+
+        /* Solution Text */
+        .solution-text {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            font-style: italic;
+            padding-left: 12px;
+            border-left: 2px solid var(--accent-secondary);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--bg-panel);
+            border-top: 2px solid var(--border-glow);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 180, 255, 0.1);
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+        }
+
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-text:first-child {
+            color: var(--hud-cyan);
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .summary-value {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 5px;
+            border: 2px solid var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>[TSUNAMI] Zafiyet Yonetimi</h1>
+        <nav class="nav-links">
+            <a href="/panel">Panel</a>
+            <a href="/harita">Harita</a>
+            <a href="/spektrum">Spektrum</a>
+            <a href="/trafik">Trafik</a>
+            <a href="/araclar">Araclar</a>
+            <a href="/raporlar">Raporlar</a>
+            <a href="/cikis">Cikis</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-value" style="color: var(--accent-danger);" id="kritik-count">0</div>
+                <div class="summary-label">Kritik</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: var(--accent-warning);" id="yuksek-count">0</div>
+                <div class="summary-label">Yuksek</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: var(--hud-amber);" id="orta-count">0</div>
+                <div class="summary-label">Orta</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" style="color: var(--hud-green);" id="dusuk-count">0</div>
+                <div class="summary-label">Dusuk</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Tespit Edilen Zafiyetler</h3>
+                <button class="btn btn-primary" id="btn-refresh">Yenile</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hedef</th>
+                            <th>Tip</th>
+                            <th>Ciddiyet</th>
+                            <th>Aciklama</th>
+                            <th>Durum</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vuln-table">
+                        <tr><td colspan="6" class="empty-state">Zafiyet verisi yukleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span class="status-text" id="status-text">Hazir</span>
+        <span class="status-text">TSUNAMI Zafiyet Yonetimi v2.0</span>
+    </div>
+
+    <script>
+        async function fetchVulnerabilities() {
+            document.getElementById('status-text').textContent = 'Zafiyetler yukleniyor...';
+
+            try {
+                const response = await fetch('/api/zafiyetler/liste');
+                const data = await response.json();
+                updateTable(data);
+                updateCounts(data);
+                document.getElementById('status-text').textContent = 'Hazir';
+            } catch (e) {
+                document.getElementById('status-text').textContent = 'Hata: ' + e.message;
+            }
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('vuln-table');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Henuz zafiyet tespit edilmedi</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(v => {
+                const tarih = v.tespit_tarihi ? new Date(v.tespit_tarihi).toLocaleDateString('tr-TR') : '-';
+
+                return `
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${v.hedef || '-'}</td>
+                        <td>${v.zafiyet_tipi || v.hedef_tipi || '-'}</td>
+                        <td><span class="badge ${v.ciddiyet || 'orta'}">${v.ciddiyet || 'Orta'}</span></td>
+                        <td>
+                            <div>${v.aciklama || '-'}</div>
+                            ${v.cozum ? `<div class="solution-text">Cozum: ${v.cozum}</div>` : ''}
+                        </td>
+                        <td><span class="badge ${v.durum || 'acik'}">${v.durum || 'Acik'}</span></td>
+                        <td style="font-size: 11px; color: var(--text-dim);">${tarih}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateCounts(data) {
+            const counts = { kritik: 0, yuksek: 0, orta: 0, dusuk: 0 };
+
+            if (data) {
+                data.forEach(v => {
+                    const ciddiyet = (v.ciddiyet || 'orta').toLowerCase();
+                    if (counts.hasOwnProperty(ciddiyet)) {
+                        counts[ciddiyet]++;
+                    }
+                });
+            }
+
+            document.getElementById('kritik-count').textContent = counts.kritik;
+            document.getElementById('yuksek-count').textContent = counts.yuksek;
+            document.getElementById('orta-count').textContent = counts.orta;
+            document.getElementById('dusuk-count').textContent = counts.dusuk;
+        }
+
+        document.getElementById('btn-refresh').addEventListener('click', fetchVulnerabilities);
+
+        document.addEventListener('DOMContentLoaded', fetchVulnerabilities);
+    </script>
+    <script src="/static/theme-switcher.js"></script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

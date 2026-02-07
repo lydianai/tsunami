@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI BEYIN - Otonom Merkezi Zeka</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+            --defcon-1: #ff3355;
+            --defcon-2: #ffaa00;
+            --defcon-3: #ffcc00;
+            --defcon-4: #00ff88;
+            --defcon-5: #00b4ff;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+            --defcon-1: #ff0000;
+            --defcon-2: #ffaa00;
+            --defcon-3: #ffdd00;
+            --defcon-4: #00ff00;
+            --defcon-5: #ffffff;
+        }
+        [data-theme="cockpit-bw"] header, [data-theme="cockpit-bw"] .beyin-header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] h1, [data-theme="cockpit-bw"] h2 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card, [data-theme="cockpit-bw"] .panel, [data-theme="cockpit-bw"] .brain-zone { border-color: rgba(255,255,255,0.2) !important; background: rgba(0,0,0,0.9) !important; }
+        [data-theme="cockpit-bw"] .defcon-meter { border-color: rgba(255,255,255,0.4) !important; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-void);
+            color: var(--text-bright);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(0, 180, 255, 0.03), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(136, 85, 255, 0.03), transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header - HUD Style */
+        .header {
+            background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-glass) 100%);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-glow);
+            box-shadow: 0 2px 20px rgba(0, 180, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+            border: 2px solid var(--border-glow);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            color: var(--text-bright);
+            animation: pulse-glow 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.5);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 180, 255, 0.5), inset 0 0 10px rgba(0, 180, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(136, 85, 255, 0.8), inset 0 0 15px rgba(136, 85, 255, 0.5);
+            }
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--hud-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 180, 255, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-normal);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 8px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-links a:hover {
+            color: var(--hud-cyan);
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.3);
+        }
+
+        .nav-links a:hover::before {
+            left: 100%;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Panel Base - Cockpit Style */
+        .panel {
+            background: var(--bg-panel);
+            border-radius: 8px;
+            border: 1px solid var(--border-glow);
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(0, 180, 255, 0.05), transparent);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--hud-cyan);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: var(--hud-cyan);
+            box-shadow: 0 0 8px var(--hud-cyan);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        .panel-content {
+            padding: 18px;
+        }
+
+        /* DEFCON Display - Military HUD */
+        .defcon-container {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .defcon-circle {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            margin: 0 auto 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.6s ease;
+            background: var(--bg-deep);
+        }
+
+        .defcon-circle::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 3px solid currentColor;
+            opacity: 0.4;
+            animation: defcon-pulse 2.5s ease-in-out infinite;
+        }
+
+        .defcon-circle::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            opacity: 0.2;
+            animation: defcon-pulse 2.5s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes defcon-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.15); opacity: 0.1; }
+        }
+
+        .defcon-1 {
+            color: var(--defcon-1);
+            border: 4px solid var(--defcon-1);
+            box-shadow: 0 0 30px rgba(255, 51, 85, 0.6), inset 0 0 20px rgba(255, 51, 85, 0.2);
+        }
+        .defcon-2 {
+            color: var(--defcon-2);
+            border: 4px solid var(--defcon-2);
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.6), inset 0 0 20px rgba(255, 170, 0, 0.2);
+        }
+        .defcon-3 {
+            color: var(--defcon-3);
+            border: 4px solid var(--defcon-3);
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.6), inset 0 0 20px rgba(255, 204, 0, 0.2);
+        }
+        .defcon-4 {
+            color: var(--defcon-4);
+            border: 4px solid var(--defcon-4);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.6), inset 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+        .defcon-5 {
+            color: var(--defcon-5);
+            border: 4px solid var(--defcon-5);
+            box-shadow: 0 0 30px rgba(0, 180, 255, 0.6), inset 0 0 20px rgba(0, 180, 255, 0.2);
+        }
+
+        .defcon-level {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 64px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .defcon-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 8px;
+            opacity: 0.8;
+        }
+
+        .defcon-status {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        /* Score Bar - HUD Style */
+        .score-section {
+            margin-top: 25px;
+        }
+
+        .score-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            color: var(--text-normal);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .score-bar {
+            height: 10px;
+            background: var(--bg-deep);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease, background 0.6s ease;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        /* Mod Buttons - Tactical */
+        .mod-section {
+            margin-top: 25px;
+        }
+
+        .mod-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .mod-btn {
+            padding: 12px 10px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mod-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .mod-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .mod-btn.normal {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            border: 2px solid var(--hud-green);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        .mod-btn.sessiz {
+            background: rgba(255, 204, 0, 0.15);
+            color: var(--hud-amber);
+            border: 2px solid var(--hud-amber);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        }
+        .mod-btn.hayalet {
+            background: rgba(136, 85, 255, 0.15);
+            color: var(--accent-purple);
+            border: 2px solid var(--accent-purple);
+            box-shadow: 0 0 10px rgba(136, 85, 255, 0.3);
+        }
+        .mod-btn.kapali {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            border: 2px solid var(--accent-danger);
+            box-shadow: 0 0 10px rgba(255, 51, 85, 0.3);
+        }
+
+        .mod-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .mod-btn.active {
+            transform: scale(0.95);
+        }
+
+        /* Center Panel - Threats & Decisions */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Threat List - Alert Style */
+        .threat-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--accent-warning);
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid var(--accent-warning);
+            transition: all 0.3s;
+        }
+
+        .threat-item:hover {
+            background: rgba(10, 20, 30, 1);
+            border-color: var(--border-glow);
+            box-shadow: 0 4px 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .threat-item.handled {
+            opacity: 0.5;
+            border-left-color: var(--hud-green);
+        }
+
+        .threat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: rgba(255, 170, 0, 0.2);
+            border: 1px solid var(--accent-warning);
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+        }
+
+        .threat-info {
+            flex: 1;
+        }
+
+        .threat-type {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+
+        .threat-source {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .threat-score {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--accent-warning);
+            text-shadow: 0 0 10px var(--accent-warning);
+        }
+
+        /* Decision List - Command Style */
+        .decision-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s;
+        }
+
+        .decision-item:hover {
+            background: rgba(10, 20, 30, 1);
+            border-color: var(--border-glow);
+            box-shadow: 0 4px 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .decision-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: rgba(0, 180, 255, 0.2);
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 10px rgba(0, 180, 255, 0.3);
+        }
+
+        .decision-info {
+            flex: 1;
+        }
+
+        .decision-action {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+
+        .decision-time {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .decision-status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .decision-status.success {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--hud-green);
+            border: 1px solid var(--hud-green);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+        }
+        .decision-status.pending {
+            background: rgba(255, 204, 0, 0.2);
+            color: var(--hud-amber);
+            border: 1px solid var(--hud-amber);
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
+        }
+        .decision-status.failed {
+            background: rgba(255, 51, 85, 0.2);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            box-shadow: 0 0 8px rgba(255, 51, 85, 0.3);
+        }
+
+        /* Right Panel - Stats & Health */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 6px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--hud-cyan), transparent);
+            transition: left 0.5s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 4px 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--hud-cyan);
+            text-shadow: 0 0 15px var(--hud-cyan);
+        }
+
+        .stat-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 6px;
+        }
+
+        /* Health Indicator - System Status */
+        .health-section {
+            margin-top: 18px;
+        }
+
+        .health-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .health-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            animation: blink 1.2s ease-in-out infinite;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .health-dot.saglikli { background: var(--hud-green); color: var(--hud-green); }
+        .health-dot.yavasliyor { background: var(--hud-amber); color: var(--hud-amber); }
+        .health-dot.kritik { background: var(--accent-danger); color: var(--accent-danger); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .health-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-bright);
+        }
+
+        /* Command Input - Terminal Style */
+        .command-section {
+            margin-top: 18px;
+        }
+
+        .command-input {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-deep);
+            border: 2px solid var(--border-subtle);
+            border-radius: 6px;
+            color: var(--hud-cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .command-input:focus {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .command-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* Source Scores - Telemetry */
+        .source-scores {
+            margin-top: 18px;
+        }
+
+        .source-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .source-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: var(--text-normal);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .source-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--hud-cyan);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        /* Scrollbar - HUD Style */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+            box-shadow: 0 0 6px var(--accent-primary);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--hud-cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .main-container {
+                grid-template-columns: 300px 1fr 320px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .logo-text {
+                font-size: 18px;
+            }
+
+            .nav-links {
+                gap: 12px;
+            }
+
+            .nav-links a {
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">DB</div>
+            <span class="logo-text">TSUNAMI BEYIN</span>
+        </div>
+        <nav class="nav-links">
+            <a href="/harita">Harita</a>
+            <a href="/terminal">Terminal</a>
+            <a href="/logout">Cikis</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Panel - DEFCON & Mode -->
+        <aside class="panel">
+            <div class="panel-header">
+                <span class="panel-title">DEFCON Durumu</span>
+            </div>
+            <div class="defcon-container">
+                <div id="defcon-circle" class="defcon-circle defcon-5">
+                    <span id="defcon-level" class="defcon-level">5</span>
+                    <span class="defcon-label">DEFCON</span>
+                </div>
+                <div id="defcon-status" class="defcon-status">GUVENLI</div>
+
+                <div class="score-section">
+                    <div class="score-label">
+                        <span>Tehdit Skoru</span>
+                        <span id="threat-score">0.000</span>
+                    </div>
+                    <div class="score-bar">
+                        <div id="score-fill" class="score-fill" style="width: 0%; background: var(--defcon-5);"></div>
+                    </div>
+                </div>
+
+                <div class="mod-section">
+                    <div class="score-label">
+                        <span>Gizli Mod</span>
+                        <span id="current-mod">NORMAL</span>
+                    </div>
+                    <div class="mod-buttons">
+                        <button class="mod-btn normal" onclick="modDegistir('normal')">Normal</button>
+                        <button class="mod-btn sessiz" onclick="modDegistir('sessiz')">Sessiz</button>
+                        <button class="mod-btn hayalet" onclick="modDegistir('hayalet')">Hayalet</button>
+                        <button class="mod-btn kapali" onclick="modDegistir('kapali')">Kapali</button>
+                    </div>
+                </div>
+
+                <div class="source-scores">
+                    <div class="source-item">
+                        <span class="source-name">Firewall</span>
+                        <span id="score-firewall" class="source-value">0.00</span>
+                    </div>
+                    <div class="source-item">
+                        <span class="source-name">IDS</span>
+                        <span id="score-ids" class="source-value">0.00</span>
+                    </div>
+                    <div class="source-item">
+                        <span class="source-name">Network</span>
+                        <span id="score-network" class="source-value">0.00</span>
+                    </div>
+                    <div class="source-item">
+                        <span class="source-name">Kullanici</span>
+                        <span id="score-kullanici" class="source-value">0.00</span>
+                    </div>
+                    <div class="source-item">
+                        <span class="source-name">Sistem</span>
+                        <span id="score-sistem" class="source-value">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Panel - Threats & Decisions -->
+        <div class="center-panel">
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">
+                    <span class="panel-title">Aktif Tehditler</span>
+                    <span id="threat-count" style="color: var(--accent-warning); font-family: 'Orbitron', sans-serif; font-weight: 700;">0</span>
+                </div>
+                <div class="panel-content" id="threats-container" style="max-height: 300px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#x1F6E1;</div>
+                        <div>Aktif tehdit yok</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">
+                    <span class="panel-title">Otonom Kararlar</span>
+                    <span id="decision-count" style="color: var(--hud-cyan); font-family: 'Orbitron', sans-serif; font-weight: 700;">0</span>
+                </div>
+                <div class="panel-content" id="decisions-container" style="max-height: 300px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#x1F9E0;</div>
+                        <div>Henuz karar alinmadi</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Stats & Health -->
+        <aside class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Sistem Durumu</span>
+            </div>
+            <div class="panel-content">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div id="stat-aktif" class="stat-value">-</div>
+                        <div class="stat-label">Durum</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="stat-tehdit" class="stat-value">0</div>
+                        <div class="stat-label">Tehdit</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="stat-karar" class="stat-value">0</div>
+                        <div class="stat-label">Karar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="stat-hata" class="stat-value">0</div>
+                        <div class="stat-label">Hata</div>
+                    </div>
+                </div>
+
+                <div class="health-section">
+                    <div class="score-label"><span>Sistem Sagligi</span></div>
+                    <div class="health-status">
+                        <div id="health-dot" class="health-dot saglikli"></div>
+                        <span id="health-text" class="health-text">Saglikli</span>
+                    </div>
+                </div>
+
+                <div class="command-section">
+                    <div class="score-label"><span>Hizli Komut</span></div>
+                    <input type="text" class="command-input" id="command-input"
+                           placeholder="Komut girin (ornek: tehdit_simule)"
+                           onkeypress="if(event.key==='Enter') komutGonder()">
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="mod-btn normal" style="width: 100%; margin-bottom: 10px;" onclick="testTehdit()">
+                        Test Tehdidi Olustur
+                    </button>
+                    <button class="mod-btn sessiz" style="width: 100%;" onclick="durumYenile()">
+                        Durumu Yenile
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // Sesli Bildirim Sistemi - Web Speech API
+        function sesliUyari(mesaj) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(mesaj);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                const voices = speechSynthesis.getVoices();
+                const turkceVoice = voices.find(v => v.lang.startsWith('tr'));
+                if (turkceVoice) utterance.voice = turkceVoice;
+                speechSynthesis.speak(utterance);
+            }
+        }
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        }
+
+        const socket = io();
+        let durum = null;
+
+        // Sayfa yuklendiginde
+        document.addEventListener('DOMContentLoaded', () => {
+            durumYenile();
+            setInterval(durumYenile, 5000);
+        });
+
+        // WebSocket olaylari
+        socket.on('beyin_durum', (data) => {
+            durumGuncelle(data);
+        });
+
+        socket.on('beyin_alarm', (data) => {
+            console.log('Alarm:', data);
+            durumYenile();
+            if (data.tip === 'yuksek' || data.tip === 'kritik') {
+                sesliUyari('Dikkat! Yuksek seviye alarm');
+            } else {
+                sesliUyari('Alarm tespit edildi');
+            }
+        });
+
+        // Durum yenileme
+        async function durumYenile() {
+            try {
+                const [durumRes, tehditRes, kararRes] = await Promise.all([
+                    fetch('/api/beyin/durum'),
+                    fetch('/api/beyin/tehditler'),
+                    fetch('/api/beyin/kararlar')
+                ]);
+
+                const durumData = await durumRes.json();
+                const tehditData = await tehditRes.json();
+                const kararData = await kararRes.json();
+
+                durumGuncelle(durumData);
+                tehditlerGuncelle(tehditData.tehditler || []);
+                kararlarGuncelle(kararData.kararlar || []);
+            } catch (e) {
+                console.error('Durum yuklenemedi:', e);
+            }
+        }
+
+        // Durum guncelle
+        function durumGuncelle(data) {
+            if (!data) return;
+
+            const oncekiDefcon = durum ? (durum.defcon || {}).defcon_numara : null;
+            durum = data;
+
+            const defcon = data.defcon || {};
+            const gizli = data.gizli_mod || {};
+            const saglik = data.saglik || {};
+
+            // DEFCON
+            const defconNum = defcon.defcon_numara || 5;
+            const defconCircle = document.getElementById('defcon-circle');
+            defconCircle.className = `defcon-circle defcon-${defconNum}`;
+            document.getElementById('defcon-level').textContent = defconNum;
+            document.getElementById('defcon-status').textContent = defcon.defcon || 'GUVENLI';
+
+            // DEFCON degistiginde sesli uyari
+            if (oncekiDefcon !== null && oncekiDefcon !== defconNum) {
+                if (defconNum <= 2) {
+                    sesliUyari('Dikkat! DEFCON seviyesi ' + defconNum);
+                } else if (defconNum === 3) {
+                    sesliUyari('Uyari! DEFCON seviyesi 3');
+                }
+            }
+
+            // Skor
+            const skor = defcon.toplam_skor || 0;
+            document.getElementById('threat-score').textContent = skor.toFixed(3);
+            document.getElementById('score-fill').style.width = `${skor * 100}%`;
+            document.getElementById('score-fill').style.background = getDefconColor(defconNum);
+
+            // Kaynak skorlari
+            const skorlar = defcon.kaynak_skorlari || {};
+            document.getElementById('score-firewall').textContent = (skorlar.firewall || 0).toFixed(2);
+            document.getElementById('score-ids').textContent = (skorlar.ids || 0).toFixed(2);
+            document.getElementById('score-network').textContent = (skorlar.network || 0).toFixed(2);
+            document.getElementById('score-kullanici').textContent = (skorlar.kullanici || 0).toFixed(2);
+            document.getElementById('score-sistem').textContent = (skorlar.sistem || 0).toFixed(2);
+
+            // Gizli mod
+            document.getElementById('current-mod').textContent = (gizli.mevcut_mod || 'normal').toUpperCase();
+
+            // Saglik
+            const saglikDurum = saglik.durum || 'saglikli';
+            document.getElementById('health-dot').className = `health-dot ${saglikDurum}`;
+            document.getElementById('health-text').textContent = saglikDurum.charAt(0).toUpperCase() + saglikDurum.slice(1);
+
+            // Istatistikler
+            document.getElementById('stat-aktif').textContent = data.aktif ? 'AKTIF' : 'PASIF';
+            document.getElementById('stat-tehdit').textContent = defcon.aktif_tehdit_sayisi || 0;
+            document.getElementById('stat-karar').textContent = (data.son_kararlar || []).length;
+            document.getElementById('stat-hata').textContent = saglik.hata_sayisi || 0;
+        }
+
+        // Tehditler guncelle
+        function tehditlerGuncelle(tehditler) {
+            const container = document.getElementById('threats-container');
+            const oncekiSayi = parseInt(document.getElementById('threat-count').textContent) || 0;
+            document.getElementById('threat-count').textContent = tehditler.length;
+
+            // Yeni tehdit tespit edildiginde sesli uyari
+            if (tehditler.length > oncekiSayi && oncekiSayi > 0) {
+                const yeniTehditSayisi = tehditler.length - oncekiSayi;
+                sesliUyari('Dikkat! ' + yeniTehditSayisi + ' yeni tehdit tespit edildi');
+            }
+
+            if (!tehditler.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#x1F6E1;</div>
+                        <div>Aktif tehdit yok</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = tehditler.map(t => `
+                <div class="threat-item ${t.islendi ? 'handled' : ''}">
+                    <div class="threat-icon">&#x26A0;</div>
+                    <div class="threat-info">
+                        <div class="threat-type">${t.tip || 'Bilinmeyen'}</div>
+                        <div class="threat-source">${t.kaynak} - ${t.id.substring(0, 8)}</div>
+                    </div>
+                    <div class="threat-score">${(t.skor || 0).toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Kararlar guncelle
+        function kararlarGuncelle(kararlar) {
+            const container = document.getElementById('decisions-container');
+            document.getElementById('decision-count').textContent = kararlar.length;
+
+            if (!kararlar.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#x1F9E0;</div>
+                        <div>Henuz karar alinmadi</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = kararlar.map(k => `
+                <div class="decision-item">
+                    <div class="decision-icon">&#x1F916;</div>
+                    <div class="decision-info">
+                        <div class="decision-action">${k.aksiyon || 'Bilinmeyen'}</div>
+                        <div class="decision-time">${formatZaman(k.zaman)}</div>
+                    </div>
+                    <div class="decision-status ${k.yurutuldu ? 'success' : 'pending'}">
+                        ${k.yurutuldu ? 'Yurutuldu' : 'Bekliyor'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mod degistir
+        async function modDegistir(mod) {
+            try {
+                const res = await fetch('/api/beyin/mod', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mod: mod, sebep: 'arayuz'})
+                });
+                const data = await res.json();
+                if (data.basarili) {
+                    durumYenile();
+                }
+            } catch (e) {
+                console.error('Mod degistirilemedi:', e);
+            }
+        }
+
+        // Test tehdidi olustur
+        async function testTehdit() {
+            try {
+                const res = await fetch('/api/beyin/komut', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        komut: 'tehdit_simule',
+                        parametre: {
+                            kaynak: 'test',
+                            skor: 0.6 + Math.random() * 0.3,
+                            tip: ['brute_force', 'ddos', 'intrusion', 'anomaly'][Math.floor(Math.random() * 4)],
+                            ip: '192.168.1.' + Math.floor(Math.random() * 254 + 1)
+                        }
+                    })
+                });
+                durumYenile();
+            } catch (e) {
+                console.error('Test tehdidi olusturulamadi:', e);
+            }
+        }
+
+        // Komut gonder
+        async function komutGonder() {
+            const input = document.getElementById('command-input');
+            const komut = input.value.trim();
+            if (!komut) return;
+
+            try {
+                const res = await fetch('/api/beyin/komut', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({komut: komut})
+                });
+                const data = await res.json();
+                console.log('Komut sonucu:', data);
+                input.value = '';
+                durumYenile();
+            } catch (e) {
+                console.error('Komut gonderilemedi:', e);
+            }
+        }
+
+        // Yardimci fonksiyonlar
+        function getDefconColor(num) {
+            const colors = {
+                1: 'var(--defcon-1)',
+                2: 'var(--defcon-2)',
+                3: 'var(--defcon-3)',
+                4: 'var(--defcon-4)',
+                5: 'var(--defcon-5)'
+            };
+            return colors[num] || colors[5];
+        }
+
+        function formatZaman(zaman) {
+            if (!zaman) return '-';
+            const d = new Date(zaman);
+            return d.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        }
+    </script>
+    <script src="/static/theme-switcher.js"></script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

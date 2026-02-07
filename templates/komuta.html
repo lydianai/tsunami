@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="cyan">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUNAMI - Siber Komuta Merkezi</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/themes.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root, [data-theme="cyan"] {
+            --bg-void: #020408;
+            --bg-deep: #040810;
+            --bg-panel: rgba(8, 16, 24, 0.85);
+            --bg-glass: rgba(12, 24, 36, 0.6);
+            --bg-card: rgba(10, 20, 30, 0.9);
+            --border-glow: rgba(0, 180, 255, 0.3);
+            --border-subtle: rgba(0, 120, 180, 0.15);
+            --text-bright: #e8f4ff;
+            --text-normal: #a0c0d8;
+            --text-dim: #506070;
+            --accent-primary: #00b4ff;
+            --accent-secondary: #00ff9d;
+            --accent-warning: #ffaa00;
+            --accent-danger: #ff3355;
+            --accent-purple: #8855ff;
+            --hud-green: #00ff88;
+            --hud-cyan: #00e5ff;
+            --hud-amber: #ffcc00;
+        }
+        /* F-35 KOKPIT TEMASI - SIYAH BEYAZ NEON */
+        [data-theme="cockpit-bw"] {
+            --bg-void: #000000;
+            --bg-deep: #050505;
+            --bg-panel: rgba(5, 5, 5, 0.98);
+            --bg-glass: rgba(10, 10, 10, 0.9);
+            --bg-card: rgba(8, 8, 8, 0.98);
+            --border-glow: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.15);
+            --text-bright: #ffffff;
+            --text-normal: #e0e0e0;
+            --text-dim: #888888;
+            --accent-primary: #ffffff;
+            --accent-secondary: #e0e0e0;
+            --accent-warning: #ffdd00;
+            --accent-danger: #ff2222;
+            --accent-purple: #cccccc;
+            --hud-green: #00ff00;
+            --hud-cyan: #ffffff;
+            --hud-amber: #ffdd00;
+        }
+        [data-theme="cockpit-bw"] .command-header { background: rgba(0,0,0,0.98) !important; border-color: rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .logo h1 { color: #fff !important; text-shadow: 0 0 15px rgba(255,255,255,0.5) !important; }
+        [data-theme="cockpit-bw"] button { border-color: rgba(255,255,255,0.3) !important; color: #fff !important; }
+        [data-theme="cockpit-bw"] button:hover { box-shadow: 0 0 15px rgba(255,255,255,0.3) !important; }
+        [data-theme="cockpit-bw"] .card { border-color: rgba(255,255,255,0.2) !important; }
+        [data-theme="cockpit-bw"] .nav-item:hover, [data-theme="cockpit-bw"] .nav-item.active { background: rgba(255,255,255,0.1) !important; }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(180deg, var(--bg-void) 0%, var(--bg-deep) 100%);
+            color: var(--text-normal);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(0, 180, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(136, 85, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Header - Tactical HUD Style */
+        .command-header {
+            background: var(--bg-panel);
+            border-bottom: 2px solid var(--border-glow);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0, 180, 255, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .command-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.4);
+            border: 1px solid var(--border-glow);
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        .logo-text h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-bright);
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        .logo-text span {
+            font-size: 9px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header-status {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-normal);
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-dot.active {
+            background: var(--hud-green);
+            box-shadow: 0 0 12px var(--hud-green);
+        }
+        .status-dot.inactive {
+            background: var(--accent-danger);
+            box-shadow: 0 0 12px var(--accent-danger);
+        }
+        .status-dot.warning {
+            background: var(--accent-warning);
+            box-shadow: 0 0 12px var(--accent-warning);
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.15); }
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            background: rgba(0, 180, 255, 0.15);
+            color: var(--accent-primary);
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            background: rgba(0, 180, 255, 0.2);
+            border-color: var(--accent-primary);
+            color: var(--text-bright);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+        }
+
+        .nav-tab.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-primary);
+        }
+
+        /* Main Grid - Cockpit Layout */
+        .command-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            padding: 15px;
+            height: calc(100vh - 70px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Cards - Tactical Panels */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+        }
+
+        .card-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 180, 255, 0.05);
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 8px rgba(0, 180, 255, 0.3);
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        /* Stats Panel - HUD Display */
+        .stats-panel {
+            grid-row: span 2;
+        }
+
+        .stat-item {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+            background: linear-gradient(90deg, rgba(0, 180, 255, 0.02) 0%, transparent 100%);
+            transition: all 0.3s;
+        }
+
+        .stat-item:hover {
+            background: rgba(0, 180, 255, 0.05);
+            border-left: 3px solid var(--accent-primary);
+            padding-left: 13px;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 15px currentColor;
+            line-height: 1;
+        }
+
+        .stat-value.cyan { color: var(--hud-cyan); }
+        .stat-value.green { color: var(--hud-green); }
+        .stat-value.red { color: var(--accent-danger); }
+        .stat-value.orange { color: var(--accent-warning); }
+        .stat-value.purple { color: var(--accent-purple); }
+
+        .stat-change {
+            font-size: 10px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .stat-change.up {
+            color: var(--hud-green);
+            text-shadow: 0 0 8px var(--hud-green);
+        }
+        .stat-change.down {
+            color: var(--accent-danger);
+            text-shadow: 0 0 8px var(--accent-danger);
+        }
+
+        /* Map Panel - Tactical Display */
+        .map-panel {
+            grid-column: 2;
+            grid-row: span 2;
+            position: relative;
+        }
+
+        .map-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid var(--border-glow);
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 6px;
+        }
+
+        #threat-map {
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+            filter: saturate(1.2) contrast(1.1);
+        }
+
+        /* Activity Panel - Mission Log */
+        .activity-panel {
+            grid-row: span 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .activity-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background: var(--bg-glass);
+            border-left: 3px solid var(--accent-primary);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--accent-primary);
+            transition: all 0.3s;
+        }
+
+        .activity-item:hover {
+            background: rgba(0, 180, 255, 0.1);
+            border-left-color: var(--text-bright);
+            transform: translateX(4px);
+        }
+
+        .activity-item.kritik {
+            border-left-color: var(--accent-danger);
+            background: rgba(255, 51, 85, 0.08);
+            box-shadow: 0 0 15px rgba(255, 51, 85, 0.2);
+        }
+        .activity-item.yuksek {
+            border-left-color: var(--accent-warning);
+            background: rgba(255, 170, 0, 0.08);
+        }
+        .activity-item.orta {
+            border-left-color: var(--hud-amber);
+            background: rgba(255, 204, 0, 0.05);
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            border: 1px solid currentColor;
+        }
+
+        .activity-icon.wifi {
+            background: rgba(0, 229, 255, 0.15);
+            color: var(--hud-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        .activity-icon.bt {
+            background: rgba(136, 85, 255, 0.15);
+            color: var(--accent-purple);
+            box-shadow: 0 0 15px rgba(136, 85, 255, 0.3);
+        }
+        .activity-icon.alert {
+            background: rgba(255, 51, 85, 0.15);
+            color: var(--accent-danger);
+            box-shadow: 0 0 15px rgba(255, 51, 85, 0.3);
+        }
+        .activity-icon.vpn {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--hud-green);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        .activity-icon.scan {
+            background: rgba(0, 180, 255, 0.15);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.3);
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+
+        .activity-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-time {
+            font-size: 9px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge {
+            background: var(--accent-danger);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 0 0 12px var(--accent-danger);
+        }
+
+        /* VPN Panel - Secure Connection Display */
+        .vpn-panel {
+            background: linear-gradient(135deg, rgba(0, 255, 157, 0.08), transparent);
+            margin-top: 15px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 15px;
+        }
+
+        .vpn-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .vpn-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+        .vpn-icon.connected {
+            background: rgba(0, 255, 136, 0.15);
+            border: 2px solid var(--hud-green);
+            color: var(--hud-green);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+            animation: pulse-vpn 2s infinite;
+        }
+
+        .vpn-icon.disconnected {
+            background: rgba(255, 51, 85, 0.15);
+            border: 2px solid var(--accent-danger);
+            color: var(--accent-danger);
+            box-shadow: 0 0 25px rgba(255, 51, 85, 0.4);
+        }
+
+        @keyframes pulse-vpn {
+            0%, 100% { box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+        }
+
+        .vpn-info h3 {
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: var(--text-bright);
+            font-weight: 700;
+        }
+
+        .vpn-info p {
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .vpn-actions {
+            display: flex;
+            gap: 10px;
+            padding: 0 15px 15px;
+        }
+
+        /* Buttons - Tactical Controls */
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #0066cc);
+            color: #fff;
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 4px 15px rgba(0, 180, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 25px rgba(0, 180, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-danger), #cc0033);
+            color: #fff;
+            border: 1px solid rgba(255, 51, 85, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 51, 85, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 25px rgba(255, 51, 85, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            color: var(--text-dim);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 180, 255, 0.1);
+            color: var(--accent-primary);
+            border-color: var(--border-glow);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 10px;
+        }
+
+        /* Quick Actions - Mission Controls */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .quick-btn {
+            padding: 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 180, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .quick-btn:hover::before {
+            left: 100%;
+        }
+
+        .quick-btn:hover {
+            background: rgba(0, 180, 255, 0.15);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .quick-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: var(--accent-primary);
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 8px var(--accent-primary));
+        }
+
+        .quick-btn span {
+            display: block;
+            font-size: 10px;
+            color: var(--text-normal);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tools Grid - Active Systems */
+        .tools-mini {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 10px;
+        }
+
+        .tool-chip {
+            padding: 5px 10px;
+            background: rgba(0, 180, 255, 0.1);
+            border: 1px solid var(--border-glow);
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+
+        .tool-chip:hover {
+            background: rgba(0, 180, 255, 0.2);
+            box-shadow: 0 0 12px rgba(0, 180, 255, 0.3);
+        }
+
+        .tool-chip.inactive {
+            background: rgba(80, 96, 112, 0.1);
+            border-color: var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        /* Terminal - Command Interface */
+        .terminal {
+            background: var(--bg-void);
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid var(--border-subtle);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-line {
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .terminal-line .prompt {
+            color: var(--hud-green);
+            text-shadow: 0 0 8px var(--hud-green);
+            font-weight: 700;
+        }
+
+        .terminal-line .cmd {
+            color: var(--text-bright);
+        }
+
+        .terminal-line .output {
+            color: var(--text-dim);
+        }
+
+        #cmd-input {
+            flex: 1;
+            padding: 10px;
+            background: var(--bg-void);
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            color: var(--text-bright);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        #cmd-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 180, 255, 0.3);
+        }
+
+        #cmd-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* Scrollbar - Custom HUD Style */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .command-grid {
+                grid-template-columns: 280px 1fr 340px;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .command-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+            .stats-panel, .activity-panel {
+                grid-row: auto;
+            }
+            .map-panel {
+                grid-column: 1;
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="command-header">
+        <div class="logo-section">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <div class="logo-text">
+                <h1>TSUNAMI</h1>
+                <span>Siber Komuta Merkezi v3.0</span>
+            </div>
+        </div>
+
+        <div class="header-status">
+            <div class="status-item">
+                <span class="status-dot" id="vpn-dot"></span>
+                <span id="vpn-status-text">VPN</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="shodan-dot"></span>
+                <span>Shodan</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="opencell-dot"></span>
+                <span>OpenCellID</span>
+            </div>
+        </div>
+
+        <nav class="nav-tabs">
+            <a href="/panel" class="nav-tab">Panel</a>
+            <a href="/komuta" class="nav-tab active">Komuta</a>
+            <a href="/harita" class="nav-tab">Harita</a>
+            <a href="/osint" class="nav-tab">OSINT</a>
+            <a href="/araclar" class="nav-tab">Araclar</a>
+            <a href="/raporlar" class="nav-tab">Raporlar</a>
+            <a href="/cikis" class="nav-tab">Cikis</a>
+        </nav>
+    </header>
+
+    <div class="command-grid">
+        <!-- Sol Panel: Istatistikler -->
+        <div class="card stats-panel">
+            <div class="card-header">
+                <span class="card-title">Sistem Durumu</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">WiFi Aglari</div>
+                <div class="stat-value cyan" id="stat-wifi">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Bluetooth Cihazlar</div>
+                <div class="stat-value purple" id="stat-bt">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Baz Istasyonlari</div>
+                <div class="stat-value green" id="stat-baz">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">IoT Cihazlar</div>
+                <div class="stat-value orange" id="stat-iot">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Zafiyetler</div>
+                <div class="stat-value red" id="stat-vuln">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Yuklu Araclar</div>
+                <div class="stat-value" id="stat-tools">0%</div>
+            </div>
+
+            <!-- VPN Panel -->
+            <div class="vpn-panel">
+                <div class="vpn-status">
+                    <div class="vpn-icon" id="vpn-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                    </div>
+                    <div class="vpn-info">
+                        <h3 id="vpn-title">Mullvad VPN</h3>
+                        <p id="vpn-detail">Durum kontrol ediliyor...</p>
+                    </div>
+                </div>
+                <div class="vpn-actions">
+                    <button class="btn btn-primary btn-sm" id="btn-vpn-connect">Baglan</button>
+                    <button class="btn btn-danger btn-sm" id="btn-vpn-disconnect">Kes</button>
+                </div>
+            </div>
+
+            <!-- Hizli Islemler -->
+            <div class="quick-actions">
+                <div class="quick-btn" onclick="wifiTara()">
+                    <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                    <span>WiFi Tara</span>
+                </div>
+                <div class="quick-btn" onclick="btTara()">
+                    <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29z"/></svg>
+                    <span>Bluetooth Tara</span>
+                </div>
+                <div class="quick-btn" onclick="shodanTara()">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    <span>Shodan Ara</span>
+                </div>
+                <div class="quick-btn" onclick="zafiyetTara()">
+                    <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                    <span>Zafiyet Tara</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orta: Tehdit Haritasi -->
+        <div class="card map-panel">
+            <div class="card-header">
+                <span class="card-title">Tehdit Haritasi</span>
+                <button class="btn btn-sm btn-secondary" onclick="haritaYenile()">Yenile</button>
+            </div>
+            <div id="threat-map"></div>
+        </div>
+
+        <!-- Sag Panel: Aktivite -->
+        <div class="card activity-panel">
+            <div class="card-header">
+                <span class="card-title">Canli Aktivite</span>
+                <span class="badge" id="alarm-count">0</span>
+            </div>
+            <div class="activity-list" id="activity-list">
+                <!-- Aktiviteler buraya yuklenir -->
+            </div>
+
+            <!-- Terminal -->
+            <div style="padding: 15px; border-top: 1px solid var(--border-subtle);">
+                <div class="card-title" style="margin-bottom: 10px;">Komut Terminali</div>
+                <div class="terminal" id="terminal">
+                    <div class="terminal-line">
+                        <span class="prompt">tsunami@komuta:~$</span>
+                        <span class="output"> Sistem baslatildi</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="cmd-input" placeholder="Komut girin...">
+                    <button class="btn btn-primary btn-sm" onclick="komutCalistir()">Calistir</button>
+                </div>
+            </div>
+
+            <!-- Aktif Araclar -->
+            <div style="padding: 15px; border-top: 1px solid var(--border-subtle);">
+                <div class="card-title" style="margin-bottom: 10px;">Aktif Araclar</div>
+                <div class="tools-mini" id="tools-mini">
+                    <!-- Araclar yuklenir -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let map = null;
+        let markers = [];
+
+        // Harita baslat
+        function initMap() {
+            map = L.map('threat-map').setView([39.9334, 32.8597], 6); // Turkiye
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: 'TSUNAMI',
+                maxZoom: 19
+            }).addTo(map);
+        }
+
+        // Genel durum yukle
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/komuta/genel-durum');
+                const data = await response.json();
+
+                // Istatistikler
+                document.getElementById('stat-wifi').textContent = data.istatistikler?.wifi || 0;
+                document.getElementById('stat-bt').textContent = data.istatistikler?.bluetooth || 0;
+                document.getElementById('stat-baz').textContent = data.istatistikler?.baz || 0;
+                document.getElementById('stat-iot').textContent = data.istatistikler?.iot || 0;
+                document.getElementById('stat-vuln').textContent = data.istatistikler?.zafiyet || 0;
+                document.getElementById('stat-tools').textContent = (data.araclar?.yuzde || 0) + '%';
+
+                // VPN durumu
+                updateVPNStatus(data.vpn);
+
+                // API durumu
+                document.getElementById('shodan-dot').className = 'status-dot ' + (data.api_durumu?.shodan ? 'active' : 'inactive');
+                document.getElementById('opencell-dot').className = 'status-dot ' + (data.api_durumu?.opencellid ? 'active' : 'inactive');
+
+                // Alarm sayisi
+                document.getElementById('alarm-count').textContent = data.okunmamis_alarm || 0;
+
+            } catch (e) {
+                console.error('Durum yuklenemedi:', e);
+            }
+        }
+
+        // VPN durumu guncelle
+        function updateVPNStatus(vpn) {
+            const dot = document.getElementById('vpn-dot');
+            const icon = document.getElementById('vpn-icon');
+            const title = document.getElementById('vpn-title');
+            const detail = document.getElementById('vpn-detail');
+
+            if (vpn?.aktif) {
+                dot.className = 'status-dot active';
+                icon.className = 'vpn-icon connected';
+                title.textContent = 'Mullvad VPN - Bagli';
+                detail.textContent = vpn.sunucu || 'Guvenli baglanti';
+                document.getElementById('vpn-status-text').textContent = 'VPN Aktif';
+            } else {
+                dot.className = 'status-dot inactive';
+                icon.className = 'vpn-icon disconnected';
+                title.textContent = 'Mullvad VPN';
+                detail.textContent = vpn?.durum === 'kurulu_degil' ? 'Kurulu degil' : 'Bagli degil';
+                document.getElementById('vpn-status-text').textContent = 'VPN Kapali';
+            }
+        }
+
+        // Tehdit haritasi yukle
+        async function loadThreatMap() {
+            try {
+                const response = await fetch('/api/komuta/tehdit-haritasi');
+                const data = await response.json();
+
+                // Onceki isaretleri temizle
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+
+                // WiFi aglari
+                (data.wifi || []).forEach(w => {
+                    if (w.enlem && w.boylam) {
+                        const marker = L.circleMarker([w.enlem, w.boylam], {
+                            radius: 6,
+                            fillColor: '#00e5ff',
+                            color: '#00e5ff',
+                            weight: 1,
+                            opacity: 0.8,
+                            fillOpacity: 0.5
+                        }).addTo(map);
+                        marker.bindPopup(`<b>${w.ssid || 'Gizli'}</b><br>Kanal: ${w.kanal}<br>Guvenlik: ${w.sifreleme}`);
+                        markers.push(marker);
+                    }
+                });
+
+                // Baz istasyonlari
+                (data.baz_istasyonlari || []).forEach(b => {
+                    if (b.enlem && b.boylam) {
+                        const marker = L.circleMarker([b.enlem, b.boylam], {
+                            radius: 10,
+                            fillColor: '#00ff88',
+                            color: '#00ff88',
+                            weight: 2,
+                            opacity: 0.8,
+                            fillOpacity: 0.3
+                        }).addTo(map);
+                        marker.bindPopup(`<b>Baz Istasyonu</b><br>Cell ID: ${b.cell_id}<br>Operator: ${b.operator || '-'}`);
+                        markers.push(marker);
+                    }
+                });
+
+                // IoT cihazlar
+                (data.iot || []).forEach(i => {
+                    if (i.enlem && i.boylam) {
+                        const marker = L.circleMarker([i.enlem, i.boylam], {
+                            radius: 5,
+                            fillColor: '#ffaa00',
+                            color: '#ffaa00',
+                            weight: 1,
+                            opacity: 0.8,
+                            fillOpacity: 0.5
+                        }).addTo(map);
+                        marker.bindPopup(`<b>IoT Cihaz</b><br>IP: ${i.ip}<br>Port: ${i.port}`);
+                        markers.push(marker);
+                    }
+                });
+
+                // Kritik hedefler
+                (data.kritik_hedefler || []).forEach(k => {
+                    addActivity('alert', k.hedef, `${k.zafiyet} - ${k.ciddiyet}`, 'kritik');
+                });
+
+            } catch (e) {
+                console.error('Harita yuklenemedi:', e);
+            }
+        }
+
+        // Aktivite ekle
+        function addActivity(type, title, desc, severity = 'orta') {
+            const list = document.getElementById('activity-list');
+            const item = document.createElement('div');
+            item.className = `activity-item ${severity}`;
+            item.innerHTML = `
+                <div class="activity-icon ${type}">${getIcon(type)}</div>
+                <div class="activity-content">
+                    <div class="activity-title">${title}</div>
+                    <div class="activity-desc">${desc}</div>
+                </div>
+                <div class="activity-time">${new Date().toLocaleTimeString()}</div>
+            `;
+            list.insertBefore(item, list.firstChild);
+
+            // Max 50 aktivite
+            while (list.children.length > 50) {
+                list.removeChild(list.lastChild);
+            }
+        }
+
+        function getIcon(type) {
+            const icons = {
+                'wifi': 'W',
+                'bt': 'B',
+                'alert': '!',
+                'vpn': 'V',
+                'scan': 'S'
+            };
+            return icons[type] || '?';
+        }
+
+        // Araclari yukle
+        async function loadTools() {
+            try {
+                const response = await fetch('/api/yerel/araclar');
+                const data = await response.json();
+
+                const container = document.getElementById('tools-mini');
+                let html = '';
+
+                // Her kategoriden birkac arac goster
+                for (const [kat, info] of Object.entries(data.kategoriler || {})) {
+                    info.araclar.slice(0, 3).forEach(arac => {
+                        const cls = arac.yuklu ? '' : 'inactive';
+                        html += `<span class="tool-chip ${cls}">${arac.ad}</span>`;
+                    });
+                }
+
+                container.innerHTML = html || 'Arac bulunamadi';
+            } catch (e) {
+                console.error('Araclar yuklenemedi:', e);
+            }
+        }
+
+        // Terminal
+        function terminalYaz(cmd, output) {
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML += `
+                <div class="terminal-line">
+                    <span class="prompt">tsunami@komuta:~$</span>
+                    <span class="cmd"> ${cmd}</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="output">${output}</span>
+                </div>
+            `;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        async function komutCalistir() {
+            const input = document.getElementById('cmd-input');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+
+            input.value = '';
+            terminalYaz(cmd, 'Calistiriliyor...');
+
+            // Basit komutlar
+            if (cmd === 'status' || cmd === 'durum') {
+                loadStatus();
+                terminalYaz('', 'Durum guncellendi');
+            } else if (cmd === 'wifi scan' || cmd === 'wifi tara') {
+                wifiTara();
+            } else if (cmd === 'bt scan' || cmd === 'bt tara') {
+                btTara();
+            } else if (cmd === 'vpn status' || cmd === 'vpn durum') {
+                const r = await fetch('/api/vpn/durum');
+                const d = await r.json();
+                terminalYaz('', `VPN: ${d.aktif ? 'Bagli' : 'Bagli degil'} - IP: ${d.ip_bilgi?.ip || 'Bilinmeyen'}`);
+            } else if (cmd === 'help' || cmd === 'yardim') {
+                terminalYaz('', 'Komutlar: status, wifi scan, bt scan, vpn status, shodan <ip>, osint <domain>');
+            } else if (cmd.startsWith('shodan ')) {
+                const ip = cmd.split(' ')[1];
+                const r = await fetch(`/api/shodan/host/${ip}`);
+                const d = await r.json();
+                terminalYaz('', d.hata || `${ip}: ${d.organizasyon || '-'}, Portlar: ${(d.portlar || []).join(', ')}`);
+            } else {
+                terminalYaz('', 'Bilinmeyen komut. "help" yazin.');
+            }
+        }
+
+        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') komutCalistir();
+        });
+
+        // Tarama fonksiyonlari
+        function wifiTara() {
+            addActivity('wifi', 'WiFi Tarama', 'Baslatildi', 'orta');
+            socket.emit('tarama_baslat', { tip: 'wifi' });
+        }
+
+        function btTara() {
+            addActivity('bt', 'Bluetooth Tarama', 'Baslatildi', 'orta');
+            socket.emit('tarama_baslat', { tip: 'bluetooth' });
+        }
+
+        async function shodanTara() {
+            addActivity('scan', 'Shodan Tarama', 'Konum bazli arama baslatildi', 'orta');
+            // Kullanici konumunu al
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const r = await fetch('/api/shodan/konum', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            enlem: pos.coords.latitude,
+                            boylam: pos.coords.longitude,
+                            radius: 10
+                        })
+                    });
+                    const d = await r.json();
+                    addActivity('scan', 'Shodan Sonuc', `${d.length || 0} cihaz bulundu`, 'orta');
+                    loadThreatMap();
+                });
+            }
+        }
+
+        function zafiyetTara() {
+            const hedef = prompt('Hedef IP veya domain:');
+            if (hedef) {
+                addActivity('alert', 'Zafiyet Tarama', hedef, 'yuksek');
+                socket.emit('zafiyet_tara', { hedef: hedef });
+            }
+        }
+
+        function haritaYenile() {
+            loadThreatMap();
+        }
+
+        // VPN kontrolleri
+        document.getElementById('btn-vpn-connect').addEventListener('click', async () => {
+            addActivity('vpn', 'VPN Baglantisi', 'Baglaniyor...', 'orta');
+            const r = await fetch('/api/vpn/baglan', { method: 'POST' });
+            const d = await r.json();
+            updateVPNStatus(d);
+            if (d.aktif) {
+                addActivity('vpn', 'VPN Baglandi', d.ip_bilgi?.ip || 'Guvenli', 'orta');
+            }
+        });
+
+        document.getElementById('btn-vpn-disconnect').addEventListener('click', async () => {
+            const r = await fetch('/api/vpn/kes', { method: 'POST' });
+            const d = await r.json();
+            updateVPNStatus(d);
+            addActivity('vpn', 'VPN Kesildi', 'Baglanti kapatildi', 'orta');
+        });
+
+        // Socket olaylari
+        socket.on('connect', () => {
+            addActivity('wifi', 'Sistem', 'WebSocket baglantisi kuruldu', 'orta');
+        });
+
+        socket.on('tarama_sonuc', (data) => {
+            addActivity(data.tip === 'wifi' ? 'wifi' : 'bt',
+                data.tip === 'wifi' ? 'WiFi Tarama' : 'Bluetooth Tarama',
+                `${data.sonuclar?.length || 0} cihaz bulundu`, 'orta');
+            loadStatus();
+            loadThreatMap();
+        });
+
+        socket.on('zafiyet_sonuc', (data) => {
+            addActivity('alert', 'Zafiyet Tarama',
+                `${data.sonuclar?.length || 0} zafiyet bulundu`, 'yuksek');
+            loadStatus();
+        });
+
+        // Sayfa yuklendiginde
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            loadStatus();
+            loadThreatMap();
+            loadTools();
+
+            // Periyodik guncelleme
+            setInterval(loadStatus, 30000);
+        });
+    </script>
+    <script src="/static/theme-system.js"></script>
+</body>
+</html>

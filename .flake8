@@ -1,0 +1,46 @@
+# TSUNAMI Flake8 Configuration
+# AILYDIAN AutoFix - Code Quality Enhancement
+
+[flake8]
+max-line-length = 120
+max-complexity = 15
+exclude =
+    .git,
+    .venv,
+    venv,
+    __pycache__,
+    osint_tools,
+    build,
+    dist,
+    *.egg-info,
+    migrations
+
+# Error codes to ignore
+ignore =
+    # Line too long (handled by black)
+    E501,
+    # Line break before binary operator
+    W503,
+    # Missing whitespace around operator
+    E225,
+    # Blank line at end of file
+    W391,
+    # Module level import not at top of file
+    E402,
+
+# Per-file ignores
+per-file-ignores =
+    # Allow unused imports in __init__.py
+    __init__.py: F401,F403
+    # Allow complex functions in main files
+    dalga_web.py: C901
+    dalga.py: C901
+    dalga_osint.py: C901
+
+# Statistics
+count = true
+show-source = true
+statistics = true
+
+# Output format
+format = default

@@ -1,0 +1,114 @@
+# Shannon AI Pentester - SSRF Response Playbook
+# Automatically triggered when Shannon detects Server-Side Request Forgery
+
+id: shannon_ssrf_response
+name: Shannon SSRF Response
+description: Automated response to SSRF vulnerabilities found by Shannon AI Pentester
+version: "1.0.0"
+author: TSUNAMI Security Team
+category: vulnerability_response
+severity: critical
+enabled: true
+
+triggers:
+  - type: shannon_finding
+    conditions:
+      vulnerability_type: ssrf
+      exploited: true
+
+variables:
+  internal_ranges: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"]
+  cloud_metadata_urls: ["169.254.169.254", "metadata.google.internal"]
+
+steps:
+  - id: log_ssrf
+    name: Log SSRF Detection
+    type: action
+    action: audit_log
+    params:
+      event: shannon_ssrf_detected
+      severity: critical
+      message: "SSRF vulnerability confirmed at {{ location }}"
+      alert_soc: true
+
+  - id: emergency_notify
+    name: Emergency Notification
+    type: action
+    action: send_notification
+    params:
+      channel: "#security-critical"
+      priority: critical
+      data:
+        title: "🚨 CRITICAL: SSRF Detected - Internal Network Exposure Risk"
+        message: "Shannon confirmed SSRF at {{ location }}. Immediate action required."
+
+  - id: block_internal_access
+    name: Block Internal Network Access
+    type: action
+    action: network_acl_update
+    params:
+      rule_type: deny_outbound
+      source_app: "{{ affected_application }}"
+      destinations: "{{ internal_ranges }}"
+      comment: "SSRF mitigation - Shannon {{ finding_id }}"
+    rollback_action: network_acl_remove
+
+  - id: block_cloud_metadata
+    name: Block Cloud Metadata Access
+    type: action
+    action: network_acl_update
+    params:
+      rule_type: deny_outbound
+      destinations: "{{ cloud_metadata_urls }}"
+      comment: "Prevent cloud credential theft"
+
+  - id: check_data_exfil
+    name: Check for Data Exfiltration
+    type: action
+    action: siem_query
+    params:
+      query: |
+        source={{ affected_application }}
+        dest_ip IN ({{ internal_ranges | join(',') }})
+        | stats count by dest_ip, dest_port
+      timerange: "-24h"
+
+  - id: evaluate_exposure
+    name: Evaluate Exposure
+    type: condition
+    condition: "{{ step_result.count > 0 }}"
+    on_success: escalate_incident
+    on_failure: standard_remediation
+
+  - id: escalate_incident
+    name: Escalate to Incident Response
+    type: action
+    action: escalate_incident
+    params:
+      incident_id: "{{ incident_id }}"
+      severity: critical
+      reason: "SSRF with confirmed internal access - potential data exfiltration"
+      assign_to: incident-response-team
+
+  - id: standard_remediation
+    name: Standard Remediation
+    type: action
+    action: create_ticket
+    params:
+      priority: Critical
+      title: "[SHANNON] SSRF - {{ location }}"
+      description: |
+        ## SSRF Vulnerability (Verified)
+        Shannon AI confirmed SSRF allowing access to internal resources.
+
+        ## Immediate Actions Taken
+        - Blocked internal network access from affected app
+        - Blocked cloud metadata endpoints
+
+        ## Required Remediation
+        1. Implement URL allowlist validation
+        2. Block private IP ranges at application level
+        3. Use separate network segment for external requests
+
+metadata:
+  tags: [shannon, ssrf, critical, network-exposure]
