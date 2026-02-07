@@ -92,13 +92,13 @@ class TestPasswordManager:
         """Test rejection of passwords without uppercase"""
         valid, errors = password_manager.validate_password('weakpassword123!')
         assert valid is False
-        assert any('buyuk' in e.lower() or 'uppercase' in e.lower() for e in errors)
+        assert any('büyük' in e.lower() or 'buyuk' in e.lower() or 'uppercase' in e.lower() for e in errors)
 
     def test_validate_weak_password_no_lowercase(self, password_manager):
         """Test rejection of passwords without lowercase"""
         valid, errors = password_manager.validate_password('WEAKPASSWORD123!')
         assert valid is False
-        assert any('kucuk' in e.lower() or 'lowercase' in e.lower() for e in errors)
+        assert any('küçük' in e.lower() or 'kucuk' in e.lower() or 'lowercase' in e.lower() for e in errors)
 
     def test_validate_weak_password_no_numbers(self, password_manager):
         """Test rejection of passwords without numbers"""
@@ -110,7 +110,7 @@ class TestPasswordManager:
         """Test rejection of passwords without special characters"""
         valid, errors = password_manager.validate_password('WeakPassword123')
         assert valid is False
-        assert any('ozel' in e.lower() or 'special' in e.lower() for e in errors)
+        assert any('özel' in e.lower() or 'ozel' in e.lower() or 'special' in e.lower() for e in errors)
 
     def test_validate_common_passwords(self, password_manager, sample_weak_passwords):
         """Test rejection of common passwords"""
