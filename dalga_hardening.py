@@ -471,8 +471,9 @@ class SecureSessionManager:
     def init_app(self, app: Flask):
         """Session güvenliğini yapılandır"""
         # Session config
+        is_production = os.environ.get('FLASK_ENV') == 'production'
         app.config.update(
-            SESSION_COOKIE_SECURE=True,  # HTTPS only
+            SESSION_COOKIE_SECURE=is_production,  # HTTPS only in production
             SESSION_COOKIE_HTTPONLY=True,  # No JS access
             SESSION_COOKIE_SAMESITE='Lax',  # CSRF protection
             PERMANENT_SESSION_LIFETIME=timedelta(hours=8),  # 8 saat
