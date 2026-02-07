@@ -86,38 +86,36 @@ def login(validated_data):
     username = validated_data.kullanici
     password = validated_data.sifre
 
-    # Gerçek veritabanı kontrolü - dalga_web.py ile tutarlı
+    # Gercek veritabani kontrolu - dalga_web.py ile tutarli
     import sys
     sys.path.insert(0, '/home/lydian/Desktop/TSUNAMI')
     try:
         from dalga_web import db as dalga_db
         if dalga_db and dalga_db.kullanici_dogrula(username, password):
-            # Kullanıcı bilgilerini al
+            # Kullanici bilgilerini al
             user_info = dalga_db.kullanici_bilgi_al(username) if hasattr(dalga_db, 'kullanici_bilgi_al') else None
             session['user_id'] = user_info['id'] if user_info else 1
             session['username'] = username
             session['is_admin'] = (user_info.get('rol') == 'admin') if user_info else False
             logger.info(f"[AUTH] Login successful: {username}")
+
+            return jsonify({
+                'success': True,
+                'message': 'Giris basarili',
+                'user': {
+                    'username': username,
+                    'is_admin': session['is_admin']
+                }
+            })
         else:
             logger.warning(f"[AUTH] Login failed: {username}")
-            return jsonify({'success': False, 'message': 'Geçersiz kullanıcı adı veya şifre'}), 401
+            return jsonify({'success': False, 'message': 'Gecersiz kullanici adi veya sifre'}), 401
     except ImportError:
-        logger.error("[AUTH] dalga_web import hatası - fallback disabled for security")
-        return jsonify({'success': False, 'message': 'Kimlik doğrulama servisi kullanılamıyor'}), 503
-
-        logger.info(f"[AUTH] Login successful: {username}")
-
-        return jsonify({
-            'success': True,
-            'message': 'Giris basarili',
-            'user': {
-                'username': username,
-                'is_admin': True
-            }
-        })
-
-    logger.warning(f"[AUTH] Login failed: {username}")
-    raise AuthenticationError("Gecersiz kullanici adi veya sifre")
+        logger.error("[AUTH] dalga_web import hatasi - fallback disabled for security")
+        return jsonify({'success': False, 'message': 'Kimlik dogrulama servisi kullanilamiyor'}), 503
+    except Exception as e:
+        logger.error(f"[AUTH] Login hatasi: {e}")
+        return jsonify({'success': False, 'message': 'Kimlik dogrulama hatasi'}), 500
 
 
 @auth_bp.route('/logout', methods=['POST'])
