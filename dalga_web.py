@@ -324,6 +324,22 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Static file caching disabled
 app.jinja_env.auto_reload = True
 app.jinja_env.cache = {}  # Clear Jinja2 cache
 
+# Flask-Limiter - Global rate limiting
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per minute", "5000 per hour"],
+        storage_uri=os.environ.get('REDIS_URL', 'memory://'),
+        strategy="fixed-window"
+    )
+    RATE_LIMIT_AKTIF = True
+except ImportError:
+    limiter = None
+    RATE_LIMIT_AKTIF = False
+
 # CORS - Restricted to specific origins (AILYDIAN Security Fix)
 ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:8080,http://127.0.0.1:8080').split(',')
 socketio = SocketIO(app, cors_allowed_origins=ALLOWED_ORIGINS, async_mode='threading')
@@ -4200,6 +4216,7 @@ def record_login_attempt(success: bool):
 
 @app.route('/giris', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
+@(limiter.limit("5 per minute") if limiter else lambda f: f)
 def login():
     ip = request.remote_addr
 
@@ -4419,6 +4436,7 @@ def api_guvenlik_durum():
 
 
 @app.route('/api/guvenlik/2fa/setup', methods=['POST'])
+@(limiter.limit("3 per minute") if limiter else lambda f: f)
 @login_required
 def api_2fa_setup():
     """2FA kurulumu başlat"""
@@ -4458,6 +4476,7 @@ def api_2fa_setup():
 
 
 @app.route('/api/guvenlik/2fa/verify', methods=['POST'])
+@(limiter.limit("5 per minute") if limiter else lambda f: f)
 @login_required
 def api_2fa_verify():
     """2FA kodunu doğrula ve aktifleştir"""

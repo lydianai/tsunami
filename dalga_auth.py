@@ -506,8 +506,9 @@ def require_2fa(f: Callable):
 
 def secure_session_config(app):
     """Flask session güvenlik ayarları"""
+    is_production = os.environ.get('FLASK_ENV') == 'production'
     app.config.update(
-        SESSION_COOKIE_SECURE=True,  # HTTPS only
+        SESSION_COOKIE_SECURE=is_production,  # HTTPS only in production
         SESSION_COOKIE_HTTPONLY=True,  # JavaScript erişimi yok
         SESSION_COOKIE_SAMESITE='Lax',  # CSRF koruması
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Session timeout
