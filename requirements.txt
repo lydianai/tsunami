@@ -15,7 +15,7 @@ Flask-Talisman==1.1.0
 Werkzeug==3.1.3
 
 # === Async & WebSocket ===
-eventlet==0.39.1
+eventlet==0.40.4
 python-socketio==5.12.1
 python-engineio==4.11.2
 gevent==24.11.1
