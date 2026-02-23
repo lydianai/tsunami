@@ -880,6 +880,64 @@ class HoneypotOrchestrator:
 
         return honeypot
 
+    def get_stats(self) -> Dict[str, Any]:
+        """Honeypot istatistikleri (dalga_web.py uyumlulugu)"""
+        active = sum(1 for hp in self._honeypotlar.values() if hp.aktif)
+        total_interactions = sum(hp.toplam_etkilesim for hp in self._honeypotlar.values())
+        unique_ips = set(log.get('kaynak_ip') for log in self._etkilesim_loglari)
+
+        cutoff = (datetime.now() - timedelta(hours=24)).isoformat()
+        recent = [log for log in self._etkilesim_loglari
+                  if log.get('zaman', '') > cutoff]
+
+        tip_counts = {}
+        for hp in self._honeypotlar.values():
+            tip_counts[hp.tip.value] = tip_counts.get(hp.tip.value, 0) + hp.toplam_etkilesim
+        most_targeted = max(tip_counts, key=tip_counts.get) if tip_counts else 'none'
+
+        return {
+            'active_honeypots': active,
+            'total_interactions': total_interactions,
+            'unique_attackers': len(unique_ips),
+            'last_24h_interactions': len(recent),
+            'most_targeted_service': most_targeted
+        }
+
+    def get_attacker_locations(self, limit: int = 200) -> List[Dict]:
+        """Saldirgan konum bilgileri (dalga_web.py uyumlulugu)"""
+        ip_data = {}
+        for log in self._etkilesim_loglari:
+            ip = log.get('kaynak_ip', '')
+            if not ip:
+                continue
+            if ip not in ip_data:
+                ip_data[ip] = {
+                    'ip': ip,
+                    'first_seen': log.get('zaman', ''),
+                    'last_seen': log.get('zaman', ''),
+                    'count': 0,
+                    'services': set()
+                }
+            ip_data[ip]['last_seen'] = log.get('zaman', '')
+            ip_data[ip]['count'] += 1
+            ip_data[ip]['services'].add(log.get('honeypot_tip', ''))
+
+        result = []
+        for data in sorted(ip_data.values(), key=lambda x: x['count'], reverse=True)[:limit]:
+            result.append({
+                'lat': 0.0,
+                'lng': 0.0,
+                'ip': data['ip'],
+                'country': '',
+                'city': '',
+                'targeted_service': ', '.join(data['services']),
+                'risk_score': min(data['count'] / 10.0, 1.0),
+                'first_seen': data['first_seen'],
+                'last_seen': data['last_seen'],
+                'interaction_count': data['count']
+            })
+        return result
+
     def _honeypot_baslat(self, honeypot: Honeypot):
         """Honeypot servisini baslat"""
         try:

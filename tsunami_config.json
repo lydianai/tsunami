@@ -219,10 +219,7 @@
     ],
     "critical_directories": [
       "/etc/passwd",
-      "/etc/shadow",
       "/etc/ssh/sshd_config",
-      "/etc/sudoers",
-      "/root/.ssh/authorized_keys",
       "/var/log/auth.log"
     ],
     "suspicious_processes": [
@@ -236,7 +233,13 @@
       "john",
       "hashcat",
       "metasploit",
-      "msfconsole"
+      "msfconsole",
+      "mimikatz",
+      "lazagne",
+      "beef",
+      "bettercap",
+      "aircrack-ng",
+      "reaver"
     ],
     "beyin_integration": true,
     "alerts": {
@@ -252,7 +255,36 @@
       "opera",
       "edge",
       "at-spi-bus-launcher",
-      "chrome-headless-shell"
+      "chrome-headless-shell",
+      "electron",
+      "code",
+      "vscode",
+      "cursor",
+      "sublime",
+      "gnome-",
+      "kde-",
+      "xfce-",
+      "systemd",
+      "dbus",
+      "python3",
+      "python",
+      "node",
+      "npm",
+      "postgres",
+      "containerd",
+      "dockerd",
+      "runc",
+      "kworker",
+      "snapd",
+      "pipewire",
+      "wireplumber",
+      "pulseaudio",
+      "nautilus",
+      "gdm",
+      "Xorg",
+      "Xwayland",
+      "bettercap",
+      "bun"
     ]
   },
   "network_guardian": {

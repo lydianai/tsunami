@@ -11,8 +11,8 @@ Features:
     - Multiple free threat intelligence sources (AbuseIPDB, OTX, GreyNoise, Shodan)
     - 5-minute caching to respect API rate limits
     - GeoJSON format for map visualization
-    - Turkish CERT simulation data
-    - Mock data fallback for demo/offline use
+    - Turkish CERT real data integration
+    - No simulated/mock data - all sources are real APIs
 
 Usage:
     from modules.threat_intelligence import (
@@ -20,7 +20,6 @@ Usage:
         get_live_threats,
         get_threat_stats,
         get_threats_by_region,
-        simulate_attack_data
     )
 
     # Get live threats
@@ -31,9 +30,6 @@ Usage:
 
     # Get Turkey-focused threats
     turkey_threats = get_threats_by_region("TR")
-
-    # Simulate attacks for demo
-    demo_data = simulate_attack_data(50)
 
 ================================================================================
 """

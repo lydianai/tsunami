@@ -1,0 +1,23 @@
+[build]
+builder = "heroku/buildpacks:20"
+
+[[services]]
+name = "web"
+machine_type = "basic-1xcx"
+
+[deploy]
+startCommand = "gunicorn --bind 0.0.0.0:$PORT --workers 4 --timeout 120 dalga_web:app"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicy = "on-failure"
+
+[[services.env]]
+DATABASE_URL = "postgresql://tsunami:tsunami_password@localhost:5432/tsunami"
+REDIS_URL = "redis://localhost:6379/0"
+FLASK_ENV = "production"
+SECRET_KEY = "production_secret_key_here"
+JWT_SECRET_KEY = "production_jwt_secret_here"
+
+[[services.env]]
+RAILWAY_POSTGRES_URL = "postgresql://tsunami:tsunami_password@localhost:5432/tsunami"
+RAILWAY_REDIS_URL = "redis://localhost:6379/0"

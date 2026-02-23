@@ -3813,3 +3813,29 @@ def get_action_library() -> ActionLibrary:
     if _action_library is None:
         _action_library = ActionLibrary()
     return _action_library
+
+
+# Dict-like access for backwards compatibility
+# Usage: from modules.soar_xdr.action_library import ACTION_LIBRARY
+# ACTION_LIBRARY['quarantine_endpoint'](params, dry_run=False)
+class _ActionLibraryProxy(dict):
+    """Lazy-loading dict proxy for action functions."""
+    def __init__(self):
+        super().__init__()
+        self._loaded = False
+
+    def _ensure_loaded(self):
+        if not self._loaded:
+            lib = get_action_library()
+            self.update(lib._actions)
+            self._loaded = True
+
+    def __getitem__(self, key):
+        self._ensure_loaded()
+        return super().__getitem__(key)
+
+    def __contains__(self, key):
+        self._ensure_loaded()
+        return super().__contains__(key)
+
+ACTION_LIBRARY = _ActionLibraryProxy()

@@ -508,29 +508,30 @@ class AILYDIANBridge:
             loop.close()
 
     def _execute_fallback(self, agent_id: str, task: str, params: Dict) -> Dict:
-        """Fallback execution - basit simülasyon"""
+        """Fallback execution - yerleşik güvenlik araçlarıyla gerçek analiz"""
         agent = self.get_agent_by_id(agent_id)
 
         if not agent:
             return {'error': f'Agent bulunamadı: {agent_id}'}
 
-        # Agent türüne göre simüle et
+        # Agent türüne göre gerçek analiz çalıştır
         if 'recon' in agent_id.lower():
-            return self._simulate_recon(params)
+            return self._run_recon(params)
         elif 'redteam' in agent_id.lower():
-            return self._simulate_redteam(params)
+            return self._run_redteam(params)
         elif 'osint' in agent_id.lower():
-            return self._simulate_osint(params)
+            return self._run_osint(params)
         else:
             return {
                 'message': f"Task alındı: {task}",
                 'agent': agent['name'],
                 'params': params,
-                'note': 'Fallback modu - simüle edilmiş yanıt'
+                'note': 'Fallback modu - orchestrator bağlantısı kurulamadı',
+                'mode': 'fallback'
             }
 
-    def _simulate_recon(self, params: Dict) -> Dict:
-        """Gerçek Recon taraması - AILYDIAN AutoFix: Simülasyon kaldırıldı"""
+    def _run_recon(self, params: Dict) -> Dict:
+        """Yerleşik Recon taraması - DNS, SSL, WHOIS sorguları"""
         import socket
         import ssl
         import requests
@@ -598,25 +599,186 @@ class AILYDIANBridge:
             recs.append('Çok sayıda A kaydı tespit edildi - Load balancer veya CDN kullanımını doğrulayın')
         return recs or ['Kritik sorun tespit edilmedi']
 
-    def _simulate_redteam(self, params: Dict) -> Dict:
-        """RedTeam simülasyonu"""
+    def _run_redteam(self, params: Dict) -> Dict:
+        """Yerleşik RedTeam analizi - HTTP başlıkları, SSL, port taraması, hassas yol kontrolü"""
+        import requests
+        import ssl
+        import socket
+
         target = params.get('target', 'unknown')
+        findings = {
+            'engineers': [],
+            'architects': [],
+            'pentesters': [],
+            'interns': []
+        }
+        risk_score = 0
+        counterarguments = []
+
+        # --- Engineer perspective: HTTP security headers ---
+        try:
+            url = target if target.startswith('http') else f"https://{target}"
+            resp = requests.get(url, timeout=10, allow_redirects=True, verify=True)
+
+            security_headers = {
+                'Strict-Transport-Security': 'HSTS eksik - MitM saldırılarına açık',
+                'Content-Security-Policy': 'CSP eksik - XSS riski',
+                'X-Content-Type-Options': 'X-Content-Type-Options eksik - MIME sniffing riski',
+                'X-Frame-Options': 'X-Frame-Options eksik - Clickjacking riski',
+                'X-XSS-Protection': 'X-XSS-Protection eksik',
+                'Referrer-Policy': 'Referrer-Policy eksik - bilgi sızıntısı riski',
+                'Permissions-Policy': 'Permissions-Policy eksik',
+            }
+
+            missing_headers = []
+            present_headers = []
+            for header, risk_msg in security_headers.items():
+                if header.lower() in {k.lower(): k for k in resp.headers}:
+                    present_headers.append(header)
+                else:
+                    missing_headers.append(risk_msg)
+                    risk_score += 1
+
+            findings['engineers'].append(f"HTTP güvenlik başlıkları: {len(present_headers)}/{len(security_headers)} mevcut")
+            if missing_headers:
+                findings['engineers'].extend(missing_headers[:5])
+            else:
+                findings['engineers'].append('Tüm güvenlik başlıkları mevcut - iyi yapılandırılmış')
+
+            # Check server info disclosure
+            server = resp.headers.get('Server', '')
+            if server:
+                findings['engineers'].append(f"Server bilgi ifşası: '{server}' - versiyon gizlenmeli")
+                risk_score += 1
+
+        except requests.exceptions.SSLError:
+            findings['engineers'].append('SSL/TLS hatası - sertifika sorunlu')
+            risk_score += 3
+        except Exception as e:
+            findings['engineers'].append(f'HTTP analiz hatası: {str(e)[:100]}')
+
+        # --- Architect perspective: SSL/TLS configuration ---
+        try:
+            hostname = target.replace('https://', '').replace('http://', '').split('/')[0].split(':')[0]
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(socket.socket(), server_hostname=hostname) as s:
+                s.settimeout(10)
+                s.connect((hostname, 443))
+                cert = s.getpeercert()
+                cipher = s.cipher()
+
+                # Check cert expiry
+                from datetime import datetime as dt
+                not_after = dt.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+                days_left = (not_after - dt.now()).days
+                if days_left < 30:
+                    findings['architects'].append(f'SSL sertifikası {days_left} gün içinde sona eriyor - ACİL yenilenmeli')
+                    risk_score += 2
+                else:
+                    findings['architects'].append(f'SSL sertifikası geçerli ({days_left} gün kaldı)')
+
+                # Check TLS version
+                if cipher:
+                    tls_ver = cipher[1] if len(cipher) > 1 else 'bilinmiyor'
+                    findings['architects'].append(f'TLS versiyonu: {tls_ver}, Cipher: {cipher[0]}')
+                    if 'TLSv1.0' in str(tls_ver) or 'TLSv1.1' in str(tls_ver):
+                        findings['architects'].append('Eski TLS versiyonu tespit edildi - TLSv1.2+ önerilir')
+                        risk_score += 2
+
+                # Check SAN
+                san = cert.get('subjectAltName', [])
+                findings['architects'].append(f'SAN girişleri: {len(san)} domain')
+
+        except Exception as e:
+            findings['architects'].append(f'SSL analiz hatası: {str(e)[:100]}')
+
+        # --- Pentester perspective: port scan (top 5 common ports) ---
+        try:
+            hostname = target.replace('https://', '').replace('http://', '').split('/')[0].split(':')[0]
+            open_ports = []
+            risky_ports = {21: 'FTP', 23: 'Telnet', 3389: 'RDP', 3306: 'MySQL', 5432: 'PostgreSQL',
+                          6379: 'Redis', 27017: 'MongoDB', 8080: 'HTTP-Alt', 8443: 'HTTPS-Alt'}
+
+            for port, service in risky_ports.items():
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(2)
+                    result = sock.connect_ex((hostname, port))
+                    if result == 0:
+                        open_ports.append(f"{port}/{service}")
+                        risk_score += 2
+                    sock.close()
+                except Exception:
+                    pass
+
+            if open_ports:
+                findings['pentesters'].append(f'Açık riskli portlar: {", ".join(open_ports)}')
+                counterarguments.append('Açık servis portları saldırı yüzeyini genişletiyor')
+            else:
+                findings['pentesters'].append('Yaygın riskli portlarda açık servis bulunamadı')
+
+            # Check common paths
+            base_url = target if target.startswith('http') else f"https://{target}"
+            exposed_paths = []
+            for path in ['/.env', '/robots.txt', '/.git/HEAD', '/wp-admin/', '/admin/', '/api/docs']:
+                try:
+                    r = requests.head(f"{base_url}{path}", timeout=5, allow_redirects=False)
+                    if r.status_code == 200:
+                        exposed_paths.append(path)
+                        risk_score += 2
+                except Exception:
+                    pass
+
+            if exposed_paths:
+                findings['pentesters'].append(f'Erişilebilir hassas yollar: {", ".join(exposed_paths)}')
+            else:
+                findings['pentesters'].append('Hassas yollar uygun şekilde korunuyor')
+
+        except Exception as e:
+            findings['pentesters'].append(f'Port/yol tarama hatası: {str(e)[:100]}')
+
+        # --- Intern perspective: DNS & basic checks ---
+        try:
+            hostname = target.replace('https://', '').replace('http://', '').split('/')[0].split(':')[0]
+            ips = socket.gethostbyname_ex(hostname)
+            findings['interns'].append(f'DNS çözümleme: {len(ips[2])} IP adresi')
+
+            # Check if www redirect exists
+            try:
+                if not hostname.startswith('www.'):
+                    socket.gethostbyname(f'www.{hostname}')
+                    findings['interns'].append('www subdomain mevcut')
+            except socket.gaierror:
+                findings['interns'].append('www subdomain yapılandırılmamış')
+
+        except Exception as e:
+            findings['interns'].append(f'DNS analiz hatası: {str(e)[:100]}')
+
+        # Overall risk assessment
+        if risk_score >= 10:
+            overall_risk = 'CRITICAL'
+        elif risk_score >= 6:
+            overall_risk = 'HIGH'
+        elif risk_score >= 3:
+            overall_risk = 'MEDIUM'
+        else:
+            overall_risk = 'LOW'
+
+        if not counterarguments:
+            counterarguments.append('Sosyal mühendislik saldırılarına karşı farkındalık eğitimi önerilir')
+
         return {
             'target': target,
-            'analysis': {
-                'engineers': ['Code review completed', 'No critical bugs found'],
-                'architects': ['Architecture is sound', 'Consider microservices'],
-                'pentesters': ['No immediate vulnerabilities', 'Recommend regular scanning'],
-                'interns': ['Fresh perspective: UI could be improved']
-            },
-            'steelman': 'The target system shows good security practices',
-            'counterarguments': ['Potential for social engineering attacks'],
-            'overall_risk': 'LOW',
-            'mode': 'simulation'
+            'analysis': findings,
+            'steelman': f'Hedef sistem {len([f for cat in findings.values() for f in cat])} kontrol noktasından analiz edildi',
+            'counterarguments': counterarguments,
+            'overall_risk': overall_risk,
+            'risk_score': risk_score,
+            'mode': 'real'
         }
 
-    def _simulate_osint(self, params: Dict) -> Dict:
-        """Gerçek OSINT araştırması - AILYDIAN AutoFix: Simülasyon kaldırıldı"""
+    def _run_osint(self, params: Dict) -> Dict:
+        """Yerleşik OSINT araştırması - HackerTarget, HIBP, email analizi"""
         import requests
 
         query = params.get('query', 'unknown')

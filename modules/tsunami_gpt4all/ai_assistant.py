@@ -377,6 +377,16 @@ class BasitKomutIsleyici:
             }
         }
 
+    def gecmis_al(self, son_n: int = 10) -> List[Dict]:
+        """Son N mesaji dondur"""
+        mesajlar = self.sohbet_gecmisi[-son_n:] if son_n > 0 else self.sohbet_gecmisi
+        return [m for m in mesajlar if m.get('rol') != 'sistem']
+
+    def gecmis_temizle(self):
+        """Sohbet gecmisini temizle"""
+        self.sohbet_gecmisi = []
+        self.istatistik = OturumIstatistik()
+
 
 # Global instance
 _ai_asistan: Optional[TsunamiAIAssistant] = None

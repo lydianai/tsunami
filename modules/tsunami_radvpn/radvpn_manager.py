@@ -245,9 +245,13 @@ class RadVPNManager:
         # Binary kontrolu
         binary_status = self.check_binary()
         if not binary_status['ready']:
-            # Simulasyon modu
-            logger.warning("[RADVPN] Binary bulunamadi, simulasyon modunda calisiliyor")
-            return await self._start_simulation()
+            logger.error("[RADVPN] Binary bulunamadi - kurulum gerekli")
+            return {
+                "basarili": False,
+                "hata": "RadVPN binary bulunamadi",
+                "cozum": "curl -sSL https://github.com/mehrdadrad/radvpn/releases/latest/download/radvpn-linux-amd64 -o /usr/local/bin/radvpn && chmod +x /usr/local/bin/radvpn",
+                "detay": binary_status.get('mesaj', 'Binary yolu kontrol edin')
+            }
 
         try:
             self.process = subprocess.Popen(
@@ -276,26 +280,6 @@ class RadVPNManager:
             logger.error(f"[RADVPN] Baslama hatasi: {e}")
             return {"basarili": False, "hata": str(e)}
 
-    async def _start_simulation(self) -> Dict:
-        """Simulasyon modunda baslat (binary olmadan)"""
-        if not self.config:
-            self.create_config(use_defaults=True)
-            self.save_config()
-
-        # Node'lari aktif olarak isaretle
-        for node in self.config.nodes:
-            node.is_active = True
-            node.last_seen = datetime.now()
-
-        logger.info(f"[RADVPN] Simulasyon modu aktif: {len(self.config.nodes)} node")
-        return {
-            "basarili": True,
-            "pid": None,
-            "mesaj": "RadVPN simulasyon modunda aktif",
-            "node_sayisi": len(self.config.nodes),
-            "mod": "simulation"
-        }
-
     async def stop(self) -> Dict:
         """RadVPN servisini durdur"""
         if self.process:
@@ -322,15 +306,10 @@ class RadVPNManager:
         # Process kontrolu
         process_aktif = self.process is not None and self.process.poll() is None
 
-        # Simulasyon modu kontrolu
-        simulasyon = not process_aktif and self.config and any(n.is_active for n in self.config.nodes)
-
-        aktif = process_aktif or simulasyon
-
         return {
-            "aktif": aktif,
+            "aktif": process_aktif,
             "pid": self.process.pid if process_aktif else None,
-            "mod": "native" if process_aktif else ("simulation" if simulasyon else "stopped"),
+            "mod": "native" if process_aktif else "stopped",
             "node_sayisi": len(self.config.nodes) if self.config else 0,
             "aktif_node_sayisi": sum(1 for n in self.config.nodes if n.is_active) if self.config else 0,
             "sifreleme": self.config.crypto_type if self.config else None,
@@ -408,16 +387,37 @@ class RadVPNManager:
         if not node:
             return {"basarili": False, "hata": f"Node bulunamadi: {node_name}"}
 
-        # Simulasyon: rastgele latency
-        import random
-        latency = random.randint(10, 150)
-
-        return {
-            "basarili": True,
-            "node": node_name,
-            "latency_ms": latency,
-            "status": "reachable" if latency < 200 else "slow"
-        }
+        # Gercek ping - subprocess ile ICMP
+        try:
+            ip = node.address.split(':')[0]  # host:port formatindan IP al
+            result = subprocess.run(
+                ['ping', '-c', '1', '-W', '3', ip],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                # "time=12.3 ms" satirindan latency cek
+                import re
+                match = re.search(r'time[=<]([\d.]+)\s*ms', result.stdout)
+                latency = float(match.group(1)) if match else -1
+                return {
+                    "basarili": True,
+                    "node": node_name,
+                    "address": ip,
+                    "latency_ms": round(latency, 2),
+                    "status": "reachable"
+                }
+            else:
+                return {
+                    "basarili": True,
+                    "node": node_name,
+                    "address": ip,
+                    "latency_ms": -1,
+                    "status": "unreachable"
+                }
+        except subprocess.TimeoutExpired:
+            return {"basarili": True, "node": node_name, "latency_ms": -1, "status": "timeout"}
+        except Exception as e:
+            return {"basarili": False, "hata": f"Ping hatasi: {str(e)}"}
 
 
 class MeshNetworkManager:

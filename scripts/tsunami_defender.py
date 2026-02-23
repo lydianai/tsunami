@@ -116,17 +116,14 @@ class DefenderConfig:
     block_duration: int = 3600  # saniye
     whitelist_ips: List[str] = field(default_factory=lambda: ["127.0.0.1", "::1"])
 
-    # Izlenecek dizinler
+    # Izlenecek dizinler - sadece okunabilir dosyalar
     critical_directories: List[str] = field(default_factory=lambda: [
         "/etc/passwd",
-        "/etc/shadow",
         "/etc/ssh/sshd_config",
-        "/etc/sudoers",
-        "/root/.ssh/authorized_keys",
         "/var/log/auth.log"
     ])
 
-    # Supheli prosesler
+    # Supheli prosesler - exact match yapilir (substring degil)
     suspicious_processes: List[str] = field(default_factory=lambda: [
         "nc", "netcat", "ncat",
         "nmap", "masscan",
@@ -145,7 +142,15 @@ class DefenderConfig:
         "code", "vscode", "cursor", "sublime", "atom",
         "gnome-", "kde-", "xfce-", "systemd", "dbus",
         "nautilus", "dolphin", "thunar", "nemo",
-        "python3", "python", "node", "npm", "bun"
+        "python3", "python", "node", "npm", "bun",
+        "postgres", "postgresql", "containerd", "dockerd", "runc",
+        "kworker", "ksoftirqd", "kdevtmpfs", "migration",
+        "snapd", "packagekitd", "polkitd", "accounts-daemon",
+        "NetworkManager", "avahi-daemon", "cupsd", "bluetoothd",
+        "pipewire", "wireplumber", "pulseaudio", "gdm", "lightdm",
+        "Xorg", "Xwayland", "gnome-shell", "plasmashell",
+        "udisksd", "upowerd", "colord", "fwupd",
+        "thermald", "irqbalance", "cron", "rsyslogd"
     ])
 
 
@@ -299,15 +304,27 @@ class ThreatDetectionEngine:
         return connections
 
     def detect_port_scan(self, connections: List[ConnectionInfo]) -> List[SecurityEvent]:
-        """Port taramasi tespit et"""
+        """Port taramasi tespit et - sadece gelen (incoming) baglantilar icin"""
         events = []
         current_time = time.time()
 
-        # IP bazinda baglantilari grupla
+        # Sadece gelen baglantilar icin port taramasi tespit et
+        # Gelen = remote taraf bizim farkli portlarimiza baglanir
+        # Giden = biz remote portlara baglaniriz (browser, CDN vs. - bu normal)
+        # Filtre: local_port < 1024 veya bilinen servis portlari = hedef olabilir
+        # Ayrica: ayni remote IP birden fazla FARKLI local porta baglaniyorsa = potansiyel tarama
         ip_ports: Dict[str, Set[int]] = defaultdict(set)
         for conn in connections:
-            if conn.remote_addr and conn.remote_addr not in self.config.whitelist_ips:
-                ip_ports[conn.remote_addr].add(conn.local_port)
+            if not conn.remote_addr or conn.remote_addr in self.config.whitelist_ips:
+                continue
+            # Sadece LISTEN olmayan, ESTABLISHED olan gelen baglantilar
+            # Gelen baglanti: remote_port genelde yuksek (ephemeral), local_port dusuk (servis)
+            # Ama tarama durumunda remote birden fazla local porta baglanir
+            # Giden baglanti: local_port ephemeral (>32768), remote_port bilinen servis
+            # Giden baglantilarida filtrele - bunlar normal internet kullanimi
+            if conn.local_port > 32768:
+                continue  # Ephemeral local port = giden baglanti, tarama degil
+            ip_ports[conn.remote_addr].add(conn.local_port)
 
         for ip, ports in ip_ports.items():
             # Eski kayitlari temizle
@@ -323,6 +340,13 @@ class ThreatDetectionEngine:
             # Esik kontrolu
             unique_ports = len(set(p for p, _ in self._port_scan_tracker[ip]))
             if unique_ports >= self.config.port_scan_threshold:
+                # Ayni IP icin tekrar eden alarmlari onle (60 saniye debounce)
+                last_alert_key = f"_last_portscan_alert_{ip}"
+                last_alert_time = getattr(self, last_alert_key, 0)
+                if current_time - last_alert_time < 60:
+                    continue
+                setattr(self, last_alert_key, current_time)
+
                 event = SecurityEvent(
                     timestamp=datetime.now().isoformat(),
                     event_type="PORT_SCAN_DETECTED",
@@ -383,7 +407,10 @@ class ThreatDetectionEngine:
                                              'memory_percent', 'cmdline', 'create_time']):
                 try:
                     pinfo = proc.info
-                    connections = len(proc.connections()) if proc.connections else 0
+                    try:
+                        connections = len(proc.net_connections()) if hasattr(proc, 'net_connections') else len(proc.connections())
+                    except (psutil.AccessDenied, psutil.NoSuchProcess):
+                        connections = 0
                     processes.append(ProcessInfo(
                         pid=pinfo['pid'],
                         name=pinfo['name'] or '',
@@ -414,9 +441,15 @@ class ThreatDetectionEngine:
             if any(safe in proc_name_lower for safe in whitelist):
                 continue
 
-            # Bilinen supheli araclar
+            # Bilinen supheli araclar - exact match veya cmdline word match
             for suspicious in self.config.suspicious_processes:
-                if suspicious in proc_name_lower or suspicious in proc.cmdline.lower():
+                # Proses adi exact match (substring degil - false positive onlemi)
+                name_match = (proc_name_lower == suspicious)
+                # Cmdline'da word boundary match (bagimsiz kelime olarak)
+                cmdline_lower = proc.cmdline.lower()
+                cmdline_parts = re.split(r'[\s/\\]+', cmdline_lower)
+                cmdline_match = suspicious in cmdline_parts
+                if name_match or cmdline_match:
                     event = SecurityEvent(
                         timestamp=datetime.now().isoformat(),
                         event_type="SUSPICIOUS_PROCESS",
@@ -572,28 +605,36 @@ class ThreatDetectionEngine:
         if ip in self.config.whitelist_ips:
             return
 
+        # Tekrarli engelleme girisimini onle
+        if ip in self._blocked_ips:
+            return
+
         try:
-            # UFW ile engelle
-            cmd = f"ufw insert 1 deny from {ip} to any"
-            result = subprocess.run(cmd.split(), capture_output=True, text=True)
+            action_taken = "logged_only"
 
-            if result.returncode == 0:
-                self._blocked_ips[ip] = time.time()
-                self.stats["ips_blocked"] += 1
-                self.logger.warning(f"IP engellendi: {ip} - Sebep: {reason}")
+            # Root kontrolu - sadece root ise UFW kullan
+            if os.geteuid() == 0:
+                cmd = f"ufw insert 1 deny from {ip} to any"
+                result = subprocess.run(cmd.split(), capture_output=True, text=True)
+                if result.returncode == 0:
+                    action_taken = "ufw deny"
+                    self.logger.warning(f"IP engellendi: {ip} - Sebep: {reason}")
+                else:
+                    self.logger.warning(f"UFW engelleme basarisiz ({ip}): {result.stderr.strip()}")
 
-                # Log kaydi
-                event = SecurityEvent(
-                    timestamp=datetime.now().isoformat(),
-                    event_type="IP_BLOCKED",
-                    severity="high",
-                    source_ip=ip,
-                    description=f"IP adresi engellendi: {reason}",
-                    action_taken="ufw deny"
-                )
-                self.log_event(event)
-            else:
-                self.logger.error(f"IP engelleme hatasi: {result.stderr}")
+            # Her durumda kaydet (engellenmis olarak isaretle)
+            self._blocked_ips[ip] = time.time()
+            self.stats["ips_blocked"] += 1
+
+            event = SecurityEvent(
+                timestamp=datetime.now().isoformat(),
+                event_type="IP_BLOCKED",
+                severity="high",
+                source_ip=ip,
+                description=f"IP adresi engellendi: {reason}",
+                action_taken=action_taken
+            )
+            self.log_event(event)
 
         except Exception as e:
             self.logger.error(f"IP engelleme hatasi ({ip}): {e}")
@@ -717,13 +758,63 @@ class BeyinIntegration:
             self.logger.error(f"BEYIN alarm hatasi: {e}")
 
     async def get_threat_intel(self, ip: str) -> Dict:
-        """BEYIN'den tehdit istihbarati al"""
-        # Placeholder - gercek implementasyonda BEYIN'den veri alinir
-        return {
-            "ip": ip,
-            "reputation": "unknown",
-            "threats": []
-        }
+        """BEYIN'den tehdit istihbaratı al - gerçek API sorgusu"""
+        import aiohttp
+
+        result = {"ip": ip, "reputation": "unknown", "threats": [], "sources": []}
+
+        # AbuseIPDB sorgusu
+        abuseipdb_key = os.environ.get('ABUSEIPDB_API_KEY')
+        if abuseipdb_key:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        "https://api.abuseipdb.com/api/v2/check",
+                        headers={"Key": abuseipdb_key, "Accept": "application/json"},
+                        params={"ipAddress": ip, "maxAgeInDays": 90},
+                        timeout=aiohttp.ClientTimeout(total=10)
+                    ) as resp:
+                        if resp.status == 200:
+                            data = (await resp.json()).get("data", {})
+                            score = data.get("abuseConfidenceScore", 0)
+                            if score >= 75:
+                                result["reputation"] = "malicious"
+                            elif score >= 25:
+                                result["reputation"] = "suspicious"
+                            else:
+                                result["reputation"] = "clean"
+                            result["abuse_score"] = score
+                            result["country"] = data.get("countryCode", "")
+                            result["isp"] = data.get("isp", "")
+                            result["total_reports"] = data.get("totalReports", 0)
+                            result["sources"].append("abuseipdb")
+            except Exception as e:
+                self.logger.debug(f"AbuseIPDB sorgu hatası: {e}")
+
+        # GreyNoise sorgusu (API key opsiyonel - community endpoint)
+        try:
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://api.greynoise.io/v3/community/{ip}",
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        classification = data.get("classification", "")
+                        if classification == "malicious":
+                            result["reputation"] = "malicious"
+                            result["threats"].append(f"GreyNoise: {data.get('name', 'unknown threat')}")
+                        elif classification == "benign":
+                            if result["reputation"] == "unknown":
+                                result["reputation"] = "clean"
+                        result["noise"] = data.get("noise", False)
+                        result["riot"] = data.get("riot", False)
+                        result["sources"].append("greynoise")
+        except Exception as e:
+            self.logger.debug(f"GreyNoise sorgu hatası: {e}")
+
+        return result
 
 
 # ==============================================================================

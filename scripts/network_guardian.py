@@ -1009,8 +1009,16 @@ class NetworkScanner:
         self.alerts.append(alert)
         self.stats["alerts_generated"] += 1
 
-        # Log'a yaz
-        log_method = getattr(self.logger, severity.value if severity.value != "critical" else "critical")
+        # Log'a yaz - severity.value'yu Python log seviyesine esle
+        severity_to_log = {
+            "info": "info",
+            "low": "info",
+            "medium": "warning",
+            "high": "error",
+            "critical": "critical"
+        }
+        log_level = severity_to_log.get(severity.value, "info")
+        log_method = getattr(self.logger, log_level)
         log_method(f"[{alert_type.value.upper()}] {description}")
 
         return alert

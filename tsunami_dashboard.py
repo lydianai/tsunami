@@ -2286,21 +2286,11 @@ Ozellikler:
         # Veritabanindan al
         tehditler = self.db.son_tehditler(5)
 
-        # Demo veri (eger bos ise)
         if not tehditler:
-            demo_tehditler = [
-                TehditOlayi(
-                    id=hashlib.md5(str(i).encode()).hexdigest()[:8],
-                    zaman=datetime.now() - timedelta(minutes=i * 5),
-                    kaynak="Network Guardian",
-                    tip="Port Taramasi",
-                    seviye=TehditSeviyesi.ORTA,
-                    aciklama=f"Supheli port taramasi tespit edildi ({80 + i * 10} portu)",
-                    ip_adresi=f"192.168.1.{100 + i}",
-                    port=80 + i * 10
-                ) for i in range(3)
-            ]
-            tehditler = demo_tehditler
+            # Gercek tehdit yok - bos durum goster
+            bos_etiket = Gtk.Label(label="Aktif tehdit tespit edilmedi")
+            bos_etiket.add_css_class('dim-label')
+            self.son_tehditler_kutu.append(bos_etiket)
 
         for tehdit in tehditler[:5]:
             kart = TehditKarti(tehdit, on_action=self._on_tehdit_aksiyon)

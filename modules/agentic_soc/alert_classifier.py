@@ -270,11 +270,11 @@ class AlertClassifier:
         self._create_pretrained_models()
 
     def _create_pretrained_models(self):
-        """Create pre-trained models with synthetic training data"""
-        logger.info("Creating pre-trained classification models")
+        """Create models trained with real data from database"""
+        logger.info("Creating classification models from real data")
 
-        # Generate synthetic training data
-        training_samples = self._generate_synthetic_training_data()
+        # Load real training data from database, fallback to rule-based
+        training_samples = self._load_real_training_data()
 
         if len(training_samples) < 100:
             logger.warning("Insufficient training data, using rule-based classification")
@@ -337,71 +337,116 @@ class AlertClassifier:
         self._save_models()
         logger.info("Pre-trained models created successfully")
 
-    def _generate_synthetic_training_data(self) -> List[Dict[str, Any]]:
-        """Generate synthetic training data for model initialization"""
+    def _load_real_training_data(self) -> List[Dict[str, Any]]:
+        """Load real training data from database and log files.
+
+        Sources:
+        1. SQLite alarmlar table (real alerts)
+        2. Alert history files in ~/.dalga/alerts/
+        3. Previously classified alerts saved to model_path
+
+        Returns empty list if no real data, triggering rule-based fallback.
+        """
+        import sqlite3
+        import os
+        import glob
+
         samples = []
+        db_path = os.path.expanduser("~/.dalga/dalga_v2.db")
 
-        # Generate samples for each category
-        for category, keywords in self.CATEGORY_KEYWORDS.items():
-            for i in range(50):  # 50 samples per category
-                # Generate text
-                selected_keywords = np.random.choice(keywords, size=min(3, len(keywords)), replace=False)
-                text = f"Alert: {' '.join(selected_keywords)} detected on system"
+        # Source 1: SQLite alarmlar table
+        if os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                conn.row_factory = sqlite3.Row
+                alarms = conn.execute(
+                    "SELECT tip, kaynak, mesaj, ciddiyet, tarih FROM alarmlar "
+                    "ORDER BY tarih DESC LIMIT 2000"
+                ).fetchall()
+                for alarm in alarms:
+                    text = alarm['mesaj'] or f"Alert: {alarm['tip']}"
+                    severity = alarm['ciddiyet'] or 'medium'
+                    category = self._map_alarm_type_to_category(alarm['tip'])
+                    from datetime import datetime as dt
+                    try:
+                        ts = dt.fromisoformat(alarm['tarih']) if alarm['tarih'] else dt.now()
+                    except (ValueError, TypeError):
+                        ts = dt.now()
 
-                # Determine severity based on category
-                if category in [AlertCategory.MALWARE, AlertCategory.DATA_EXFILTRATION, AlertCategory.INTRUSION]:
-                    severity = np.random.choice(['critical', 'high'], p=[0.3, 0.7])
-                elif category in [AlertCategory.CREDENTIAL_THEFT, AlertCategory.LATERAL_MOVEMENT]:
-                    severity = np.random.choice(['high', 'medium'], p=[0.6, 0.4])
-                elif category in [AlertCategory.RECONNAISSANCE, AlertCategory.POLICY_VIOLATION]:
-                    severity = np.random.choice(['medium', 'low'], p=[0.5, 0.5])
-                else:
-                    severity = np.random.choice(['medium', 'low', 'informational'], p=[0.3, 0.4, 0.3])
+                    samples.append({
+                        'text': text,
+                        'category': category,
+                        'severity': severity,
+                        'is_false_positive': False,
+                        'features': [
+                            0,  # port (unknown)
+                            1,  # event count
+                            0.5,  # anomaly score
+                            ts.hour,
+                            ts.weekday(),
+                            1 if severity in ['critical', 'high', 'kritik', 'yuksek'] else 0,
+                            1,  # affected assets
+                            0.7 if severity in ['critical', 'kritik'] else 0.4
+                        ]
+                    })
+                conn.close()
+            except Exception as e:
+                logger.warning(f"Database load failed: {e}")
 
-                # Generate numeric features
-                features = [
-                    np.random.randint(0, 65535),  # port
-                    np.random.randint(0, 1000),   # event count
-                    np.random.random(),           # anomaly score
-                    np.random.randint(0, 24),     # hour of day
-                    np.random.randint(0, 7),      # day of week
-                    1 if severity in ['critical', 'high'] else 0,  # high priority flag
-                    np.random.randint(0, 10),     # affected assets
-                    np.random.random()            # risk score
-                ]
+        # Source 2: Alert files
+        alerts_dir = os.path.expanduser("~/.dalga/alerts")
+        if os.path.isdir(alerts_dir):
+            for alert_file in glob.glob(f"{alerts_dir}/*.json"):
+                try:
+                    with open(alert_file) as f:
+                        alert = json.load(f)
+                    samples.append({
+                        'text': alert.get('message', alert.get('mesaj', '')),
+                        'category': alert.get('category', 'unknown'),
+                        'severity': alert.get('severity', alert.get('ciddiyet', 'medium')),
+                        'is_false_positive': alert.get('is_false_positive', False),
+                        'features': alert.get('features', [0, 1, 0.5, 12, 3, 0, 1, 0.5])
+                    })
+                except Exception:
+                    pass
 
-                # False positive probability
-                is_fp = np.random.random() < 0.15  # 15% false positive rate
-
-                samples.append({
-                    'text': text,
-                    'category': category.value,
-                    'severity': severity,
-                    'is_false_positive': is_fp,
-                    'features': features
-                })
-
-        # Add false positive samples
-        for _ in range(100):
-            fp_text = f"Alert: {np.random.choice(self.FALSE_POSITIVE_INDICATORS)} activity"
-            samples.append({
-                'text': fp_text,
-                'category': AlertCategory.FALSE_POSITIVE.value,
-                'severity': 'low',
-                'is_false_positive': True,
-                'features': [
-                    np.random.randint(0, 65535),
-                    np.random.randint(0, 100),
-                    np.random.random() * 0.3,
-                    np.random.randint(0, 24),
-                    np.random.randint(0, 7),
-                    0,
-                    1,
-                    np.random.random() * 0.2
-                ]
-            })
+        if samples:
+            logger.info(f"Loaded {len(samples)} real alert samples for training")
+        else:
+            logger.warning(
+                "[AlertClassifier] No real training data found. "
+                "Model will use rule-based classification until real alerts are collected. "
+                "Generate alerts via network scans to build training data."
+            )
 
         return samples
+
+    def _map_alarm_type_to_category(self, alarm_type: str) -> str:
+        """Map Turkish alarm types to alert categories"""
+        if not alarm_type:
+            return 'unknown'
+        alarm_type_lower = alarm_type.lower()
+        mapping = {
+            'malware': AlertCategory.MALWARE.value,
+            'zararli': AlertCategory.MALWARE.value,
+            'virus': AlertCategory.MALWARE.value,
+            'intrusion': AlertCategory.INTRUSION.value,
+            'izinsiz': AlertCategory.INTRUSION.value,
+            'brute': AlertCategory.CREDENTIAL_THEFT.value,
+            'kimlik': AlertCategory.CREDENTIAL_THEFT.value,
+            'recon': AlertCategory.RECONNAISSANCE.value,
+            'tarama': AlertCategory.RECONNAISSANCE.value,
+            'scan': AlertCategory.RECONNAISSANCE.value,
+            'exfil': AlertCategory.DATA_EXFILTRATION.value,
+            'veri_sizinti': AlertCategory.DATA_EXFILTRATION.value,
+            'lateral': AlertCategory.LATERAL_MOVEMENT.value,
+            'policy': AlertCategory.POLICY_VIOLATION.value,
+            'ihlal': AlertCategory.POLICY_VIOLATION.value,
+        }
+        for key, value in mapping.items():
+            if key in alarm_type_lower:
+                return value
+        return 'unknown'
 
     def _save_models(self):
         """Save models to disk"""

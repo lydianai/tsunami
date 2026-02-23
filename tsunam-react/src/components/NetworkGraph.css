@@ -1,0 +1,37 @@
+.network-graph-panel {
+  width: 550px;
+}
+
+.graph-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.toolbar-btn {
+  flex: 1;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--primary-cyan);
+  border-radius: 5px;
+  color: var(--primary-cyan);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toolbar-btn:hover {
+  background: var(--primary-cyan);
+  color: #fff;
+}
+
+.graph-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}

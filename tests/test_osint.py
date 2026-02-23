@@ -116,7 +116,7 @@ class TestAILYDIANIntegration:
 
             ailydian = TsunamiAILYDIAN()
             # Test internal method
-            result = ailydian._simulate_recon({'target': 'google.com'})
+            result = ailydian._run_recon({'target': 'google.com'})
 
             # Should return 'real' mode, not 'simulation'
             assert result.get('mode') == 'real', "Recon should return real data"
@@ -132,7 +132,7 @@ class TestAILYDIANIntegration:
             from dalga_ailydian import TsunamiAILYDIAN
 
             ailydian = TsunamiAILYDIAN()
-            result = ailydian._simulate_osint({'query': 'example.com'})
+            result = ailydian._run_osint({'query': 'example.com'})
 
             # Should return 'real' mode, not 'simulation'
             assert result.get('mode') == 'real', "OSINT should return real data"

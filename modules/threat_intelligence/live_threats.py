@@ -682,17 +682,19 @@ class ShodanSource(ThreatSource):
 
 class TurkishCERTSource(ThreatSource):
     """
-    Turkish CERT (USOM) simulated threat data source.
+    Turkish CERT (USOM) gerçek tehdit verisi kaynağı.
 
-    In production, this would connect to:
-    - USOM (Ulusal Siber Olaylara Mudahale Merkezi)
-    - BTK Siber Guvenlik
-    - Turkish national cyber threat feeds
-
-    For demo purposes, generates realistic simulated data.
+    Gerçek veri kaynakları:
+    - USOM URL Blocklist: https://www.usom.gov.tr/url-list.txt
+    - USOM Zararlı Bağlantılar: https://www.usom.gov.tr/adres
+    - AbuseIPDB ile IP geolocation zenginleştirme
     """
 
-    # Turkish cities with coordinates
+    # USOM gerçek feed URL'leri
+    USOM_URL_LIST = "https://www.usom.gov.tr/url-list.txt"
+    USOM_ADDRESSES = "https://www.usom.gov.tr/adres"
+
+    # Turkish cities with coordinates (for GeoJSON mapping)
     TURKISH_CITIES = {
         "Istanbul": (41.0082, 28.9784),
         "Ankara": (39.9334, 32.8597),
@@ -711,306 +713,151 @@ class TurkishCERTSource(ThreatSource):
         "Trabzon": (41.0015, 39.7178)
     }
 
-    # Regional threat sources (neighboring countries and common attack origins)
-    REGIONAL_SOURCES = {
-        "RU": ("Russia", 55.7558, 37.6173),
-        "IR": ("Iran", 35.6892, 51.3890),
-        "CN": ("China", 39.9042, 116.4074),
-        "UA": ("Ukraine", 50.4501, 30.5234),
-        "RO": ("Romania", 44.4268, 26.1025),
-        "BG": ("Bulgaria", 42.6977, 23.3219),
-        "GR": ("Greece", 37.9838, 23.7275),
-        "SY": ("Syria", 33.5138, 36.2765),
-        "IQ": ("Iraq", 33.3152, 44.3661)
-    }
-
     def __init__(self):
-        super().__init__("Turkish_CERT")
-        self._threat_templates = self._init_threat_templates()
-
-    def _init_threat_templates(self) -> List[Dict]:
-        """Initialize threat templates for simulation"""
-        return [
-            {
-                "category": ThreatCategory.APT,
-                "severity": ThreatSeverity.CRITICAL,
-                "description": "APT group activity targeting Turkish government infrastructure",
-                "tags": ["apt", "government", "espionage"]
-            },
-            {
-                "category": ThreatCategory.DDOS,
-                "severity": ThreatSeverity.HIGH,
-                "description": "DDoS attack campaign targeting Turkish financial sector",
-                "tags": ["ddos", "financial", "volumetric"]
-            },
-            {
-                "category": ThreatCategory.RANSOMWARE,
-                "severity": ThreatSeverity.CRITICAL,
-                "description": "Ransomware campaign targeting Turkish enterprises",
-                "tags": ["ransomware", "enterprise", "encryption"]
-            },
-            {
-                "category": ThreatCategory.PHISHING,
-                "severity": ThreatSeverity.MEDIUM,
-                "description": "Phishing campaign impersonating Turkish banks",
-                "tags": ["phishing", "banking", "credential-theft"]
-            },
-            {
-                "category": ThreatCategory.BOTNET,
-                "severity": ThreatSeverity.HIGH,
-                "description": "Botnet C2 infrastructure detected in Turkey region",
-                "tags": ["botnet", "c2", "mirai-variant"]
-            },
-            {
-                "category": ThreatCategory.BRUTE_FORCE,
-                "severity": ThreatSeverity.MEDIUM,
-                "description": "SSH brute force attacks targeting Turkish servers",
-                "tags": ["bruteforce", "ssh", "credential-stuffing"]
-            },
-            {
-                "category": ThreatCategory.SCANNING,
-                "severity": ThreatSeverity.LOW,
-                "description": "Port scanning activity from suspicious sources",
-                "tags": ["scanning", "reconnaissance", "nmap"]
-            },
-            {
-                "category": ThreatCategory.MALWARE,
-                "severity": ThreatSeverity.HIGH,
-                "description": "Malware distribution server targeting Turkish users",
-                "tags": ["malware", "trojan", "distribution"]
-            },
-            {
-                "category": ThreatCategory.C2,
-                "severity": ThreatSeverity.CRITICAL,
-                "description": "Command and Control server communication detected",
-                "tags": ["c2", "beaconing", "exfiltration"]
-            },
-            {
-                "category": ThreatCategory.DATA_EXFILTRATION,
-                "severity": ThreatSeverity.CRITICAL,
-                "description": "Data exfiltration attempt to foreign servers",
-                "tags": ["exfiltration", "data-theft", "sensitive"]
-            }
-        ]
+        super().__init__("USOM_Turkish_CERT")
 
     def fetch_threats(self) -> List[ThreatIndicator]:
-        """Generate simulated Turkish CERT threat data"""
+        """USOM gerçek URL blocklist'inden tehdit verisi çek"""
+        if not requests:
+            logger.warning(f"[{self.name}] requests kütüphanesi yüklü değil")
+            return []
+
         threats = []
+        try:
+            # USOM URL blocklist çek
+            response = requests.get(
+                self.USOM_URL_LIST,
+                timeout=30,
+                headers={"User-Agent": "TSUNAMI-ThreatIntel/6.0"}
+            )
+            response.raise_for_status()
 
-        # Generate between 15-30 simulated threats
-        num_threats = random.randint(15, 30)
+            now = datetime.now()
+            lines = response.text.strip().split('\n')
 
-        for i in range(num_threats):
-            threat = self._generate_threat(i)
-            if threat:
-                threats.append(threat)
+            for i, line in enumerate(lines[:200]):  # Max 200 entry
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
 
-        self.last_fetch = datetime.now()
-        logger.info(f"[{self.name}] Generated {len(threats)} simulated threats")
+                threat = self._parse_usom_entry(line, i, now)
+                if threat:
+                    threats.append(threat)
+
+            self.last_fetch = now
+            self.reset_errors()
+            logger.info(f"[{self.name}] USOM'dan {len(threats)} gerçek tehdit çekildi")
+
+        except Exception as e:
+            self.record_error(e)
+            logger.error(f"[{self.name}] USOM veri çekme hatası: {e}")
+
         return threats
 
-    def _generate_threat(self, index: int) -> ThreatIndicator:
-        """Generate a single simulated threat"""
-        template = random.choice(self._threat_templates)
+    def _parse_usom_entry(self, entry: str, index: int, now: datetime) -> Optional[ThreatIndicator]:
+        """USOM blocklist entry'sini ThreatIndicator'a çevir"""
+        try:
+            # USOM listesi URL veya domain içerir
+            # IP adresi çıkar (varsa)
+            ip_address = None
+            domain = entry
 
-        # Decide if threat originates from Turkey or external
-        is_external = random.random() < 0.7  # 70% external threats
+            # Doğrudan IP mi kontrol et
+            try:
+                ipaddress.ip_address(entry)
+                ip_address = entry
+            except ValueError:
+                # URL/domain ise - IP'ye çözümle
+                import socket
+                try:
+                    # URL'den hostname çıkar
+                    if '://' in entry:
+                        from urllib.parse import urlparse
+                        parsed = urlparse(entry)
+                        domain = parsed.hostname or entry
+                    else:
+                        domain = entry.split('/')[0]
 
-        if is_external:
-            source_country = random.choice(list(self.REGIONAL_SOURCES.keys()))
-            country_name, lat, lon = self.REGIONAL_SOURCES[source_country]
-            # Add some randomness to coordinates
-            lat += random.uniform(-2, 2)
-            lon += random.uniform(-2, 2)
-        else:
-            city = random.choice(list(self.TURKISH_CITIES.keys()))
-            lat, lon = self.TURKISH_CITIES[city]
-            source_country = "TR"
-            country_name = "Turkey"
-            lat += random.uniform(-0.5, 0.5)
-            lon += random.uniform(-0.5, 0.5)
+                    ip_address = socket.gethostbyname(domain)
+                except (socket.gaierror, TypeError):
+                    # DNS çözümlenemedi - yine de kaydet
+                    ip_address = "0.0.0.0"
 
-        # Generate random IP
-        ip_parts = [random.randint(1, 254) for _ in range(4)]
-        ip_address = ".".join(map(str, ip_parts))
+            # Tehdit kategorisi belirle
+            category = ThreatCategory.MALWARE
+            severity = ThreatSeverity.HIGH
+            tags = ["usom", "blocklist", "turkey"]
 
-        # Random timestamps
-        now = datetime.now()
-        first_seen = now - timedelta(
-            hours=random.randint(1, 72),
-            minutes=random.randint(0, 59)
-        )
-        last_seen = now - timedelta(minutes=random.randint(0, 30))
+            if any(kw in entry.lower() for kw in ['phish', 'login', 'bank', 'verify']):
+                category = ThreatCategory.PHISHING
+                severity = ThreatSeverity.MEDIUM
+                tags.append("phishing")
+            elif any(kw in entry.lower() for kw in ['c2', 'command', 'beacon', 'rat']):
+                category = ThreatCategory.C2
+                severity = ThreatSeverity.CRITICAL
+                tags.append("c2")
+            elif any(kw in entry.lower() for kw in ['ransom', 'crypt', 'lock']):
+                category = ThreatCategory.RANSOMWARE
+                severity = ThreatSeverity.CRITICAL
+                tags.append("ransomware")
 
-        # Random port for some threats
-        port = None
-        protocol = None
-        if template["category"] in [ThreatCategory.BRUTE_FORCE, ThreatCategory.SCANNING]:
-            common_ports = [22, 23, 80, 443, 445, 3389, 8080, 8443]
-            port = random.choice(common_ports)
-            protocol = "TCP"
+            # Türkiye varsayılan konum (hedef bölge)
+            # Ankara - USOM merkezi
+            geo = GeoLocation(
+                latitude=39.9334,
+                longitude=32.8597,
+                country_code="TR",
+                country_name="Turkey",
+                city="Ankara"
+            )
 
-        geo = GeoLocation(
-            latitude=lat,
-            longitude=lon,
-            country_code=source_country,
-            country_name=country_name,
-            city=random.choice(list(self.TURKISH_CITIES.keys())) if source_country == "TR" else None,
-            asn=f"AS{random.randint(1000, 65000)}"
-        )
+            return ThreatIndicator(
+                id=hashlib.md5(f"usom:{entry}:{index}".encode()).hexdigest()[:16],
+                ip_address=ip_address,
+                category=category,
+                severity=severity,
+                confidence=0.95,  # USOM resmi kaynak - yüksek güven
+                source=self.name,
+                first_seen=now - timedelta(hours=24),
+                last_seen=now,
+                geo_location=geo,
+                description=f"USOM blocklist: {domain}",
+                tags=tags,
+                metadata={
+                    "target_region": "Turkey",
+                    "source_url": self.USOM_URL_LIST,
+                    "original_entry": entry,
+                    "official_source": True
+                }
+            )
 
-        confidence = random.uniform(0.6, 0.95)
-        if template["severity"] == ThreatSeverity.CRITICAL:
-            confidence = max(confidence, 0.85)
-
-        return ThreatIndicator(
-            id=hashlib.md5(f"trcert:{ip_address}:{index}:{now.timestamp()}".encode()).hexdigest()[:16],
-            ip_address=ip_address,
-            category=template["category"],
-            severity=template["severity"],
-            confidence=round(confidence, 2),
-            source=self.name,
-            first_seen=first_seen,
-            last_seen=last_seen,
-            geo_location=geo,
-            description=template["description"],
-            tags=template["tags"],
-            port=port,
-            protocol=protocol,
-            attack_count=random.randint(1, 1000),
-            metadata={
-                "target_region": "Turkey",
-                "simulated": True
-            }
-        )
+        except Exception as e:
+            logger.debug(f"[{self.name}] Entry parse hatası: {e}")
+            return None
 
 
 # =============================================================================
-# MOCK DATA GENERATOR
+# MOCK DATA GENERATOR (Deprecated - artık gerçek kaynaklar kullanılıyor)
 # =============================================================================
 
 class MockThreatGenerator:
     """
-    Generates realistic mock threat data for demo/testing purposes.
-    Used when APIs are unavailable or for offline demonstrations.
+    DEPRECATED: Artık gerçek API kaynakları kullanılıyor.
+    Bu sınıf sadece geriye uyumluluk için korunuyor.
+    Boş liste döndürür - sahte veri üretmez.
     """
-
-    # Global attack origins with coordinates
-    GLOBAL_SOURCES = {
-        "RU": {"name": "Russia", "lat": 55.7558, "lon": 37.6173, "weight": 0.25},
-        "CN": {"name": "China", "lat": 39.9042, "lon": 116.4074, "weight": 0.20},
-        "US": {"name": "United States", "lat": 39.8283, "lon": -98.5795, "weight": 0.10},
-        "IR": {"name": "Iran", "lat": 35.6892, "lon": 51.3890, "weight": 0.15},
-        "KP": {"name": "North Korea", "lat": 39.0392, "lon": 125.7625, "weight": 0.05},
-        "UA": {"name": "Ukraine", "lat": 50.4501, "lon": 30.5234, "weight": 0.08},
-        "BR": {"name": "Brazil", "lat": -14.2350, "lon": -51.9253, "weight": 0.05},
-        "IN": {"name": "India", "lat": 20.5937, "lon": 78.9629, "weight": 0.05},
-        "VN": {"name": "Vietnam", "lat": 14.0583, "lon": 108.2772, "weight": 0.04},
-        "ID": {"name": "Indonesia", "lat": -0.7893, "lon": 113.9213, "weight": 0.03}
-    }
-
-    # Turkey-focused targets
-    TURKEY_TARGETS = {
-        "Istanbul": (41.0082, 28.9784),
-        "Ankara": (39.9334, 32.8597),
-        "Izmir": (38.4237, 27.1428),
-        "Antalya": (36.8969, 30.7133),
-        "Bursa": (40.1885, 29.0610)
-    }
 
     @classmethod
     def generate_threats(cls, count: int = 50, turkey_focus: bool = True) -> List[ThreatIndicator]:
-        """Generate mock threat data"""
-        threats = []
-
-        for i in range(count):
-            threat = cls._generate_single_threat(i, turkey_focus)
-            threats.append(threat)
-
-        return threats
+        """Deprecated: Boş liste döndürür. Gerçek kaynakları kullanın."""
+        logger.warning("[MockThreatGenerator] DEPRECATED - Sahte veri üretimi devre dışı. "
+                      "Gerçek API kaynakları kullanılmalı.")
+        return []
 
     @classmethod
-    def _generate_single_threat(cls, index: int, turkey_focus: bool) -> ThreatIndicator:
-        """Generate a single mock threat"""
-        # Select source country weighted by attack frequency
-        countries = list(cls.GLOBAL_SOURCES.keys())
-        weights = [cls.GLOBAL_SOURCES[c]["weight"] for c in countries]
-        source_country = random.choices(countries, weights=weights)[0]
-        source_data = cls.GLOBAL_SOURCES[source_country]
-
-        # Randomize coordinates slightly
-        lat = source_data["lat"] + random.uniform(-5, 5)
-        lon = source_data["lon"] + random.uniform(-5, 5)
-
-        # Generate IP address
-        ip_parts = [random.randint(1, 254) for _ in range(4)]
-        ip_address = ".".join(map(str, ip_parts))
-
-        # Select category and severity
-        categories = list(ThreatCategory)
-        category = random.choice(categories)
-
-        severities = [ThreatSeverity.CRITICAL, ThreatSeverity.HIGH,
-                     ThreatSeverity.MEDIUM, ThreatSeverity.LOW]
-        severity_weights = [0.1, 0.25, 0.40, 0.25]
-        severity = random.choices(severities, severity_weights)[0]
-
-        # APT threats are typically critical
-        if category == ThreatCategory.APT:
-            severity = ThreatSeverity.CRITICAL
-
-        # Time data
-        now = datetime.now()
-        first_seen = now - timedelta(hours=random.randint(1, 168))
-        last_seen = now - timedelta(minutes=random.randint(0, 60))
-
-        # Port information for relevant categories
-        port = None
-        protocol = None
-        if category in [ThreatCategory.BRUTE_FORCE, ThreatCategory.SCANNING]:
-            port = random.choice([22, 23, 80, 443, 445, 3389, 8080, 8443, 5900])
-            protocol = "TCP"
-        elif category == ThreatCategory.DDOS:
-            port = random.choice([80, 443, 53])
-            protocol = random.choice(["TCP", "UDP"])
-
-        geo = GeoLocation(
-            latitude=lat,
-            longitude=lon,
-            country_code=source_country,
-            country_name=source_data["name"],
-            asn=f"AS{random.randint(1000, 65000)}",
-            isp=f"ISP-{random.randint(1, 100)}"
-        )
-
-        tags = [category.value, severity.value, source_country.lower()]
-        if turkey_focus:
-            target_city = random.choice(list(cls.TURKEY_TARGETS.keys()))
-            tags.append(f"target:{target_city.lower()}")
-
-        sources = ["MockGenerator", "AbuseIPDB", "AlienVault_OTX", "GreyNoise", "Turkish_CERT"]
-        source = random.choice(sources)
-
-        return ThreatIndicator(
-            id=hashlib.md5(f"mock:{ip_address}:{index}:{now.timestamp()}".encode()).hexdigest()[:16],
-            ip_address=ip_address,
-            category=category,
-            severity=severity,
-            confidence=round(random.uniform(0.5, 0.99), 2),
-            source=source,
-            first_seen=first_seen,
-            last_seen=last_seen,
-            geo_location=geo,
-            description=f"Mock {category.value} threat from {source_data['name']}",
-            tags=tags,
-            port=port,
-            protocol=protocol,
-            attack_count=random.randint(1, 5000),
-            metadata={
-                "mock": True,
-                "generated_at": now.isoformat()
-            }
-        )
+    def _generate_single_threat(cls, index: int, turkey_focus: bool) -> Optional[ThreatIndicator]:
+        """Deprecated: None döndürür."""
+        return None
 
 
 # =============================================================================
@@ -1021,35 +868,35 @@ class ThreatIntelligenceManager:
     """
     Central manager for threat intelligence aggregation and analysis.
 
-    Aggregates data from multiple sources:
-    - AbuseIPDB
-    - AlienVault OTX
-    - GreyNoise
-    - Shodan
-    - Turkish CERT (simulated)
+    Aggregates data from multiple real API sources:
+    - AbuseIPDB (real-time abuse reports)
+    - AlienVault OTX (open threat exchange pulses)
+    - GreyNoise (internet scanner detection)
+    - Shodan (internet-wide scan data)
+    - USOM Turkish CERT (official national blocklist)
 
     Features:
     - 5-minute caching to respect API rate limits
-    - Automatic fallback to mock data
-    - GeoJSON format output
+    - GeoJSON format output for map visualization
     - Regional filtering (Turkey focus)
     - Statistics and analytics
+    - No simulated/mock data - all sources are real
     """
 
     # Turkey and surrounding region country codes
     TURKEY_REGION = ["TR", "GR", "BG", "RO", "UA", "GE", "AM", "AZ", "IR", "IQ", "SY", "CY"]
 
     def __init__(self,
-                 use_mock_fallback: bool = True,
+                 use_mock_fallback: bool = False,
                  cache_ttl: int = 300):  # 5 minutes default
         """
         Initialize the Threat Intelligence Manager.
 
         Args:
-            use_mock_fallback: If True, use mock data when APIs fail
+            use_mock_fallback: Deprecated, kept for API compat. Always False.
             cache_ttl: Cache time-to-live in seconds (default: 300 = 5 minutes)
         """
-        self.use_mock_fallback = use_mock_fallback
+        self.use_mock_fallback = False  # Mock data devre dışı
         self.cache_ttl = cache_ttl
         self._cache = ThreatCache(default_ttl=cache_ttl)
         self._threats: Dict[str, ThreatIndicator] = {}
@@ -1075,13 +922,13 @@ class ThreatIntelligenceManager:
 
     def get_live_threats(self,
                          force_refresh: bool = False,
-                         include_mock: bool = True) -> Dict[str, Any]:
+                         include_mock: bool = False) -> Dict[str, Any]:
         """
         Get current live threats in GeoJSON format.
 
         Args:
             force_refresh: If True, bypass cache and fetch fresh data
-            include_mock: If True, include mock data when APIs fail
+            include_mock: Deprecated, ignored. No mock data used.
 
         Returns:
             GeoJSON FeatureCollection with threat data
@@ -1095,13 +942,13 @@ class ThreatIntelligenceManager:
                 cached_data["cache_age_seconds"] = self._cache.get_age(cache_key)
                 return cached_data
 
-        # Fetch fresh data from all sources
+        # Fetch fresh data from all real API sources
         threats = self._fetch_all_threats()
 
-        # If no threats from APIs and fallback enabled, use mock data
-        if not threats and self.use_mock_fallback and include_mock:
-            logger.warning("[ThreatIntelligenceManager] No API data, using mock fallback")
-            threats = MockThreatGenerator.generate_threats(50, turkey_focus=True)
+        # Log if no data from any source (no mock fallback)
+        if not threats:
+            logger.warning("[ThreatIntelligenceManager] No threats from any API source. "
+                          "Check API keys and network connectivity.")
 
         # Store threats
         with self._lock:
@@ -1312,44 +1159,20 @@ class ThreatIntelligenceManager:
                              attack_type: Optional[ThreatCategory] = None,
                              target_region: str = "TR") -> Dict[str, Any]:
         """
-        Generate simulated attack data for demo/testing purposes.
+        DEPRECATED: Returns current real threat data instead of simulated data.
+        Kept for API compatibility only.
 
         Args:
-            num_attacks: Number of attack events to simulate
-            attack_type: Specific attack type (None for random mix)
-            target_region: Target region code (default: TR for Turkey)
+            num_attacks: Ignored
+            attack_type: Ignored
+            target_region: Used for region filtering
 
         Returns:
-            GeoJSON FeatureCollection with simulated attack data
+            GeoJSON FeatureCollection with real threat data
         """
-        threats = []
-
-        for i in range(num_attacks):
-            if attack_type:
-                category = attack_type
-            else:
-                category = random.choice(list(ThreatCategory))
-
-            # Generate threat with specific parameters
-            threat = MockThreatGenerator._generate_single_threat(
-                i,
-                turkey_focus=(target_region == "TR")
-            )
-
-            # Override category if specified
-            if attack_type:
-                threat.category = attack_type
-                threat.tags = [attack_type.value] + threat.tags[1:]
-                threat.description = f"Simulated {attack_type.value} attack"
-
-            threats.append(threat)
-
-        geojson = self._to_geojson(threats)
-        geojson["properties"]["simulation"] = True
-        geojson["properties"]["attack_type"] = attack_type.value if attack_type else "mixed"
-        geojson["properties"]["target_region"] = target_region
-
-        return geojson
+        logger.warning("[ThreatIntelligenceManager] simulate_attack_data() DEPRECATED. "
+                      "Returning real threat data instead.")
+        return self.get_threats_by_region(country_code=target_region)
 
     def get_threat_by_ip(self, ip_address: str) -> Optional[ThreatIndicator]:
         """
@@ -1426,6 +1249,49 @@ class ThreatIntelligenceManager:
 
         return results
 
+    def get_live_threats_geojson(self,
+                                region: Optional[str] = None,
+                                category: Optional[str] = None,
+                                severity: Optional[str] = None,
+                                force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        Get live threats as GeoJSON with optional filtering.
+
+        Args:
+            region: Country code filter (e.g., "TR")
+            category: Threat category filter (e.g., "malware", "ddos")
+            severity: Severity level filter (e.g., "critical", "high")
+            force_refresh: If True, bypass cache
+
+        Returns:
+            GeoJSON FeatureCollection with filtered threat data
+        """
+        # Get base data (region-filtered or all)
+        if region:
+            geojson = self.get_threats_by_region(country_code=region)
+        else:
+            geojson = self.get_live_threats(force_refresh=force_refresh)
+
+        # Apply additional filters on features
+        if category or severity:
+            filtered_features = []
+            for feature in geojson.get("features", []):
+                props = feature.get("properties", {})
+                if category and props.get("category") != category:
+                    continue
+                if severity and props.get("severity") != severity:
+                    continue
+                filtered_features.append(feature)
+
+            geojson["features"] = filtered_features
+            geojson["properties"]["total_threats"] = len(filtered_features)
+            if category:
+                geojson["properties"]["category_filter"] = category
+            if severity:
+                geojson["properties"]["severity_filter"] = severity
+
+        return geojson
+
     def clear_cache(self) -> None:
         """Clear all cached data"""
         self._cache.clear()
@@ -1457,14 +1323,14 @@ _manager_lock = threading.Lock()
 
 
 def get_threat_intelligence_manager(
-    use_mock_fallback: bool = True,
+    use_mock_fallback: bool = False,
     cache_ttl: int = 300
 ) -> ThreatIntelligenceManager:
     """
     Get the singleton ThreatIntelligenceManager instance.
 
     Args:
-        use_mock_fallback: If True, use mock data when APIs fail
+        use_mock_fallback: Deprecated, ignored. No mock data used.
         cache_ttl: Cache time-to-live in seconds
 
     Returns:
@@ -1475,7 +1341,7 @@ def get_threat_intelligence_manager(
     with _manager_lock:
         if _manager_instance is None:
             _manager_instance = ThreatIntelligenceManager(
-                use_mock_fallback=use_mock_fallback,
+                use_mock_fallback=False,
                 cache_ttl=cache_ttl
             )
         return _manager_instance
@@ -1523,16 +1389,14 @@ def get_threats_by_region(country_code: str = "TR") -> Dict[str, Any]:
 
 def simulate_attack_data(num_attacks: int = 25) -> Dict[str, Any]:
     """
-    Convenience function to generate simulated attack data.
-
-    Args:
-        num_attacks: Number of attacks to simulate
+    DEPRECATED: Returns real threat data. Kept for API compatibility.
 
     Returns:
-        GeoJSON FeatureCollection with simulated data
+        GeoJSON FeatureCollection with real threat data
     """
+    logger.warning("[live_threats] simulate_attack_data() DEPRECATED")
     manager = get_threat_intelligence_manager()
-    return manager.simulate_attack_data(num_attacks=num_attacks)
+    return manager.get_live_threats()
 
 
 # =============================================================================

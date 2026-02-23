@@ -906,3 +906,7 @@ class WiFiSecurityMonitor:
             'detection_history_size': len(self._detection_history),
             'last_scan': self._scan_history[-1] if self._scan_history else None
         }
+
+    def get_stats(self) -> Dict[str, Any]:
+        """get_statistics icin alias (dalga_web.py uyumlulugu)"""
+        return self.get_statistics()

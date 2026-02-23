@@ -993,6 +993,25 @@ class WirelessIDS:
             'metric_history_keys': len(self._metric_history)
         }
 
+    def get_stats(self) -> Dict[str, Any]:
+        """get_statistics icin alias (dalga_web.py uyumlulugu)"""
+        return self.get_statistics()
+
+    def get_recent_events(self, limit: int = 100) -> List[Dict]:
+        """Son olaylari dict listesi olarak getir (dalga_web.py uyumlulugu)"""
+        events = self.get_events(limit=limit)
+        return [
+            {
+                'event_type': e.category.value if e.category else 'unknown',
+                'severity': e.severity.name if e.severity else 'unknown',
+                'source': e.source_identifier or '',
+                'details': e.description or '',
+                'timestamp': e.timestamp.isoformat() if e.timestamp else '',
+                'signature_name': e.signature_id or ''
+            }
+            for e in events
+        ]
+
     def add_signature(self, signature: WirelessThreatSignature):
         """Yeni imza ekle"""
         self.signatures[signature.signature_id] = signature

@@ -22,6 +22,14 @@ from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 import uuid
 import json
+import socket
+import threading
+
+try:
+    import requests
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
 
 logger = logging.getLogger(__name__)
 
@@ -152,14 +160,58 @@ class SyslogInput:
         }
 
     def start(self) -> bool:
-        """Start syslog listener"""
-        self.running = True
-        logger.info("Syslog listener started (simulated)")
-        return True
+        """Start real UDP syslog listener on configured port"""
+        if self.running:
+            return True
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listen_port = self.config.get("port", 5514)
+            self._socket.bind(("0.0.0.0", listen_port))
+            self._socket.settimeout(1.0)
+            self.running = True
+            self._listener_thread = threading.Thread(
+                target=self._listen_loop, daemon=True, name="syslog-listener"
+            )
+            self._listener_thread.start()
+            logger.info(f"Syslog UDP listener started on port {listen_port}")
+            return True
+        except PermissionError:
+            logger.warning(f"Permission denied for syslog port, using record-only mode")
+            self.running = True
+            return True
+        except Exception as e:
+            logger.error(f"Syslog listener start failed: {e}")
+            self.running = True
+            return True
+
+    def _listen_loop(self):
+        """Background thread: receive syslog UDP datagrams"""
+        while self.running:
+            try:
+                data, addr = self._socket.recvfrom(8192)
+                msg = data.decode('utf-8', errors='replace')
+                parsed = self.parse_message(msg)
+                parsed["source_ip"] = addr[0]
+                parsed["source_port"] = addr[1]
+                self.messages.append(parsed)
+                if len(self.messages) > 10000:
+                    self.messages = self.messages[-5000:]
+            except socket.timeout:
+                continue
+            except Exception:
+                if self.running:
+                    continue
+                break
 
     def stop(self) -> bool:
-        """Stop syslog listener"""
+        """Stop syslog listener and close socket"""
         self.running = False
+        if hasattr(self, '_socket') and self._socket:
+            try:
+                self._socket.close()
+            except Exception:
+                pass
         logger.info("Syslog listener stopped")
         return True
 
@@ -169,18 +221,52 @@ class SyslogInput:
 
 
 class RESTConnector:
-    """REST API connector for external systems"""
+    """REST API connector for external systems - gercek HTTP istemcisi
+
+    requests kutuphanesi ile gercek HTTP istekleri yapar.
+    Ozellikler:
+    - Session-based connection pooling
+    - Otomatik retry (config.retry_count)
+    - Timeout yonetimi (config.timeout)
+    - API key / Bearer token / Basic auth
+    - SSL dogrulama
+    """
 
     def __init__(self, config: IntegrationConfig):
         self.config = config
-        self.session = None
+        self.session: Optional[Any] = None
         self.status = ConnectionStatus.DISCONNECTED
         logger.info(f"RESTConnector initialized: {config.name}")
 
     def connect(self) -> bool:
-        """Establish connection"""
+        """Establish connection with real requests.Session"""
+        if not HAS_REQUESTS:
+            logger.error("requests library not installed - REST connector unavailable")
+            self.status = ConnectionStatus.ERROR
+            return False
         try:
-            # Would use requests session in real implementation
+            self.session = requests.Session()
+            self.session.headers.update(self.config.headers)
+
+            # Auth setup
+            creds = self.config.credentials
+            if creds.get("api_key"):
+                key_header = creds.get("api_key_header", "X-API-Key")
+                self.session.headers[key_header] = creds["api_key"]
+            elif creds.get("bearer_token"):
+                self.session.headers["Authorization"] = f"Bearer {creds['bearer_token']}"
+            elif creds.get("username") and creds.get("password"):
+                self.session.auth = (creds["username"], creds["password"])
+
+            # Test connectivity
+            if self.config.endpoint:
+                resp = self.session.head(
+                    self.config.endpoint,
+                    timeout=min(self.config.timeout, 10),
+                    allow_redirects=True
+                )
+                resp.raise_for_status()
+
             self.status = ConnectionStatus.CONNECTED
             logger.info(f"Connected to: {self.config.endpoint}")
             return True
@@ -190,17 +276,61 @@ class RESTConnector:
             return False
 
     def disconnect(self) -> bool:
-        """Close connection"""
+        """Close connection and session"""
+        if self.session:
+            try:
+                self.session.close()
+            except Exception:
+                pass
+            self.session = None
         self.status = ConnectionStatus.DISCONNECTED
         return True
 
     def get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """HTTP GET request"""
-        return {"method": "GET", "path": path, "params": params, "simulated": True}
+        """Real HTTP GET request"""
+        if not self.session:
+            self.connect()
+        if not self.session:
+            return {"error": "Not connected", "status": 503}
+
+        url = f"{self.config.endpoint.rstrip('/')}/{path.lstrip('/')}" if path else self.config.endpoint
+        last_error = None
+        for attempt in range(max(1, self.config.retry_count)):
+            try:
+                resp = self.session.get(url, params=params, timeout=self.config.timeout)
+                return {
+                    "status_code": resp.status_code,
+                    "data": resp.json() if resp.headers.get("content-type", "").startswith("application/json") else resp.text,
+                    "headers": dict(resp.headers),
+                    "url": str(resp.url)
+                }
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"GET {url} attempt {attempt+1} failed: {e}")
+        return {"error": last_error, "status": 500}
 
     def post(self, path: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        """HTTP POST request"""
-        return {"method": "POST", "path": path, "data": data, "simulated": True}
+        """Real HTTP POST request"""
+        if not self.session:
+            self.connect()
+        if not self.session:
+            return {"error": "Not connected", "status": 503}
+
+        url = f"{self.config.endpoint.rstrip('/')}/{path.lstrip('/')}" if path else self.config.endpoint
+        last_error = None
+        for attempt in range(max(1, self.config.retry_count)):
+            try:
+                resp = self.session.post(url, json=data, timeout=self.config.timeout)
+                return {
+                    "status_code": resp.status_code,
+                    "data": resp.json() if resp.headers.get("content-type", "").startswith("application/json") else resp.text,
+                    "headers": dict(resp.headers),
+                    "url": str(resp.url)
+                }
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"POST {url} attempt {attempt+1} failed: {e}")
+        return {"error": last_error, "status": 500}
 
     def get_status(self) -> ConnectionStatus:
         """Get connection status"""

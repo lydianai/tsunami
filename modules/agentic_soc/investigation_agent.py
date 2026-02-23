@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import ipaddress
 import socket
 import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -233,120 +234,236 @@ class DataSourceConnector:
 
 
 class SIEMConnector(DataSourceConnector):
-    """SIEM data source connector"""
+    """SIEM data source connector - queries real system logs and TSUNAMI DB"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.SIEM, config)
+        self._db_path = str(Path.home() / '.dalga' / 'dalga_v2.db')
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query SIEM for related events"""
-        # Simulated SIEM query - in production, connect to actual SIEM
+        """Query real system logs and TSUNAMI security database"""
+        import sqlite3 as _sqlite3
+
         ip = query_params.get('ip')
         username = query_params.get('username')
         hostname = query_params.get('hostname')
         time_range = query_params.get('time_range_hours', 24)
 
-        # Generate realistic SIEM results
+        t0 = datetime.utcnow()
         events = []
-        if ip:
-            events.extend([
-                {
-                    'timestamp': (datetime.utcnow() - timedelta(hours=i)).isoformat(),
-                    'event_type': 'authentication',
-                    'source_ip': ip,
-                    'action': 'login_success' if i % 3 != 0 else 'login_failure',
-                    'user': f'user{i % 5}',
-                    'hostname': f'workstation{i % 10}'
-                }
-                for i in range(min(10, time_range))
-            ])
 
-        if username:
-            events.extend([
-                {
-                    'timestamp': (datetime.utcnow() - timedelta(hours=i * 2)).isoformat(),
-                    'event_type': 'process_execution',
-                    'username': username,
-                    'process': ['cmd.exe', 'powershell.exe', 'chrome.exe'][i % 3],
-                    'command_line': f'command_{i}'
-                }
-                for i in range(min(5, time_range // 2))
-            ])
+        # 1) Query TSUNAMI security events database
+        try:
+            if Path(self._db_path).exists():
+                conn = _sqlite3.connect(self._db_path, timeout=5)
+                conn.row_factory = _sqlite3.Row
+                cutoff = (datetime.utcnow() - timedelta(hours=time_range)).isoformat()
+
+                # Query olay_kayitlari (event logs) table if it exists
+                tables = [r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()]
+
+                for tbl in ['olay_kayitlari', 'security_events', 'audit_log']:
+                    if tbl in tables:
+                        try:
+                            rows = conn.execute(
+                                f"SELECT * FROM {tbl} WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT 50",
+                                (cutoff,)
+                            ).fetchall()
+                            for row in rows:
+                                d = dict(row)
+                                # Filter by IP/username/hostname if specified
+                                row_str = json.dumps(d, default=str).lower()
+                                if ip and ip.lower() not in row_str:
+                                    continue
+                                if username and username.lower() not in row_str:
+                                    continue
+                                if hostname and hostname.lower() not in row_str:
+                                    continue
+                                events.append({
+                                    'timestamp': d.get('timestamp', d.get('created_at', '')),
+                                    'event_type': d.get('event_type', d.get('tip', 'unknown')),
+                                    'source': 'tsunami_db',
+                                    'data': d
+                                })
+                        except Exception:
+                            pass
+                conn.close()
+        except Exception as e:
+            logger.warning(f"SIEM DB query error: {e}")
+
+        # 2) Parse real system auth logs
+        auth_log = Path('/var/log/auth.log')
+        if auth_log.exists():
+            try:
+                cutoff_dt = datetime.utcnow() - timedelta(hours=time_range)
+                with open(auth_log, 'r', errors='ignore') as f:
+                    for line in f.readlines()[-200:]:  # Last 200 lines
+                        line_lower = line.lower()
+                        if ip and ip in line:
+                            events.append({
+                                'timestamp': line[:15],
+                                'event_type': 'auth_log',
+                                'source': 'system',
+                                'raw': line.strip()
+                            })
+                        elif username and username.lower() in line_lower:
+                            events.append({
+                                'timestamp': line[:15],
+                                'event_type': 'auth_log',
+                                'source': 'system',
+                                'raw': line.strip()
+                            })
+            except PermissionError:
+                pass
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'siem',
             'query': query_params,
             'total_events': len(events),
-            'events': events,
-            'query_time_ms': 150
+            'events': events[:50],
+            'query_time_ms': round(elapsed, 1)
         }
 
 
 class EDRConnector(DataSourceConnector):
-    """EDR data source connector"""
+    """EDR data source connector - queries real endpoint data via psutil"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.EDR, config)
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query EDR for endpoint data"""
+        """Query real endpoint data using psutil"""
+        import platform
+        t0 = datetime.utcnow()
+
         hostname = query_params.get('hostname')
         ip = query_params.get('ip')
         process_name = query_params.get('process_name')
 
-        # Simulated EDR results
         endpoint_data = {}
 
-        if hostname or ip:
-            endpoint_data = {
-                'hostname': hostname or f'host-{ip}',
-                'ip': ip or '10.0.0.100',
-                'os': 'Windows 10 Enterprise',
-                'last_seen': datetime.utcnow().isoformat(),
-                'agent_version': '7.5.2',
-                'isolation_status': 'not_isolated',
-                'running_processes': [
-                    {'name': 'chrome.exe', 'pid': 1234, 'user': 'DOMAIN\\user1'},
-                    {'name': 'outlook.exe', 'pid': 5678, 'user': 'DOMAIN\\user1'},
-                    {'name': 'svchost.exe', 'pid': 912, 'user': 'SYSTEM'}
-                ],
-                'network_connections': [
-                    {'remote_ip': '8.8.8.8', 'remote_port': 443, 'process': 'chrome.exe'},
-                    {'remote_ip': '40.97.164.146', 'remote_port': 443, 'process': 'outlook.exe'}
-                ],
-                'recent_detections': []
-            }
+        try:
+            import psutil
 
-        if process_name:
-            endpoint_data['process_tree'] = {
-                'name': process_name,
-                'pid': 9999,
-                'parent': 'explorer.exe',
-                'children': ['child_proc.exe'],
-                'command_line': f'{process_name} --suspicious-flag',
-                'file_hash': 'abc123def456...'
-            }
+            # Real system info
+            local_hostname = socket.gethostname()
+            local_ips = []
+            for iface, addrs in psutil.net_if_addrs().items():
+                for addr in addrs:
+                    if addr.family == socket.AF_INET:
+                        local_ips.append(addr.address)
+
+            # Check if query targets this host
+            is_local = (
+                not hostname or hostname == local_hostname or
+                not ip or ip in local_ips
+            )
+
+            if is_local:
+                # Real running processes
+                running_procs = []
+                for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent']):
+                    try:
+                        info = proc.info
+                        entry = {
+                            'name': info['name'],
+                            'pid': info['pid'],
+                            'user': info.get('username', 'unknown'),
+                            'cpu_pct': round(info.get('cpu_percent', 0) or 0, 1),
+                            'mem_pct': round(info.get('memory_percent', 0) or 0, 1)
+                        }
+                        # Filter by process name if specified
+                        if process_name and process_name.lower() not in (info['name'] or '').lower():
+                            continue
+                        running_procs.append(entry)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+
+                # Real network connections
+                net_conns = []
+                for conn in psutil.net_connections(kind='inet'):
+                    if conn.status == 'ESTABLISHED' and conn.raddr:
+                        try:
+                            proc_name = psutil.Process(conn.pid).name() if conn.pid else 'unknown'
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            proc_name = 'unknown'
+                        net_conns.append({
+                            'remote_ip': conn.raddr.ip,
+                            'remote_port': conn.raddr.port,
+                            'local_port': conn.laddr.port if conn.laddr else None,
+                            'process': proc_name,
+                            'pid': conn.pid
+                        })
+
+                endpoint_data = {
+                    'hostname': local_hostname,
+                    'ip': local_ips[0] if local_ips else '127.0.0.1',
+                    'os': f'{platform.system()} {platform.release()}',
+                    'last_seen': datetime.utcnow().isoformat(),
+                    'isolation_status': 'not_isolated',
+                    'running_processes': running_procs[:50],
+                    'total_processes': len(running_procs),
+                    'network_connections': net_conns[:30],
+                    'total_connections': len(net_conns),
+                    'cpu_usage': psutil.cpu_percent(interval=0.1),
+                    'memory_usage': psutil.virtual_memory().percent,
+                    'boot_time': datetime.fromtimestamp(psutil.boot_time()).isoformat()
+                }
+
+                # Process tree for specific process
+                if process_name:
+                    for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'ppid']):
+                        try:
+                            if process_name.lower() in (proc.info['name'] or '').lower():
+                                parent = psutil.Process(proc.info['ppid']) if proc.info['ppid'] else None
+                                children = [c.name() for c in proc.children()]
+                                endpoint_data['process_tree'] = {
+                                    'name': proc.info['name'],
+                                    'pid': proc.info['pid'],
+                                    'parent': parent.name() if parent else None,
+                                    'children': children,
+                                    'command_line': ' '.join(proc.info.get('cmdline') or []),
+                                }
+                                break
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+            else:
+                endpoint_data = {
+                    'hostname': hostname or f'host-{ip}',
+                    'ip': ip,
+                    'status': 'remote_host_not_accessible',
+                    'note': 'Uzak host bilgisi icin ajan kurulumu gerekli'
+                }
+
+        except ImportError:
+            endpoint_data = {'error': 'psutil kurulu degil: pip install psutil'}
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'edr',
             'query': query_params,
             'endpoint_data': endpoint_data,
-            'query_time_ms': 200
+            'query_time_ms': round(elapsed, 1)
         }
 
 
 class NetworkConnector(DataSourceConnector):
-    """Network data source connector"""
+    """Network data source connector - real DNS, whois, and connection data"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.NETWORK, config)
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query network data"""
+        """Query real network data via DNS, socket, and psutil"""
+        t0 = datetime.utcnow()
         ip = query_params.get('ip')
         port = query_params.get('port')
 
-        # Simulated network data
         network_data = {
             'flows': [],
             'dns_queries': [],
@@ -354,178 +471,414 @@ class NetworkConnector(DataSourceConnector):
         }
 
         if ip:
-            # Check if internal or external
+            # Classify IP
             try:
                 ip_obj = ipaddress.ip_address(ip)
                 is_private = ip_obj.is_private
+                network_data['ip_info'] = {
+                    'address': ip,
+                    'is_private': is_private,
+                    'is_loopback': ip_obj.is_loopback,
+                    'is_multicast': ip_obj.is_multicast,
+                    'version': ip_obj.version
+                }
             except Exception:
                 is_private = False
 
-            if is_private:
-                network_data['flows'] = [
-                    {
-                        'src_ip': ip,
-                        'dst_ip': '10.0.0.1',
-                        'src_port': 49152,
-                        'dst_port': 443,
-                        'protocol': 'TCP',
-                        'bytes_sent': 1024,
-                        'bytes_recv': 4096,
-                        'timestamp': datetime.utcnow().isoformat()
-                    }
-                ]
-            else:
-                network_data['geo'] = {
-                    'country': 'US',
-                    'city': 'Seattle',
-                    'asn': 16509,
-                    'org': 'Amazon.com Inc.'
-                }
-
-            # DNS lookups
+            # Real reverse DNS
             try:
-                hostname = socket.gethostbyaddr(ip)[0]
-                network_data['reverse_dns'] = hostname
+                hostname_result = socket.gethostbyaddr(ip)
+                network_data['reverse_dns'] = hostname_result[0]
+                network_data['aliases'] = hostname_result[1]
             except Exception:
                 network_data['reverse_dns'] = None
+
+            # Real forward DNS if we got a hostname
+            if network_data.get('reverse_dns'):
+                try:
+                    fwd = socket.getaddrinfo(network_data['reverse_dns'], None)
+                    network_data['forward_dns'] = list(set(
+                        addr[4][0] for addr in fwd
+                    ))
+                except Exception:
+                    pass
+
+            # Real active connections to/from this IP via psutil
+            try:
+                import psutil
+                for conn in psutil.net_connections(kind='inet'):
+                    if conn.status == 'ESTABLISHED':
+                        if conn.raddr and conn.raddr.ip == ip:
+                            try:
+                                pname = psutil.Process(conn.pid).name() if conn.pid else 'unknown'
+                            except Exception:
+                                pname = 'unknown'
+                            network_data['connections'].append({
+                                'direction': 'outbound',
+                                'local_ip': conn.laddr.ip if conn.laddr else None,
+                                'local_port': conn.laddr.port if conn.laddr else None,
+                                'remote_ip': conn.raddr.ip,
+                                'remote_port': conn.raddr.port,
+                                'process': pname,
+                                'pid': conn.pid,
+                                'timestamp': datetime.utcnow().isoformat()
+                            })
+                        elif conn.laddr and conn.laddr.ip == ip:
+                            network_data['connections'].append({
+                                'direction': 'inbound',
+                                'local_ip': conn.laddr.ip,
+                                'local_port': conn.laddr.port,
+                                'remote_ip': conn.raddr.ip if conn.raddr else None,
+                                'remote_port': conn.raddr.port if conn.raddr else None,
+                                'pid': conn.pid,
+                                'timestamp': datetime.utcnow().isoformat()
+                            })
+            except ImportError:
+                pass
+
+            # Port connectivity check if specified
+            if port:
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(3)
+                    result = s.connect_ex((ip, int(port)))
+                    network_data['port_check'] = {
+                        'port': int(port),
+                        'open': result == 0
+                    }
+                    s.close()
+                except Exception:
+                    pass
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'network',
             'query': query_params,
             'network_data': network_data,
-            'query_time_ms': 100
+            'query_time_ms': round(elapsed, 1)
         }
 
 
 class ThreatIntelConnector(DataSourceConnector):
-    """Threat intelligence data source connector"""
+    """Threat intelligence connector - uses real TSUNAMI threat intel module"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.THREAT_INTEL, config)
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query threat intelligence"""
+        """Query real threat intelligence sources"""
+        t0 = datetime.utcnow()
         ioc = query_params.get('ioc')
         ioc_type = query_params.get('ioc_type', 'ip')
 
-        # Simulated threat intel
         intel_data = {
             'found': False,
-            'feeds_checked': ['alienvault', 'virustotal', 'abuse.ch'],
+            'feeds_checked': [],
             'matches': []
         }
 
-        # Simulate finding some IOCs
-        if ioc and '.' in str(ioc):
-            # Randomly mark some as malicious
-            if hash(str(ioc)) % 5 == 0:
-                intel_data['found'] = True
-                intel_data['matches'] = [
-                    {
-                        'feed': 'abuse.ch',
-                        'type': ioc_type,
-                        'value': ioc,
-                        'threat_type': 'malware',
-                        'malware_family': 'Emotet',
-                        'first_seen': (datetime.utcnow() - timedelta(days=30)).isoformat(),
-                        'last_seen': datetime.utcnow().isoformat(),
-                        'confidence': 85
-                    }
-                ]
+        if not ioc:
+            return {
+                'source': 'threat_intel',
+                'query': query_params,
+                'intel_data': intel_data,
+                'query_time_ms': 0
+            }
+
+        # Use TSUNAMI's real threat intelligence module
+        try:
+            from modules.threat_intelligence import get_live_threats, get_threat_intelligence_manager
+            manager = get_threat_intelligence_manager()
+            feeds_checked = []
+
+            for src_name, src in manager.sources.items():
+                feeds_checked.append(src_name)
+                try:
+                    indicators = await src.fetch() if asyncio.iscoroutinefunction(src.fetch) else src.fetch()
+                    for indicator in (indicators or []):
+                        val = getattr(indicator, 'value', '') or str(indicator)
+                        if str(ioc).lower() in val.lower():
+                            intel_data['found'] = True
+                            intel_data['matches'].append({
+                                'feed': src_name,
+                                'type': ioc_type,
+                                'value': ioc,
+                                'threat_type': getattr(indicator, 'category', 'unknown'),
+                                'severity': getattr(indicator, 'severity', 'medium'),
+                                'first_seen': getattr(indicator, 'first_seen', ''),
+                                'last_seen': getattr(indicator, 'last_seen', ''),
+                                'confidence': getattr(indicator, 'confidence', 0)
+                            })
+                except Exception as e:
+                    logger.debug(f"Threat intel source {src_name} error: {e}")
+
+            intel_data['feeds_checked'] = feeds_checked
+
+        except ImportError:
+            # Fallback: direct AbuseIPDB check if threat intel module unavailable
+            intel_data['feeds_checked'] = ['direct_check']
+            if ioc_type == 'ip':
+                try:
+                    import os, urllib.request
+                    api_key = os.environ.get('ABUSEIPDB_API_KEY', '')
+                    if api_key:
+                        req = urllib.request.Request(
+                            f'https://api.abuseipdb.com/api/v2/check?ipAddress={ioc}',
+                            headers={'Key': api_key, 'Accept': 'application/json'}
+                        )
+                        with urllib.request.urlopen(req, timeout=10) as resp:
+                            data = json.loads(resp.read())
+                            abuse_score = data.get('data', {}).get('abuseConfidenceScore', 0)
+                            if abuse_score > 0:
+                                intel_data['found'] = True
+                                intel_data['matches'].append({
+                                    'feed': 'abuseipdb',
+                                    'type': 'ip',
+                                    'value': ioc,
+                                    'abuse_score': abuse_score,
+                                    'total_reports': data['data'].get('totalReports', 0),
+                                    'country': data['data'].get('countryCode', ''),
+                                    'isp': data['data'].get('isp', ''),
+                                })
+                except Exception as e:
+                    logger.debug(f"Direct threat intel check failed: {e}")
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'threat_intel',
             'query': query_params,
             'intel_data': intel_data,
-            'query_time_ms': 300
+            'query_time_ms': round(elapsed, 1)
         }
 
 
 class AssetInventoryConnector(DataSourceConnector):
-    """Asset inventory data source connector"""
+    """Asset inventory connector - queries real SIGINT device database"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.ASSET_INVENTORY, config)
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query asset inventory"""
+        """Query real SIGINT device database for asset inventory"""
+        import sqlite3 as _sqlite3
+        t0 = datetime.utcnow()
+
         ip = query_params.get('ip')
         hostname = query_params.get('hostname')
+        mac = query_params.get('mac')
 
-        # Simulated asset inventory
-        asset_data = {}
+        asset_data = {'found': False}
 
-        if ip or hostname:
-            asset_data = {
-                'found': True,
-                'asset': {
-                    'id': f'ASSET-{hash(str(ip or hostname)) % 10000}',
-                    'hostname': hostname or f'host-{ip}',
-                    'ip': ip or '10.0.0.100',
-                    'type': 'workstation',
-                    'os': 'Windows 10',
-                    'owner': 'john.doe@company.com',
-                    'department': 'Engineering',
-                    'criticality': 'medium',
-                    'location': 'Building A, Floor 3',
-                    'tags': ['pci-scope', 'developer'],
-                    'installed_software': ['Microsoft Office', 'Visual Studio', 'Chrome'],
-                    'last_patched': (datetime.utcnow() - timedelta(days=7)).isoformat(),
-                    'compliance_status': 'compliant'
-                }
-            }
-        else:
-            asset_data = {'found': False}
+        # Query SIGINT database for detected devices
+        sigint_db = Path.home() / '.dalga' / 'sigint.db'
+        if sigint_db.exists():
+            try:
+                conn = _sqlite3.connect(str(sigint_db), timeout=5)
+                conn.row_factory = _sqlite3.Row
+
+                conditions = []
+                params = []
+                if ip:
+                    conditions.append("ip_address LIKE ?")
+                    params.append(f"%{ip}%")
+                if hostname:
+                    conditions.append("(name LIKE ? OR hostname LIKE ?)")
+                    params.extend([f"%{hostname}%", f"%{hostname}%"])
+                if mac:
+                    conditions.append("(mac_address LIKE ? OR bssid LIKE ?)")
+                    params.extend([f"%{mac}%", f"%{mac}%"])
+
+                if conditions:
+                    where = " OR ".join(conditions)
+                    rows = conn.execute(
+                        f"SELECT * FROM sigint_devices WHERE {where} ORDER BY last_seen DESC LIMIT 10",
+                        params
+                    ).fetchall()
+
+                    if rows:
+                        assets = []
+                        for row in rows:
+                            d = dict(row)
+                            assets.append({
+                                'device_id': d.get('device_id', ''),
+                                'name': d.get('name', 'unknown'),
+                                'type': d.get('device_type', 'unknown'),
+                                'mac_address': d.get('mac_address', ''),
+                                'vendor': d.get('vendor', ''),
+                                'category': d.get('category', ''),
+                                'first_seen': d.get('first_seen', ''),
+                                'last_seen': d.get('last_seen', ''),
+                                'signal_strength': d.get('signal_strength'),
+                                'threat_level': d.get('threat_level', ''),
+                                'risk_score': d.get('risk_score', 0),
+                            })
+
+                        asset_data = {
+                            'found': True,
+                            'count': len(assets),
+                            'assets': assets
+                        }
+                conn.close()
+            except Exception as e:
+                logger.warning(f"Asset inventory query error: {e}")
+
+        # Also check main TSUNAMI database for system-level assets
+        main_db = Path.home() / '.dalga' / 'dalga_v2.db'
+        if main_db.exists() and not asset_data.get('found'):
+            try:
+                conn = _sqlite3.connect(str(main_db), timeout=5)
+                conn.row_factory = _sqlite3.Row
+                tables = [r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()]
+                if 'assets' in tables or 'varliklar' in tables:
+                    tbl = 'assets' if 'assets' in tables else 'varliklar'
+                    rows = conn.execute(f"SELECT * FROM {tbl} LIMIT 10").fetchall()
+                    if rows:
+                        asset_data = {
+                            'found': True,
+                            'count': len(rows),
+                            'assets': [dict(r) for r in rows]
+                        }
+                conn.close()
+            except Exception as e:
+                logger.debug(f"Main DB asset query error: {e}")
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'asset_inventory',
             'query': query_params,
             'asset_data': asset_data,
-            'query_time_ms': 50
+            'query_time_ms': round(elapsed, 1)
         }
 
 
 class IdentityConnector(DataSourceConnector):
-    """Identity/IAM data source connector"""
+    """Identity/IAM connector - queries real TSUNAMI auth database"""
 
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(DataSourceType.IDENTITY, config)
 
     async def query(self, query_params: Dict[str, Any]) -> Dict[str, Any]:
-        """Query identity information"""
+        """Query real user identity from TSUNAMI auth database"""
+        import sqlite3 as _sqlite3
+        t0 = datetime.utcnow()
+
         username = query_params.get('username')
         email = query_params.get('email')
 
-        # Simulated identity data
-        identity_data = {}
+        identity_data = {'found': False}
 
-        if username or email:
-            identity_data = {
-                'found': True,
-                'user': {
-                    'username': username or email.split('@')[0],
-                    'email': email or f'{username}@company.com',
-                    'full_name': 'John Doe',
-                    'department': 'Engineering',
-                    'title': 'Senior Developer',
-                    'manager': 'jane.smith@company.com',
-                    'groups': ['Developers', 'VPN Users', 'Remote Access'],
-                    'privileged': False,
-                    'mfa_enabled': True,
-                    'last_login': datetime.utcnow().isoformat(),
-                    'password_last_changed': (datetime.utcnow() - timedelta(days=45)).isoformat(),
-                    'account_status': 'active',
-                    'risk_score': 25
-                }
+        if not username and not email:
+            return {
+                'source': 'identity',
+                'query': query_params,
+                'identity_data': identity_data,
+                'query_time_ms': 0
             }
-        else:
-            identity_data = {'found': False}
+
+        # Query TSUNAMI auth databases
+        for db_name in ['dalga_v2.db', 'dalga_web.db']:
+            db_path = Path.home() / '.dalga' / db_name
+            if not db_path.exists():
+                continue
+
+            try:
+                conn = _sqlite3.connect(str(db_path), timeout=5)
+                conn.row_factory = _sqlite3.Row
+
+                tables = [r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()]
+
+                user_table = None
+                for candidate in ['kullanicilar', 'users', 'user']:
+                    if candidate in tables:
+                        user_table = candidate
+                        break
+
+                if user_table:
+                    # Get column names
+                    cols = [c[1] for c in conn.execute(f"PRAGMA table_info({user_table})").fetchall()]
+
+                    conditions = []
+                    params = []
+                    if username:
+                        for col in cols:
+                            if 'user' in col.lower() or 'kullanici' in col.lower():
+                                conditions.append(f"{col} = ?")
+                                params.append(username)
+                    if email:
+                        for col in cols:
+                            if 'email' in col.lower() or 'eposta' in col.lower():
+                                conditions.append(f"{col} = ?")
+                                params.append(email)
+
+                    if conditions:
+                        where = " OR ".join(conditions)
+                        row = conn.execute(
+                            f"SELECT * FROM {user_table} WHERE {where} LIMIT 1",
+                            params
+                        ).fetchone()
+
+                        if row:
+                            d = dict(row)
+                            # Remove sensitive fields
+                            for sensitive in ['sifre', 'password', 'password_hash', 'hash', 'salt', 'token']:
+                                d.pop(sensitive, None)
+
+                            identity_data = {
+                                'found': True,
+                                'source_db': db_name,
+                                'user': {
+                                    'username': d.get('kullanici_adi', d.get('username', username)),
+                                    'email': d.get('email', d.get('eposta', email)),
+                                    'role': d.get('rol', d.get('role', 'user')),
+                                    'account_status': d.get('durum', d.get('status', 'active')),
+                                    'created_at': d.get('olusturulma', d.get('created_at', '')),
+                                    'last_login': d.get('son_giris', d.get('last_login', '')),
+                                    'mfa_enabled': bool(d.get('iki_faktor', d.get('2fa_enabled', False))),
+                                    'extra': {k: v for k, v in d.items()
+                                              if k not in ('kullanici_adi', 'username', 'email',
+                                                           'eposta', 'rol', 'role', 'durum', 'status')}
+                                }
+                            }
+                            break
+                conn.close()
+            except Exception as e:
+                logger.warning(f"Identity query error on {db_name}: {e}")
+
+        # Also check /etc/passwd for system users (Linux)
+        if not identity_data.get('found') and username:
+            try:
+                import pwd
+                pw = pwd.getpwnam(username)
+                identity_data = {
+                    'found': True,
+                    'source_db': 'system',
+                    'user': {
+                        'username': pw.pw_name,
+                        'uid': pw.pw_uid,
+                        'gid': pw.pw_gid,
+                        'home': pw.pw_dir,
+                        'shell': pw.pw_shell,
+                        'gecos': pw.pw_gecos,
+                        'account_status': 'active'
+                    }
+                }
+            except (KeyError, ImportError):
+                pass
+
+        elapsed = (datetime.utcnow() - t0).total_seconds() * 1000
 
         return {
             'source': 'identity',
             'query': query_params,
             'identity_data': identity_data,
-            'query_time_ms': 80
+            'query_time_ms': round(elapsed, 1)
         }
 
 

@@ -1,0 +1,43 @@
+.heatmap-panel {
+  width: 500px;
+}
+
+.heatmap-controls {
+  margin-bottom: 20px;
+}
+
+.heatmap-select {
+  width: 100%;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--primary-cyan);
+  border-radius: 5px;
+  color: var(--text-primary);
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+}
+
+.heatmap-display {
+  border-radius: 10px;
+}

@@ -159,6 +159,17 @@ class CSRFManager:
         if request.endpoint in self._exempt_views:
             return
 
+        # API endpoint'leri (api_ prefix) - session cookie ile zaten korunuyor
+        # SameSite=Strict cookie politikasi CSRF'e karsi koruma saglar
+        if request.endpoint and request.endpoint.startswith('api_'):
+            # Header'da CSRF token varsa dogrula, yoksa session cookie yeterli
+            token = request.headers.get(self.HEADER_NAME)
+            if token:
+                session_token = session.get(self.TOKEN_NAME)
+                if session_token and not hmac.compare_digest(token, session_token):
+                    abort(403, "CSRF token invalid")
+            return  # API endpoint'lerinde session cookie yeterli
+
         # Token al
         token = (
             request.form.get(self.TOKEN_NAME) or

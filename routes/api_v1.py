@@ -352,19 +352,26 @@ def list_devices():
     device_type = request.args.get('type')
     limit = min(int(request.args.get('limit', 100)), 1000)
 
-    # TODO: Gerçek veritabanı sorgusu
-    devices = [
-        {
-            'id': 'wifi-001',
-            'type': 'wifi',
-            'name': 'NETWORK-5G',
-            'mac': 'AA:BB:CC:DD:EE:FF',
-            'signal': -45,
-            'first_seen': '2026-02-04T10:00:00Z',
-            'last_seen': '2026-02-04T21:00:00Z',
-            'risk_score': 15
-        }
-    ]
+    # Real SIGINT database query
+    try:
+        from dalga_sigint.db import SigintDatabase
+        from dalga_sigint.core import DeviceType
+
+        db = SigintDatabase()
+        dt = None
+        if device_type:
+            try:
+                dt = DeviceType(device_type)
+            except ValueError:
+                pass
+
+        devices = db.get_devices(device_type=dt, limit=limit)
+    except ImportError:
+        logger.warning("dalga_sigint module not available for device listing")
+        devices = []
+    except Exception as e:
+        logger.error(f"Device listing error: {e}")
+        devices = []
 
     return jsonify({
         'success': True,

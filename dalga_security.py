@@ -25,8 +25,10 @@ import re
 import hmac
 import hashlib
 import secrets
+import sqlite3
 import ipaddress
 import logging
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
@@ -659,6 +661,11 @@ class SecurityManager:
         self.geofence = GeoFence()
         self.sanitizer = InputSanitizer()
 
+        # Veritabanı bağlantısı (dalga_web.py ile aynı DB)
+        self._db_path = Path.home() / ".dalga" / "dalga_v2.db"
+        self._db_lock = threading.Lock()
+        self._db_conn = None
+
         logger.info("[SECURITY] Security Manager başlatıldı")
 
     def secure_login(self, username: str, password: str,
@@ -689,9 +696,14 @@ class SecurityManager:
             self.audit.log(username, 'rate_limited', 'auth', False)
             return (False, 'Çok fazla deneme. Lütfen bekleyin.', {})
 
-        # Kullanıcı ve parola kontrolü burada yapılacak (db'den)
-        # Bu örnek için placeholder
-        user_data = {'username': username}  # DB'den alınacak
+        # Gerçek veritabanı doğrulaması
+        user_data = self._verify_user_from_db(username, password)
+
+        if user_data is None:
+            self.lockout.record_failure(username)
+            self.audit.log(username, 'login_failed', 'auth', False,
+                          {'reason': 'invalid_credentials', 'ip': ip})
+            return (False, 'Geçersiz kullanıcı adı veya parola', {})
 
         # 2FA kontrolü (aktifse)
         if totp_code and user_data.get('totp_secret'):
@@ -704,6 +716,109 @@ class SecurityManager:
         self.audit.log(username, 'login_success', 'auth', True)
 
         return (True, 'Giriş başarılı', user_data)
+
+    def _get_db_conn(self):
+        """SQLite bağlantısı al (lazy, thread-safe)"""
+        if self._db_conn is None:
+            if not self._db_path.exists():
+                logger.warning("[SECURITY] Veritabanı bulunamadı: %s", self._db_path)
+                return None
+            self._db_conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
+            self._db_conn.row_factory = sqlite3.Row
+        return self._db_conn
+
+    def _verify_user_from_db(self, username: str, password: str) -> Optional[Dict]:
+        """
+        Veritabanından kullanıcı doğrulama.
+        Argon2, PBKDF2 ve SHA256 hash formatlarını destekler.
+        Eski hash'leri otomatik Argon2'ye yükseltir.
+        Returns: user_data dict veya None (başarısız)
+        """
+        with self._db_lock:
+            conn = self._get_db_conn()
+            if conn is None:
+                logger.error("[SECURITY] DB bağlantısı kurulamadı")
+                return None
+
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT id, kullanici_adi, sifre_hash, rol, aktif "
+                    "FROM kullanicilar WHERE kullanici_adi = ? AND aktif = 1",
+                    (username,)
+                )
+                result = cursor.fetchone()
+
+                if not result:
+                    return None
+
+                user_id = result['id']
+                stored_hash = result['sifre_hash']
+                verified = False
+
+                # Argon2 hash doğrulama
+                if ARGON2_AVAILABLE and stored_hash.startswith('$argon2'):
+                    try:
+                        ph = PasswordHasher()
+                        ph.verify(stored_hash, password)
+                        verified = True
+                        # Rehash gerekiyorsa (parametreler değiştiyse)
+                        if ph.check_needs_rehash(stored_hash):
+                            new_hash = ph.hash(password)
+                            cursor.execute(
+                                "UPDATE kullanicilar SET sifre_hash = ? WHERE id = ?",
+                                (new_hash, user_id)
+                            )
+                    except Exception:
+                        verified = False
+
+                # PBKDF2 hash doğrulama
+                elif stored_hash.startswith('pbkdf2$'):
+                    parts = stored_hash.split('$')
+                    if len(parts) == 3:
+                        salt, hash_val = parts[1], parts[2]
+                        check = hashlib.pbkdf2_hmac(
+                            'sha256', password.encode(), salt.encode(), 100000
+                        ).hex()
+                        verified = hmac.compare_digest(check, hash_val)
+
+                # Eski SHA256 hash (geriye uyumluluk)
+                else:
+                    old_hash = hashlib.sha256(password.encode()).hexdigest()
+                    verified = hmac.compare_digest(old_hash, stored_hash)
+
+                if not verified:
+                    return None
+
+                # Eski hash'i Argon2'ye yükselt
+                if ARGON2_AVAILABLE and not stored_hash.startswith('$argon2'):
+                    try:
+                        ph = PasswordHasher()
+                        new_hash = ph.hash(password)
+                        cursor.execute(
+                            "UPDATE kullanicilar SET sifre_hash = ? WHERE id = ?",
+                            (new_hash, user_id)
+                        )
+                        logger.info("[SECURITY] Hash Argon2'ye yükseltildi: %s", username)
+                    except Exception as e:
+                        logger.warning("[SECURITY] Hash yükseltme başarısız: %s", e)
+
+                # Son giriş zamanını güncelle
+                cursor.execute(
+                    "UPDATE kullanicilar SET son_giris = CURRENT_TIMESTAMP WHERE id = ?",
+                    (user_id,)
+                )
+                conn.commit()
+
+                return {
+                    'id': user_id,
+                    'username': result['kullanici_adi'],
+                    'role': result['rol'],
+                }
+
+            except sqlite3.Error as e:
+                logger.error("[SECURITY] DB sorgu hatası: %s", e)
+                return None
 
 
 # === Decorator'lar ===

@@ -146,42 +146,201 @@ class ModelTrainer:
         validation_data: Optional[Any] = None
     ) -> TrainingMetrics:
         """
-        Train a model with given configuration and data
-
-        Note: This is a stub implementation. Real training would use
-        scikit-learn, PyTorch, or TensorFlow depending on model type.
+        Train a model with given configuration and data using scikit-learn.
+        Supports IsolationForest, RandomForest, GradientBoosting, and basic NN.
         """
+        import time as _time
+        t0 = _time.time()
         model_id = f"{config.model_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        # Simulated training metrics
+        model = None
+        accuracy = 0.0
+        precision_val = 0.0
+        recall_val = 0.0
+        f1 = 0.0
+        n_train = 0
+        n_val = 0
+
+        try:
+            import numpy as np
+
+            # Convert training data to numpy arrays
+            if hasattr(training_data, 'values') and hasattr(training_data, 'columns'):
+                # Pandas DataFrame
+                X = training_data.drop(columns=[config.target_column], errors='ignore').values
+                y = training_data[config.target_column].values if config.target_column in training_data.columns else None
+            elif isinstance(training_data, dict):
+                X = np.array(training_data.get('X', training_data.get('features', [])))
+                y = np.array(training_data.get('y', training_data.get('labels', []))) if 'y' in training_data or 'labels' in training_data else None
+            elif isinstance(training_data, (list, tuple)) and len(training_data) == 2:
+                X = np.array(training_data[0])
+                y = np.array(training_data[1]) if training_data[1] is not None else None
+            else:
+                X = np.array(training_data)
+                y = None
+
+            n_train = len(X)
+
+            # Validation split
+            if validation_data is not None:
+                if isinstance(validation_data, dict):
+                    X_val = np.array(validation_data.get('X', validation_data.get('features', [])))
+                    y_val = np.array(validation_data.get('y', validation_data.get('labels', []))) if 'y' in validation_data else None
+                else:
+                    X_val, y_val = np.array(validation_data[0]), np.array(validation_data[1]) if len(validation_data) == 2 else (np.array(validation_data), None)
+            elif y is not None and hasattr(y, 'ndim') and y.ndim > 0 and len(y) > 0 and config.validation_split > 0:
+                split_idx = int(len(X) * (1 - config.validation_split))
+                X_val, y_val = X[split_idx:], y[split_idx:]
+                X, y = X[:split_idx], y[:split_idx]
+                n_train = len(X)
+            else:
+                X_val, y_val = None, None
+
+            n_val = len(X_val) if X_val is not None else 0
+
+            from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score as sk_f1
+
+            if config.model_type == ModelType.ISOLATION_FOREST:
+                from sklearn.ensemble import IsolationForest
+                hp = config.hyperparameters
+                model = IsolationForest(
+                    n_estimators=hp.get('n_estimators', 100),
+                    contamination=hp.get('contamination', 0.1),
+                    random_state=42
+                )
+                model.fit(X)
+                preds = model.predict(X)
+                # IsolationForest: -1=anomaly, 1=normal → convert
+                if y is not None:
+                    accuracy = accuracy_score(y, (preds == -1).astype(int))
+                else:
+                    anomaly_ratio = (preds == -1).sum() / len(preds)
+                    accuracy = 1.0 - abs(anomaly_ratio - 0.1)  # How close to expected contamination
+
+            elif config.model_type == ModelType.RANDOM_FOREST:
+                from sklearn.ensemble import RandomForestClassifier
+                hp = config.hyperparameters
+                model = RandomForestClassifier(
+                    n_estimators=hp.get('n_estimators', 100),
+                    max_depth=hp.get('max_depth', None),
+                    random_state=42
+                )
+                model.fit(X, y)
+                if X_val is not None and y_val is not None:
+                    preds = model.predict(X_val)
+                    accuracy = accuracy_score(y_val, preds)
+                    precision_val = precision_score(y_val, preds, average='weighted', zero_division=0)
+                    recall_val = recall_score(y_val, preds, average='weighted', zero_division=0)
+                    f1 = sk_f1(y_val, preds, average='weighted', zero_division=0)
+                else:
+                    preds = model.predict(X)
+                    accuracy = accuracy_score(y, preds)
+
+            elif config.model_type == ModelType.GRADIENT_BOOSTING:
+                from sklearn.ensemble import GradientBoostingClassifier
+                hp = config.hyperparameters
+                model = GradientBoostingClassifier(
+                    n_estimators=hp.get('n_estimators', 100),
+                    learning_rate=hp.get('learning_rate', 0.1),
+                    max_depth=hp.get('max_depth', 3),
+                    random_state=42
+                )
+                model.fit(X, y)
+                if X_val is not None and y_val is not None:
+                    preds = model.predict(X_val)
+                    accuracy = accuracy_score(y_val, preds)
+                    precision_val = precision_score(y_val, preds, average='weighted', zero_division=0)
+                    recall_val = recall_score(y_val, preds, average='weighted', zero_division=0)
+                    f1 = sk_f1(y_val, preds, average='weighted', zero_division=0)
+                else:
+                    preds = model.predict(X)
+                    accuracy = accuracy_score(y, preds)
+
+            elif config.model_type in (ModelType.NEURAL_NETWORK, ModelType.LSTM):
+                from sklearn.neural_network import MLPClassifier
+                hp = config.hyperparameters
+                hidden = hp.get('hidden_layer_sizes', (100, 50))
+                if isinstance(hidden, list):
+                    hidden = tuple(hidden)
+                model = MLPClassifier(
+                    hidden_layer_sizes=hidden,
+                    max_iter=config.max_epochs,
+                    early_stopping=config.early_stopping,
+                    random_state=42
+                )
+                model.fit(X, y)
+                if X_val is not None and y_val is not None:
+                    preds = model.predict(X_val)
+                    accuracy = accuracy_score(y_val, preds)
+                    precision_val = precision_score(y_val, preds, average='weighted', zero_division=0)
+                    recall_val = recall_score(y_val, preds, average='weighted', zero_division=0)
+                    f1 = sk_f1(y_val, preds, average='weighted', zero_division=0)
+                else:
+                    preds = model.predict(X)
+                    accuracy = accuracy_score(y, preds)
+
+        except ImportError as e:
+            logger.error(f"scikit-learn kurulu degil: {e}")
+            raise RuntimeError(f"Egitim icin scikit-learn gerekli: pip install scikit-learn. Hata: {e}")
+        except Exception as e:
+            logger.error(f"Model egitim hatasi: {e}")
+            raise
+
+        training_time = _time.time() - t0
+
         metrics = TrainingMetrics(
             model_id=model_id,
             model_type=config.model_type,
-            accuracy=0.95,
-            precision=0.93,
-            recall=0.92,
-            f1_score=0.925,
-            training_time=10.5,
+            accuracy=round(accuracy, 4),
+            precision=round(precision_val, 4),
+            recall=round(recall_val, 4),
+            f1_score=round(f1, 4),
+            training_time=round(training_time, 3),
             epochs=config.max_epochs,
-            training_samples=1000,
-            validation_samples=200
+            training_samples=n_train,
+            validation_samples=n_val
         )
 
-        # Register with manager
-        self.manager.register_model(model_id, None, metrics)
+        self.manager.register_model(model_id, model, metrics)
         self.training_history.append(metrics)
 
-        logger.info(f"Trained model: {model_id}")
+        logger.info(f"Trained model: {model_id} - accuracy={accuracy:.4f}")
         return metrics
 
     def evaluate(self, model_id: str, test_data: Any) -> Dict[str, float]:
-        """Evaluate a trained model"""
-        return {
-            "accuracy": 0.94,
-            "precision": 0.92,
-            "recall": 0.91,
-            "f1_score": 0.915
-        }
+        """Evaluate a trained model on test data"""
+        model = self.manager.get_model(model_id)
+        if model is None:
+            return {"error": f"Model {model_id} bulunamadi"}
+
+        try:
+            import numpy as np
+            from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score as sk_f1
+
+            if isinstance(test_data, dict):
+                X_test = np.array(test_data.get('X', test_data.get('features', [])))
+                y_test = np.array(test_data.get('y', test_data.get('labels', [])))
+            elif isinstance(test_data, (list, tuple)) and len(test_data) == 2:
+                X_test, y_test = np.array(test_data[0]), np.array(test_data[1])
+            else:
+                return {"error": "Test verisi {X, y} veya (X, y) formatinda olmali"}
+
+            preds = model.predict(X_test)
+
+            # Handle IsolationForest output
+            if hasattr(model, 'contamination'):
+                preds = (preds == -1).astype(int)
+
+            return {
+                "accuracy": round(float(accuracy_score(y_test, preds)), 4),
+                "precision": round(float(precision_score(y_test, preds, average='weighted', zero_division=0)), 4),
+                "recall": round(float(recall_score(y_test, preds, average='weighted', zero_division=0)), 4),
+                "f1_score": round(float(sk_f1(y_test, preds, average='weighted', zero_division=0)), 4)
+            }
+        except ImportError:
+            return {"error": "scikit-learn kurulu degil"}
+        except Exception as e:
+            return {"error": str(e)}
 
     def get_training_history(self) -> List[TrainingMetrics]:
         """Get training history"""

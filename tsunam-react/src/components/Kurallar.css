@@ -1,0 +1,87 @@
+.kurallar-panel {
+  width: 480px;
+}
+
+.rules-disclaimer {
+  background: rgba(255, 51, 85, 0.1);
+  border: 2px solid #ff3355;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.rules-disclaimer h3 {
+  color: #ff3355;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.disclaimer-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.rule-item {
+  display: flex;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--primary-cyan);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.rule-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rule-item h4 {
+  color: var(--primary-cyan);
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.rule-item p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.compliance-status {
+  background: rgba(0, 255, 136, 0.1);
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.compliance-status h3 {
+  color: #00ff88;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.compliance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.status-badge {
+  padding: 4px 10px;
+  background: #00ff88;
+  color: #000;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+}

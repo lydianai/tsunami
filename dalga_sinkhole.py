@@ -1733,6 +1733,33 @@ class DNSSinkhole:
         """Enfekte cihazlari getir"""
         return self.db.get_infected_devices(min_risk)
 
+    def get_stats(self) -> Dict[str, Any]:
+        """Sinkhole istatistikleri (dalga_web.py uyumlulugu)"""
+        stats = self.db.get_statistics()
+        threat_dist = stats.get('threat_distribution', {})
+        return {
+            'total_blocked': stats.get('total_hits', 0),
+            'active_domains': stats.get('active_domains', 0),
+            'dga_detected': threat_dist.get('dga', 0),
+            'c2_blocked': threat_dist.get('c2', 0) + threat_dist.get('c&c', 0),
+            'last_24h_blocks': stats.get('hits_24h', 0)
+        }
+
+    def get_recent_blocks(self, limit: int = 100) -> List[Dict]:
+        """Son engellenen domainleri getir (dalga_web.py uyumlulugu)"""
+        hits = self.db.get_hits(limit=limit)
+        result = []
+        for hit in hits:
+            result.append({
+                'geo_lat': 0.0,
+                'geo_lng': 0.0,
+                'domain': hit.get('domain', ''),
+                'threat_type': hit.get('threat_type', 'unknown'),
+                'blocked_at': hit.get('timestamp', ''),
+                'source_ip': hit.get('source_ip', '')
+            })
+        return result
+
     def analyze_domain(self, domain: str) -> Dict[str, Any]:
         """Domain detayli analizi"""
         return {

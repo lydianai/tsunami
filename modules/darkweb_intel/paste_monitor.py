@@ -484,23 +484,68 @@ class PasteMonitor:
         return results
 
     def check_dpaste(self) -> List[PasteResult]:
-        """Check dpaste.org recent pastes"""
+        """
+        Check dpaste.org for pastes matching monitored keywords.
+
+        dpaste.org API v2 does not provide a public listing/search endpoint.
+        Strategy: Use Google Custom Search to find dpaste.org pastes matching
+        our monitored keywords, then fetch and analyze each result via the
+        dpaste raw content endpoint.
+        """
         results = []
         site = self.sites.get("dpaste")
 
         if not site or not site.enabled:
             return results
 
-        try:
-            # dpaste has a recent API endpoint
-            response = self._session.get(
-                f"{site.api_url}",
-                headers={"Accept": "application/json"},
-                timeout=30
-            )
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        google_cse_id = os.getenv("GOOGLE_CSE_ID")
 
-            # dpaste doesn't have public listing, search for specific patterns
-            # This is a placeholder - in production, use their actual API
+        if not google_api_key or not google_cse_id:
+            logger.debug("[PASTE-MONITOR] Google API key/CSE ID not configured for dpaste search")
+            site.last_check = datetime.now()
+            return results
+
+        try:
+            for keyword in list(self.keywords)[:5]:
+                try:
+                    search_resp = self._session.get(
+                        "https://www.googleapis.com/customsearch/v1",
+                        params={
+                            "key": google_api_key,
+                            "cx": google_cse_id,
+                            "q": f"site:dpaste.org {keyword}",
+                            "num": 10,
+                            "dateRestrict": "d7",
+                        },
+                        timeout=15,
+                    )
+
+                    if search_resp.status_code != 200:
+                        continue
+
+                    items = search_resp.json().get("items", [])
+                    for item in items:
+                        link = item.get("link", "")
+                        if "dpaste.org" not in link:
+                            continue
+
+                        paste_id = link.rstrip("/").split("/")[-1]
+                        if not paste_id:
+                            continue
+
+                        # Fetch raw content via dpaste raw endpoint
+                        raw_url = f"https://dpaste.org/{paste_id}/raw"
+                        result = self._fetch_and_analyze_paste("dpaste", paste_id, raw_url)
+                        if result:
+                            result.keywords_matched.append(keyword)
+                            results.append(result)
+                            self._notify_callbacks(result)
+
+                    time.sleep(1)  # Rate limit Google API
+
+                except Exception as e:
+                    logger.debug(f"[PASTE-MONITOR] dpaste keyword search error for '{keyword}': {e}")
 
         except Exception as e:
             logger.error(f"[PASTE-MONITOR] dpaste check error: {e}")

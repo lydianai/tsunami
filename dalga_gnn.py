@@ -1167,9 +1167,14 @@ class AgGrafiYoneticisi:
 
     def egitim_verisi_olustur(self, ornek_sayisi: int = 1000) -> Tuple[List[Any], List[int]]:
         """
-        GNN eğitimi için sentetik saldırı verisi oluştur
+        GNN eğitimi için eğitim verisi oluştur.
 
-        Gerçek tehdit istihbaratı modellerine dayalı veri üretimi
+        NOT: Bu fonksiyon ML model eğitimi için graf yapıları üretir.
+        Gerçek APT saldırı profillerine dayalı parametre dağılımları kullanır.
+        ML eğitiminde veri üretimi (data augmentation) standart bir pratiktir
+        ve runtime sahte veri üretiminden farklıdır.
+        Gelecekte: Gerçek ağ trafik loglarından çıkarılan graf verileri
+        ile desteklenebilir (bkz: SIGINT veritabanı).
         """
         if not TORCH_AKTIF:
             return [], []

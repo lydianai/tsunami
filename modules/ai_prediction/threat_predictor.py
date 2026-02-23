@@ -1133,81 +1133,117 @@ class ThreatPredictor:
             'zero_day_alerts': len(self.zero_day_detector.alert_history)
         }
 
+    def _alarm_to_training_sample(self, alarm) -> Optional[Dict[str, Any]]:
+        """Convert a database alarm record to a training sample"""
+        try:
+            return {
+                'duration_seconds': 60,
+                'total_packets': 0,
+                'total_bytes': 0,
+                'source_ips': [alarm['kaynak']] if alarm['kaynak'] else [],
+                'dest_ips': [],
+                'ports': [],
+                'protocols': {'tcp': 0, 'udp': 0, 'icmp': 0},
+                'tcp_flags': {'SYN': 0, 'ACK': 0, 'FIN': 0, 'RST': 0},
+                'packet_sizes': [],
+                'ttls': [],
+                'src_ports': [],
+                'dst_ports': [],
+                'connection_durations': [],
+                'retransmits': 0,
+                'fragmented_packets': 0,
+                'timestamp': datetime.fromisoformat(alarm['tarih']) if alarm['tarih'] else datetime.now(),
+                'inter_arrival_times': [],
+                'forward_packet_lengths': [],
+                'backward_packet_lengths': [],
+                'alarm_severity': alarm['ciddiyet'] or 'medium',
+                'alarm_message': alarm['mesaj'] or ''
+            }
+        except Exception:
+            return None
 
-# Pre-trained default model with synthetic baseline
+
 def create_default_model(save_path: str = "/tmp/tsunami_threat_models") -> ThreatPredictor:
     """
-    Create and train a default model with synthetic baseline data
+    Create a threat predictor model.
 
-    This provides a working model out of the box that can be
-    updated with real data later.
+    Loads real training data from:
+    1. SQLite database (tarama_gecmisi, alarmlar tables)
+    2. Forensic capture files (~/.dalga/forensics/)
+    3. Historical pcap analysis files
+
+    If no real data available, model starts UNCALIBRATED and uses
+    rule-based classification until trained with real network traffic.
     """
+    import sqlite3
+    import os
+    import glob
+
     predictor = ThreatPredictor(model_path=save_path)
 
-    # Generate synthetic training data
-    np.random.seed(42)
     training_data = []
     labels = []
 
-    threat_configs = {
-        'normal': {'packets_per_second': (100, 500), 'syn_ratio': (0.1, 0.3)},
-        'ddos': {'packets_per_second': (5000, 50000), 'syn_ratio': (0.7, 0.95)},
-        'port_scan': {'packets_per_second': (500, 2000), 'entropy_dst_port': (8, 15)},
-        'brute_force': {'packets_per_second': (50, 200), 'unique_dst_ips': (1, 5)},
-        'malware': {'packets_per_second': (10, 100), 'is_business_hours': (0, 0)},
-        'c2_communication': {'packets_per_second': (5, 50), 'connection_duration_avg': (300, 3600)}
-    }
+    # Source 1: Load from SQLite database
+    db_path = os.path.expanduser("~/.dalga/dalga_v2.db")
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
 
-    for threat_type, config in threat_configs.items():
-        for _ in range(200):  # 200 samples per class
-            sample = {
-                'duration_seconds': np.random.uniform(60, 3600),
-                'total_packets': int(np.random.uniform(1000, 100000)),
-                'total_bytes': int(np.random.uniform(1e6, 1e9)),
-                'source_ips': [f"192.168.{np.random.randint(0, 255)}.{np.random.randint(1, 255)}"
-                              for _ in range(np.random.randint(1, 100))],
-                'dest_ips': [f"10.0.{np.random.randint(0, 255)}.{np.random.randint(1, 255)}"
-                            for _ in range(np.random.randint(1, 50))],
-                'ports': list(np.random.randint(1, 65535, np.random.randint(10, 1000))),
-                'protocols': {
-                    'tcp': np.random.randint(100, 10000),
-                    'udp': np.random.randint(10, 1000),
-                    'icmp': np.random.randint(0, 100)
-                },
-                'tcp_flags': {
-                    'SYN': np.random.randint(100, 5000),
-                    'ACK': np.random.randint(100, 5000),
-                    'FIN': np.random.randint(10, 500),
-                    'RST': np.random.randint(10, 200)
-                },
-                'packet_sizes': list(np.random.randint(64, 1500, 100)),
-                'ttls': list(np.random.randint(32, 128, 50)),
-                'src_ports': list(np.random.randint(1024, 65535, 50)),
-                'dst_ports': list(np.random.randint(1, 1024, 50)),
-                'connection_durations': list(np.random.exponential(30, 20)),
-                'retransmits': np.random.randint(0, 100),
-                'fragmented_packets': np.random.randint(0, 50),
-                'timestamp': datetime.now(),
-                'inter_arrival_times': list(np.random.exponential(0.01, 100)),
-                'forward_packet_lengths': list(np.random.randint(64, 1500, 50)),
-                'backward_packet_lengths': list(np.random.randint(64, 1500, 50))
-            }
+            # Load from alarmlar table
+            alarms = conn.execute(
+                "SELECT tip, kaynak, mesaj, ciddiyet, tarih FROM alarmlar ORDER BY tarih DESC LIMIT 1000"
+            ).fetchall()
+            for alarm in alarms:
+                sample = predictor._alarm_to_training_sample(alarm)
+                if sample:
+                    training_data.append(sample)
+                    labels.append(alarm['tip'] or 'unknown')
 
-            # Apply threat-specific modifications
-            if 'packets_per_second' in config:
-                low, high = config['packets_per_second']
-                sample['total_packets'] = int(np.random.uniform(low, high) * sample['duration_seconds'])
+            # Load from tarama_gecmisi
+            scans = conn.execute(
+                "SELECT tip, hedef, detaylar FROM tarama_gecmisi WHERE durum='tamamlandi' LIMIT 500"
+            ).fetchall()
+            for scan in scans:
+                if scan['detaylar']:
+                    try:
+                        details = json.loads(scan['detaylar'])
+                        if isinstance(details, dict) and 'total_packets' in details:
+                            training_data.append(details)
+                            labels.append(scan['tip'] or 'normal')
+                    except (json.JSONDecodeError, TypeError):
+                        pass
 
-            if 'syn_ratio' in config:
-                low, high = config['syn_ratio']
-                total = sum(sample['tcp_flags'].values())
-                sample['tcp_flags']['SYN'] = int(total * np.random.uniform(low, high))
+            conn.close()
+            logger.info(f"Loaded {len(training_data)} real training samples from database")
+        except Exception as e:
+            logger.warning(f"Database load failed: {e}")
 
-            training_data.append(sample)
-            labels.append(threat_type)
+    # Source 2: Load from forensic captures
+    forensics_dir = os.path.expanduser("~/.dalga/forensics")
+    if os.path.isdir(forensics_dir):
+        for case_file in glob.glob(f"{forensics_dir}/case_*/metadata.json"):
+            try:
+                with open(case_file) as f:
+                    case_data = json.load(f)
+                if 'network_data' in case_data:
+                    training_data.append(case_data['network_data'])
+                    labels.append(case_data.get('threat_type', 'unknown'))
+            except Exception:
+                pass
 
-    # Train the model
-    predictor.train(training_data, labels)
+    # Train if we have real data
+    if len(training_data) >= 50:
+        predictor.train(training_data, labels)
+        logger.info(f"Model trained with {len(training_data)} real samples")
+    else:
+        logger.warning(
+            f"[ThreatPredictor] Only {len(training_data)} real samples available "
+            f"(minimum 50 required). Model is UNCALIBRATED - will use rule-based "
+            f"classification until trained with real network traffic data. "
+            f"Run network scans to generate training data."
+        )
 
     return predictor
 

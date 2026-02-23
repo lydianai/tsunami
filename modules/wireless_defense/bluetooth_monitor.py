@@ -771,3 +771,7 @@ class BluetoothSecurityMonitor:
             'pairing_attempts': len(self._pairing_attempts),
             'rssi_tracked_devices': len(self._rssi_history)
         }
+
+    def get_stats(self) -> Dict[str, Any]:
+        """get_statistics icin alias (dalga_web.py uyumlulugu)"""
+        return self.get_statistics()

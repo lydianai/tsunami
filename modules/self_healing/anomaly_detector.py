@@ -110,12 +110,8 @@ class BaselineStats:
 class ThreatIntelligence:
     """Threat intelligence data for known bad IPs and patterns"""
 
-    # Known malicious IP ranges (examples - in production, load from threat feeds)
-    KNOWN_BAD_RANGES = [
-        # Example known bad ranges (NOT real threat intel - for demo)
-        '185.220.101.0/24',  # Tor exit nodes (example)
-        '192.42.116.0/24',   # Tor exit nodes (example)
-    ]
+    # Known malicious IP ranges - loaded from GlobalThreatIntelligence at init
+    KNOWN_BAD_RANGES: List[str] = []
 
     # Suspicious destination ports
     SUSPICIOUS_PORTS = {
@@ -152,18 +148,75 @@ class ThreatIntelligence:
     ]
 
     def __init__(self):
-        self._bad_networks = [ipaddress.ip_network(r, strict=False) for r in self.KNOWN_BAD_RANGES]
         self._custom_bad_ips: Set[str] = set()
         self._whitelist_ips: Set[str] = set()
 
+        # Load real threat intel from GlobalThreatIntelligence
+        self._bad_networks = []
+        self._threat_intel_engine = None
+        try:
+            from dalga_threat_intel import GlobalThreatIntelligence
+            self._threat_intel_engine = GlobalThreatIntelligence.get_instance()
+            # Import blocked ranges from the global threat intel engine
+            if hasattr(self._threat_intel_engine, '_blocked_ranges'):
+                self._bad_networks = list(self._threat_intel_engine._blocked_ranges)
+                logger.info(f"[THREAT-INTEL] {len(self._bad_networks)} blocked range loaded from GlobalThreatIntelligence")
+        except ImportError:
+            logger.warning("[THREAT-INTEL] dalga_threat_intel not available, loading from local IOC file")
+        except Exception as e:
+            logger.warning(f"[THREAT-INTEL] GlobalThreatIntelligence load error: {e}")
+
+        # Fallback: load from local IOC file if no ranges loaded
+        if not self._bad_networks:
+            self._load_local_ioc_file()
+
+        # Also parse any statically configured ranges
+        for r in self.KNOWN_BAD_RANGES:
+            try:
+                net = ipaddress.ip_network(r, strict=False)
+                if net not in self._bad_networks:
+                    self._bad_networks.append(net)
+            except ValueError:
+                pass
+
+    def _load_local_ioc_file(self):
+        """Load IP ranges from local IOC file (~/.dalga/threat_intel/bad_ranges.txt)"""
+        from pathlib import Path
+        ioc_file = Path.home() / '.dalga' / 'threat_intel' / 'bad_ranges.txt'
+        if ioc_file.exists():
+            try:
+                for line in ioc_file.read_text().splitlines():
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        try:
+                            self._bad_networks.append(ipaddress.ip_network(line, strict=False))
+                        except ValueError:
+                            continue
+                logger.info(f"[THREAT-INTEL] {len(self._bad_networks)} ranges loaded from {ioc_file}")
+            except Exception as e:
+                logger.warning(f"[THREAT-INTEL] IOC file read error: {e}")
+        else:
+            logger.info("[THREAT-INTEL] No local IOC file found, operating with empty bad ranges until feeds update")
+
     def is_bad_ip(self, ip: str) -> Tuple[bool, Optional[str]]:
-        """Check if IP is known bad"""
+        """Check if IP is known bad using GlobalThreatIntelligence + local ranges"""
         if ip in self._whitelist_ips:
             return False, None
 
         if ip in self._custom_bad_ips:
             return True, "Custom blacklist"
 
+        # Check GlobalThreatIntelligence first (richest data source)
+        if self._threat_intel_engine:
+            try:
+                ioc = self._threat_intel_engine.check_ip(ip)
+                if ioc:
+                    sources = ', '.join(ioc.sources) if hasattr(ioc, 'sources') else 'threat_intel'
+                    return True, f"GlobalThreatIntelligence: {sources}"
+            except Exception:
+                pass
+
+        # Fallback to local blocked ranges
         try:
             ip_obj = ipaddress.ip_address(ip)
             for network in self._bad_networks:

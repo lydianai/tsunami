@@ -1046,6 +1046,36 @@ class UEBAEngine:
         ]
         return sorted(high_risk, key=lambda x: x[1], reverse=True)
 
+    def get_recent_anomalies(self, limit: int = 50) -> List[Dict]:
+        """Son anomalileri getir (dalga_web.py uyumlulugu)"""
+        result = []
+
+        # Alert'lerden anomali olustur
+        for alert in self._alerts[-limit:]:
+            result.append({
+                'user': alert.entity_id or 'unknown',
+                'anomaly_type': alert.title or 'anomaly',
+                'risk_score': 0.7,
+                'details': alert.description or '',
+                'detected_at': alert.timestamp.isoformat() if alert.timestamp else ''
+            })
+
+        # Alert yoksa yuksek riskli varliklardan olustur
+        if not result:
+            for entity_id, score in sorted(
+                self._risk_scores.items(), key=lambda x: x[1], reverse=True
+            )[:limit]:
+                if score > 0.5:
+                    result.append({
+                        'user': entity_id,
+                        'anomaly_type': 'yuksek_risk_skoru',
+                        'risk_score': round(score, 2),
+                        'details': f'Risk skoru esik degerini asti: {score:.2f}',
+                        'detected_at': datetime.now().isoformat()
+                    })
+
+        return result[:limit]
+
     def calculate_insider_threat_score(self, user_id: str) -> Dict[str, Any]:
         """
         Insider threat (ic tehdit) skoru hesapla
@@ -2431,6 +2461,23 @@ class ThreatHunter:
             if len(results) >= limit:
                 break
         return results
+
+    def get_active_threats(self, limit: int = 100) -> List[Dict]:
+        """Aktif tehditleri getir (dalga_web.py uyumlulugu)"""
+        alerts = self.get_alerts(limit=limit)
+        result = []
+        for alert in alerts:
+            result.append({
+                'geo': {'lat': 0.0, 'lng': 0.0},
+                'threat_type': alert.severity.value if alert.severity else 'unknown',
+                'confidence': 0.8,
+                'mitre_technique': alert.mitre_techniques[0] if alert.mitre_techniques else '',
+                'source': alert.source or '',
+                'target': alert.entity_id or '',
+                'detected_at': alert.timestamp.isoformat() if alert.timestamp else '',
+                'description': alert.description or alert.title or ''
+            })
+        return result
 
     def get_findings(self, limit: int = 100) -> List[Dict]:
         """Tum hunt bulgularini getir"""

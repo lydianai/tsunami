@@ -211,7 +211,24 @@ class GlobalThreatIntelligence:
         # Feeds'leri yükle
         self._initialize_feeds()
 
+        # Otomatik feed guncelleme baslat (1 saat aralik)
+        self.start_auto_update(interval=3600)
+
+        # Ilk fetch'i hemen background thread ile baslat
+        threading.Thread(target=self._initial_fetch, daemon=True, name='ThreatIntelInit').start()
+
         logger.info("[THREAT-INTEL] Global Tehdit İstihbaratı başlatıldı")
+
+    def _initial_fetch(self):
+        """Ilk baslatmada tum feed'leri cek"""
+        import time as _time
+        _time.sleep(2)  # Sunucunun ayaga kalkmasi icin kisa bekle
+        try:
+            results = self.update_all_feeds()
+            total = sum(v for v in results.values() if v > 0)
+            logger.info(f"[THREAT-INTEL] Ilk fetch tamamlandi: {total} IOC yuklendi")
+        except Exception as e:
+            logger.error(f"[THREAT-INTEL] Ilk fetch hatasi: {e}")
 
     def _initialize_feeds(self):
         """Tehdit feed'lerini başlat"""

@@ -466,22 +466,48 @@ class ZKProofConcept:
 
     @staticmethod
     def _is_prime(n: int) -> bool:
-        """Miller-Rabin primality test (simplified)"""
+        """
+        Deterministic Miller-Rabin primality test.
+        Correct for all n < 3,317,044,064,679,887,385,961,981
+        using 12 deterministic witnesses.
+        """
         if n < 2:
             return False
-        if n == 2:
+        if n < 4:
             return True
         if n % 2 == 0:
             return False
 
-        # Simple check for small primes
-        for p in [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]:
+        # Small prime check
+        small_primes = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+        for p in small_primes:
             if n == p:
                 return True
             if n % p == 0:
                 return False
 
-        return True  # Simplified for demo
+        # Write n-1 as 2^r * d
+        r, d = 0, n - 1
+        while d % 2 == 0:
+            r += 1
+            d //= 2
+
+        # Deterministic witnesses sufficient for n < 2^64
+        witnesses = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+
+        for a in witnesses:
+            if a >= n:
+                continue
+            x = pow(a, d, n)
+            if x == 1 or x == n - 1:
+                continue
+            for _ in range(r - 1):
+                x = pow(x, 2, n)
+                if x == n - 1:
+                    break
+            else:
+                return False
+        return True
 
 
 # ============================================================
@@ -580,28 +606,111 @@ class FederatedModelTrainer:
     def train_local(self, features: List[List[float]], labels: List[int],
                    learning_rate: float = 0.01, epochs: int = 5) -> Dict[str, List[float]]:
         """
-        Train model on local data and return weight updates.
+        Train model on local data using real backpropagation and return weight updates.
+
+        2-layer neural network: input -> (W1,b1) -> ReLU -> (W2,b2) -> sigmoid -> output
+        Loss: binary cross-entropy
+        Optimizer: mini-batch SGD
 
         Args:
-            features: Training features
+            features: Training features (list of feature vectors)
             labels: Training labels (0 or 1)
             learning_rate: Learning rate
             epochs: Number of training epochs
 
         Returns:
-            Weight gradients to share
+            Weight deltas (initial - final) for federated averaging
         """
+        if not features or not labels:
+            return {}
+
         if self.local_weights is None:
-            input_dim = len(features[0]) if features else 10
+            input_dim = len(features[0])
             self.initialize_model(input_dim)
 
-        # Simplified gradient computation (placeholder)
-        # In production, use proper ML framework
-        gradients = {
-            key: [learning_rate * secrets.SystemRandom().gauss(0, 0.01)
-                  for _ in range(len(vals))]
-            for key, vals in self.local_weights.items()
-        }
+        input_dim = len(features[0])
+        hidden_dim = len(self.local_weights['b1'])
+        output_dim = len(self.local_weights['b2'])
+
+        # Save initial weights to compute deltas for federation
+        initial_weights = {k: list(v) for k, v in self.local_weights.items()}
+
+        for epoch in range(epochs):
+            for x, y in zip(features, labels):
+                # ---- Forward pass ----
+                # z1 = W1^T @ x + b1  (W1 stored row-major: W1[i * hidden + j])
+                z1 = list(self.local_weights['b1'])
+                for j in range(hidden_dim):
+                    for i in range(input_dim):
+                        z1[j] += self.local_weights['W1'][i * hidden_dim + j] * x[i]
+
+                # h1 = ReLU(z1)
+                h1 = [max(0.0, z) for z in z1]
+
+                # z2 = W2^T @ h1 + b2  (W2 stored row-major: W2[i * output + j])
+                z2 = list(self.local_weights['b2'])
+                for j in range(output_dim):
+                    for i in range(hidden_dim):
+                        z2[j] += self.local_weights['W2'][i * output_dim + j] * h1[i]
+
+                # Sigmoid output
+                output = []
+                for z in z2:
+                    z_c = max(-500.0, min(500.0, z))
+                    output.append(1.0 / (1.0 + math.exp(-z_c)))
+
+                # ---- Loss gradient (binary cross-entropy) ----
+                if output_dim == 2:
+                    target = [1.0 - float(y), float(y)]
+                else:
+                    target = [float(y)]
+
+                dz2 = [output[j] - target[j] for j in range(output_dim)]
+
+                # ---- Backward pass ----
+                # dW2[i,j] = h1[i] * dz2[j]
+                dW2 = [0.0] * len(self.local_weights['W2'])
+                for i in range(hidden_dim):
+                    for j in range(output_dim):
+                        dW2[i * output_dim + j] = h1[i] * dz2[j]
+
+                db2 = list(dz2)
+
+                # dh1 = W2 @ dz2
+                dh1 = [0.0] * hidden_dim
+                for i in range(hidden_dim):
+                    for j in range(output_dim):
+                        dh1[i] += dz2[j] * self.local_weights['W2'][i * output_dim + j]
+
+                # dz1 = dh1 * ReLU'(z1)
+                dz1 = [dh1[i] * (1.0 if z1[i] > 0 else 0.0) for i in range(hidden_dim)]
+
+                # dW1[i,j] = x[i] * dz1[j]
+                dW1 = [0.0] * len(self.local_weights['W1'])
+                for i in range(input_dim):
+                    for j in range(hidden_dim):
+                        dW1[i * hidden_dim + j] = x[i] * dz1[j]
+
+                db1 = list(dz1)
+
+                # ---- SGD weight update ----
+                with self._lock:
+                    for idx in range(len(self.local_weights['W1'])):
+                        self.local_weights['W1'][idx] -= learning_rate * dW1[idx]
+                    for idx in range(len(self.local_weights['b1'])):
+                        self.local_weights['b1'][idx] -= learning_rate * db1[idx]
+                    for idx in range(len(self.local_weights['W2'])):
+                        self.local_weights['W2'][idx] -= learning_rate * dW2[idx]
+                    for idx in range(len(self.local_weights['b2'])):
+                        self.local_weights['b2'][idx] -= learning_rate * db2[idx]
+
+        # Return weight deltas (initial - final) for federated averaging
+        gradients = {}
+        for key in self.local_weights:
+            gradients[key] = [
+                initial_weights[key][i] - self.local_weights[key][i]
+                for i in range(len(self.local_weights[key]))
+            ]
 
         self.training_rounds += epochs
         return gradients
@@ -1440,6 +1549,17 @@ class FederatedIntelligence:
                 )))
 
         return dict(stats)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """get_statistics icin alias (dalga_web.py uyumlulugu)"""
+        stats = self.get_statistics(use_differential_privacy=False)
+        return {
+            'connected_peers': stats.get('active_peers', 0),
+            'shared_iocs': stats.get('total_iocs', 0),
+            'received_iocs': stats.get('total_iocs', 0),
+            'bloom_filter_size': len(self.shared_iocs) if hasattr(self, 'shared_iocs') else 0,
+            'last_sync': datetime.utcnow().isoformat() if hasattr(self, 'shared_iocs') else None
+        }
 
     def get_trend_analysis(self, days: int = 7) -> Dict[str, Any]:
         """

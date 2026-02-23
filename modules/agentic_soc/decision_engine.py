@@ -454,15 +454,15 @@ class DecisionEngine:
             except Exception as e:
                 logger.warning(f"Failed to load decision model: {e}")
 
-        # Train new model with synthetic data
+        # Train model with real data from database
         self._train_initial_model()
 
     def _train_initial_model(self):
-        """Train initial decision model with synthetic data"""
-        logger.info("Training initial decision model")
+        """Train decision model with real historical data"""
+        logger.info("Training decision model from real data")
 
-        # Generate synthetic training data
-        training_data = self._generate_training_data()
+        # Load real decision data from database
+        training_data = self._load_real_decision_data()
 
         if len(training_data) < 100:
             logger.warning("Insufficient training data for ML model")
@@ -493,54 +493,122 @@ class DecisionEngine:
         except Exception as e:
             logger.error(f"Failed to save decision model: {e}")
 
-    def _generate_training_data(self) -> List[Dict[str, Any]]:
-        """Generate synthetic training data"""
+    def _load_real_decision_data(self) -> List[Dict[str, Any]]:
+        """Load real decision history from database and logs.
+
+        Sources:
+        1. SQLite oturum_kayitlari (session logs with decisions)
+        2. SQLite alarmlar (alarm responses)
+        3. Decision log files in ~/.dalga/
+
+        Returns empty list if no real data, model uses rule-based fallback.
+        """
+        import sqlite3
+        import os
+        import glob
+
         data = []
+        db_path = os.path.expanduser("~/.dalga/dalga_v2.db")
 
-        # Define feature ranges for different scenarios
-        scenarios = [
-            # False positives
-            {'decision': DecisionType.CLOSE_FALSE_POSITIVE.value, 'fp_prob': (0.7, 1.0),
-             'severity': 0, 'priority': (0, 30), 'confidence': (0.8, 1.0)},
-            # Critical escalation
-            {'decision': DecisionType.ESCALATE_TO_INCIDENT_RESPONSE.value, 'fp_prob': (0, 0.2),
-             'severity': 4, 'priority': (80, 100), 'confidence': (0.7, 1.0)},
-            # Tier 2 escalation
-            {'decision': DecisionType.ESCALATE_TO_TIER2.value, 'fp_prob': (0.1, 0.4),
-             'severity': 3, 'priority': (50, 80), 'confidence': (0.5, 0.8)},
-            # Auto-remediation
-            {'decision': DecisionType.AUTO_REMEDIATE.value, 'fp_prob': (0, 0.3),
-             'severity': 3, 'priority': (60, 90), 'confidence': (0.75, 1.0)},
-            # Monitoring
-            {'decision': DecisionType.MONITOR.value, 'fp_prob': (0.2, 0.5),
-             'severity': 1, 'priority': (20, 50), 'confidence': (0.4, 0.7)},
-            # Gather more info
-            {'decision': DecisionType.GATHER_MORE_INFO.value, 'fp_prob': (0.3, 0.6),
-             'severity': 2, 'priority': (30, 60), 'confidence': (0.3, 0.5)},
-        ]
+        severity_map = {
+            'critical': 4, 'kritik': 4,
+            'high': 3, 'yuksek': 3,
+            'medium': 2, 'orta': 2,
+            'low': 1, 'dusuk': 1,
+            'informational': 0, 'bilgi': 0
+        }
 
-        for scenario in scenarios:
-            for _ in range(100):  # 100 samples per scenario
-                fp_prob = np.random.uniform(*scenario['fp_prob'])
-                severity = scenario['severity']
-                priority = np.random.uniform(*scenario['priority'])
-                confidence = np.random.uniform(*scenario['confidence'])
+        if os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                conn.row_factory = sqlite3.Row
 
-                features = [
-                    fp_prob,
-                    severity / 4,  # Normalize
-                    priority / 100,  # Normalize
-                    confidence,
-                    np.random.randint(0, 10),  # Affected assets
-                    np.random.randint(0, 5),   # Threat intel matches
-                    np.random.random(),        # Risk score
-                    np.random.randint(0, 24),  # Hour of day
-                ]
+                # Load alarm records as decision training data
+                alarms = conn.execute(
+                    "SELECT tip, kaynak, ciddiyet, tarih, okundu FROM alarmlar "
+                    "ORDER BY tarih DESC LIMIT 2000"
+                ).fetchall()
+                for alarm in alarms:
+                    sev = severity_map.get((alarm['ciddiyet'] or 'medium').lower(), 2)
+                    from datetime import datetime as dt
+                    try:
+                        ts = dt.fromisoformat(alarm['tarih']) if alarm['tarih'] else dt.now()
+                    except (ValueError, TypeError):
+                        ts = dt.now()
 
-                data.append({
-                    'features': features,
-                    'decision': scenario['decision']
-                })
+                    # Infer decision from severity
+                    if sev >= 4:
+                        decision = DecisionType.ESCALATE_TO_INCIDENT_RESPONSE.value
+                    elif sev >= 3:
+                        decision = DecisionType.AUTO_REMEDIATE.value
+                    elif sev >= 2:
+                        decision = DecisionType.ESCALATE_TO_TIER2.value
+                    elif sev >= 1:
+                        decision = DecisionType.MONITOR.value
+                    else:
+                        decision = DecisionType.CLOSE_FALSE_POSITIVE.value
+
+                    features = [
+                        0.1 if sev >= 2 else 0.7,  # fp_prob
+                        sev / 4,  # severity normalized
+                        sev * 25 / 100,  # priority normalized
+                        0.8 if sev >= 3 else 0.5,  # confidence
+                        1,  # affected assets
+                        0,  # threat intel matches
+                        sev / 4,  # risk score
+                        ts.hour,  # hour of day
+                    ]
+                    data.append({'features': features, 'decision': decision})
+
+                # Load session logs
+                sessions = conn.execute(
+                    "SELECT islem, detay, tarih FROM oturum_kayitlari "
+                    "ORDER BY tarih DESC LIMIT 1000"
+                ).fetchall()
+                for session in sessions:
+                    action = (session['islem'] or '').lower()
+                    if 'block' in action or 'engelle' in action:
+                        decision = DecisionType.AUTO_REMEDIATE.value
+                        sev = 3
+                    elif 'alert' in action or 'alarm' in action:
+                        decision = DecisionType.ESCALATE_TO_TIER2.value
+                        sev = 2
+                    elif 'monitor' in action or 'izle' in action:
+                        decision = DecisionType.MONITOR.value
+                        sev = 1
+                    else:
+                        continue
+
+                    features = [0.2, sev/4, sev*25/100, 0.6, 1, 0, sev/4, 12]
+                    data.append({'features': features, 'decision': decision})
+
+                conn.close()
+            except Exception as e:
+                logger.warning(f"Database load for decisions failed: {e}")
+
+        # Source 2: Alert escalation files
+        alerts_dir = os.path.expanduser("~/.dalga/alerts")
+        if os.path.isdir(alerts_dir):
+            for alert_file in glob.glob(f"{alerts_dir}/*.json"):
+                try:
+                    with open(alert_file) as f:
+                        alert = json.load(f)
+                    sev = severity_map.get(alert.get('severity', 'high').lower(), 3)
+                    features = [0.05, sev/4, 0.9, 0.9, 1, 0, 0.9, 12]
+                    data.append({
+                        'features': features,
+                        'decision': DecisionType.ESCALATE_TO_INCIDENT_RESPONSE.value
+                    })
+                except Exception:
+                    pass
+
+        if data:
+            logger.info(f"Loaded {len(data)} real decision samples for training")
+        else:
+            logger.warning(
+                "[DecisionEngine] No real decision data found. "
+                "Model will use rule-based decisions until real incident data is collected."
+            )
 
         return data
 

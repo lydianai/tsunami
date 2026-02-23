@@ -208,10 +208,10 @@ class ResponseOrchestrator:
                 step.result = result
                 step.status = ResponseStatus.COMPLETED
             else:
-                # Simulate execution for unregistered handlers
-                logger.warning(f"No handler for: {step.action_type}, simulating")
-                step.result = {"simulated": True}
-                step.status = ResponseStatus.COMPLETED
+                logger.error(f"No handler registered for action: {step.action_type}")
+                step.result = {"error": f"No handler for {step.action_type}", "unhandled": True}
+                step.status = ResponseStatus.FAILED
+                return False
 
             step.completed_at = datetime.now()
             return True

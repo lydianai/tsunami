@@ -1,49 +1,110 @@
+# ============================================================
+# TSUNAMI .gitignore
+# ============================================================
 
-# Güvenlik - API anahtarları
+# ===== SECURITY: NEVER COMMIT THESE =====
 .env
 .env.*
+!.env.example
 *.key
 *.pem
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-venv/
-.venv/
-
-# Test & Cache
-.hypothesis/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Runtime veritabanlari & loglar
-*.db
-*.log
-*.csv
-
-# Backup dosyalari
-*.backup
-*.bak
-
-# Test artifacts
-test_user_*.txt
-testuser*.txt
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+*.p12
+*.pfx
+secrets/
+credentials/
 
 # SSH keys
 scripts/858687
 scripts/858687.pub
 
-# IDE
-# (already above)
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+pip-wheel-metadata/
 
-# OS
+# ===== Runtime & Data =====
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.csv
+gunicorn.log
+gunicorn.pid
+
+# ===== Test Artifacts =====
+.hypothesis/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+test_user_*.txt
+testuser*.txt
+testuser123*.txt
+*_results.csv
+safety-report.json
+pip-audit-report.json
+trivy-results.sarif
+
+# ===== Backup Files =====
+*.backup
+*.bak
+*.orig
+*.py.backup*
+
+# ===== Cache =====
+*.db-shm
+*.db-wal
+dashboard_cache.db
+__pycache__/
+
+# ===== Node (tsunam-react) =====
+tsunam-react/node_modules/
+tsunam-react/build/
+tsunam-react/.env.local
+tsunam-react/.env.development.local
+tsunam-react/.env.test.local
+tsunam-react/.env.production.local
+tsunam-react/npm-debug.log*
+tsunam-react/yarn-debug.log*
+tsunam-react/yarn-error.log*
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ===== OS =====
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Misc =====
+*.gz
+*.zip
+*.tar
+AILYDIAN_CORE/
+dalga_denetim.log

@@ -243,34 +243,81 @@ class LicenseManager:
         return self._license
 
     def activate_license(self, license_key: str) -> bool:
-        """Activate a new license"""
-        # In a real implementation, this would validate against a license server
-        # For now, we'll do a simple key validation
+        """
+        Activate a new license with HMAC-SHA256 cryptographic verification.
+
+        License key format: BASE64(JSON_PAYLOAD).HMAC_SIGNATURE
+        JSON payload contains: type, organization, issued_at, expires_at,
+                               max_users, max_assets, features
+        """
+        import hmac
+
         try:
-            # Decode license key (simplified for demo)
-            if len(license_key) < 20:
+            if '.' not in license_key:
+                logger.warning("License key format invalid: missing signature separator")
                 return False
 
-            # Parse license data from key
-            # In production, this would be cryptographically verified
-            parts = license_key.split("-")
-            if len(parts) < 4:
+            payload_b64, signature_hex = license_key.rsplit('.', 1)
+
+            # Decode payload
+            try:
+                payload_bytes = base64.b64decode(payload_b64)
+                payload = json.loads(payload_bytes.decode('utf-8'))
+            except Exception:
+                logger.warning("License key payload decode failed")
                 return False
 
-            license_type = LicenseType.PROFESSIONAL if "PRO" in license_key else LicenseType.ENTERPRISE
+            # Verify HMAC-SHA256 signature
+            # Secret key from environment or SecretManager
+            signing_key = os.environ.get('TSUNAMI_LICENSE_SECRET', '').encode('utf-8')
+            if not signing_key:
+                # Fallback: use the SecretManager key if available
+                secret_mgr_key_file = self.config_dir / ".secret_key"
+                if secret_mgr_key_file.exists():
+                    signing_key = secret_mgr_key_file.read_bytes()
+                else:
+                    logger.error("License signing key not configured (set TSUNAMI_LICENSE_SECRET)")
+                    return False
+
+            expected_sig = hmac.new(signing_key, payload_bytes, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(expected_sig, signature_hex):
+                logger.warning("License key HMAC verification failed")
+                return False
+
+            # Validate required fields
+            required = ['type', 'organization', 'expires_at']
+            for field_name in required:
+                if field_name not in payload:
+                    logger.warning(f"License payload missing field: {field_name}")
+                    return False
+
+            # Parse license type
+            try:
+                license_type = LicenseType(payload['type'])
+            except ValueError:
+                logger.warning(f"Invalid license type: {payload.get('type')}")
+                return False
+
+            # Check expiration
+            expires_at = datetime.fromisoformat(payload['expires_at'])
+            if datetime.now() > expires_at:
+                logger.warning("License key has expired")
+                return False
+
+            issued_at = datetime.fromisoformat(payload.get('issued_at', datetime.now().isoformat()))
 
             self._license = LicenseInfo(
                 type=license_type,
-                organization="Licensed Organization",
-                issued_at=datetime.now(),
-                expires_at=datetime.now() + timedelta(days=365),
-                max_users=100,
-                max_assets=10000,
-                features=["all"],
+                organization=payload['organization'],
+                issued_at=issued_at,
+                expires_at=expires_at,
+                max_users=payload.get('max_users', 1),
+                max_assets=payload.get('max_assets', 100),
+                features=payload.get('features', []),
                 license_key=license_key
             )
             self._save_license()
-            logger.info(f"License activated: {license_type.value}")
+            logger.info(f"License activated: {license_type.value} for {payload['organization']}")
             return True
 
         except Exception as e:
