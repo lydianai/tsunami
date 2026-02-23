@@ -1,0 +1,102 @@
+name: Generate SBOM
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  sbom:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install CycloneDX generator
+        run: pip install cyclonedx-bom
+
+      - name: Generate CycloneDX SBOM (JSON)
+        run: |
+          cyclonedx-py environment \
+            --output-format json \
+            --outfile sbom-cyclonedx.json
+        continue-on-error: true
+
+      - name: Generate CycloneDX SBOM (XML)
+        run: |
+          cyclonedx-py environment \
+            --output-format xml \
+            --outfile sbom-cyclonedx.xml
+        continue-on-error: true
+
+      - name: Install Syft for comprehensive SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+        continue-on-error: true
+
+      - name: Generate SPDX SBOM with Syft
+        run: |
+          syft dir:. \
+            --exclude './osint_tools' \
+            --exclude './node_modules' \
+            --exclude './.git' \
+            -o spdx-json=sbom-spdx.json \
+            -o spdx-tag-value=sbom-spdx.txt
+        continue-on-error: true
+
+      - name: Install pip-licenses for license audit
+        run: |
+          pip install pip-licenses
+          pip install -r requirements.txt --quiet
+        continue-on-error: true
+
+      - name: Generate license report
+        run: |
+          pip-licenses \
+            --format=csv \
+            --output-file=license-report.csv \
+            --with-urls
+          pip-licenses \
+            --format=json \
+            --output-file=license-report.json \
+            --with-urls
+        continue-on-error: true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom-*.json
+            sbom-*.xml
+            sbom-*.txt
+            license-report.*
+          retention-days: 90
+
+      - name: Attach SBOM to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@c062e08bd532815e2082a7e09ce9571a6d4acca4 # v2.1.0
+        with:
+          files: |
+            sbom-cyclonedx.json
+            sbom-cyclonedx.xml
+            sbom-spdx.json
+            license-report.csv

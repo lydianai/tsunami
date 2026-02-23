@@ -229,6 +229,168 @@ WhatsmyName (Username OSINT)
   Copyright (c) 2020-2024 WebBreacher
   Homepage: https://github.com/WebBreacher/WhatsMyName
 
+argon2-cffi
+  License: MIT License
+  Copyright (c) 2015-2021 Hynek Schlawack
+  Homepage: https://github.com/hynek/argon2-cffi
+
+pyotp
+  License: MIT License
+  Copyright (c) 2011-2024 Mark Percival
+  Homepage: https://github.com/pyauth/pyotp
+
+httpx
+  License: BSD 3-Clause License
+  Copyright (c) 2019-2024 Encode OSS Ltd.
+  Homepage: https://github.com/encode/httpx
+
+dnspython
+  License: ISC License
+  Copyright (c) 2001-2024 Nominum, Inc.; 2016-2024 the dnspython authors
+  Homepage: https://github.com/rthalley/dnspython
+
+python-whois
+  License: MIT License
+  Homepage: https://github.com/richardpenman/whois
+
+shodan
+  License: MIT License
+  Copyright (c) 2010-2024 John Matherly
+  Homepage: https://github.com/achillean/shodan-python
+
+ipwhois
+  License: BSD 2-Clause License
+  Copyright (c) 2013-2024 Philip Hane
+  Homepage: https://github.com/secynic/ipwhois
+
+netaddr
+  License: BSD 3-Clause License
+  Copyright (c) 2008-2024 David P. D. Moss; 2023-2024 netaddr contributors
+  Homepage: https://github.com/netaddr/netaddr
+
+scapy
+  License: GNU General Public License v2.0
+  Copyright (c) 2003-2009 Philippe Biondi; 2007-2024 Scapy Team
+  Homepage: https://github.com/secdev/scapy
+  NOTE: scapy is a runtime dependency; it is NOT bundled with TSUNAMI.
+  Users must install scapy independently. TSUNAMI's MIT license applies
+  only to TSUNAMI's own source code.
+
+geopandas
+  License: BSD 3-Clause License
+  Copyright (c) 2013-2024 GeoPandas Developers
+  Homepage: https://github.com/geopandas/geopandas
+
+shapely
+  License: BSD 3-Clause License
+  Copyright (c) 2007-2024 Sean Gillies, Toby Weitzel, and contributors
+  Homepage: https://github.com/shapely/shapely
+
+pyproj
+  License: MIT License
+  Copyright (c) 2006-2024 Jeffrey Whitaker and contributors
+  Homepage: https://github.com/pyproj4/pyproj
+
+folium
+  License: MIT License
+  Copyright (c) 2013-2024 Rob Story
+  Homepage: https://github.com/python-visualization/folium
+
+geopy
+  License: MIT License
+  Copyright (c) 2006-2024 geopy authors
+  Homepage: https://github.com/geopy/geopy
+
+scipy
+  License: BSD 3-Clause License
+  Copyright (c) 2001-2024 SciPy Developers
+  Homepage: https://github.com/scipy/scipy
+
+networkx
+  License: BSD 3-Clause License
+  Copyright (c) 2004-2024 NetworkX Developers
+  Homepage: https://github.com/networkx/networkx
+
+phonenumbers
+  License: Apache License 2.0
+  Copyright (c) 2009-2024 Google LLC
+  Homepage: https://github.com/daviddrysdale/python-phonenumbers
+
+reportlab
+  License: BSD 3-Clause License
+  Copyright (c) 1998-2024 ReportLab Inc.
+  Homepage: https://github.com/MrBitBucket/reportlab-mirror
+
+python-pptx
+  License: MIT License
+  Copyright (c) 2012-2024 Steve Canny
+  Homepage: https://github.com/python-openxml/python-pptx
+
+openpyxl
+  License: MIT License
+  Copyright (c) 2010-2024 openpyxl contributors
+  Homepage: https://foss.heptapod.net/openpyxl/openpyxl
+
+weasyprint
+  License: BSD 3-Clause License
+  Copyright (c) 2011-2024 Simon Sapin, CourtBouillon contributors
+  Homepage: https://github.com/Kozea/WeasyPrint
+
+prometheus-client
+  License: Apache License 2.0
+  Copyright (c) 2012-2024 Prometheus Authors
+  Homepage: https://github.com/prometheus/client_python
+
+sentry-sdk
+  License: MIT License
+  Copyright (c) 2018-2024 Functional Software, Inc.
+  Homepage: https://github.com/getsentry/sentry-python
+
+structlog
+  License: MIT License
+  Copyright (c) 2013-2024 Hynek Schlawack
+  Homepage: https://github.com/hynek/structlog
+
+flasgger
+  License: MIT License
+  Copyright (c) 2016-2024 Bruno Rocha
+  Homepage: https://github.com/flasgger/flasgger
+
+pydantic
+  License: MIT License
+  Copyright (c) 2017-2024 Samuel Colvin and contributors
+  Homepage: https://github.com/pydantic/pydantic
+
+marshmallow
+  License: MIT License
+  Copyright (c) 2013-2024 Steven Loria
+  Homepage: https://github.com/marshmallow-code/marshmallow
+
+hypothesis
+  License: Mozilla Public License 2.0
+  Copyright (c) 2013-2024 David R. MacIver and contributors
+  Homepage: https://github.com/HypothesisWorks/hypothesis
+
+--------------------------------------------------------------------------------
+GPL-Licensed Tools Notice
+--------------------------------------------------------------------------------
+
+The following OSINT tools are invoked by TSUNAMI as **external subprocess calls**.
+They are NOT bundled with, incorporated into, or distributed as part of TSUNAMI.
+Users must install these tools independently. TSUNAMI's MIT license applies only
+to TSUNAMI's own source code. These tools retain their respective licenses.
+
+  - scapy: GPL-2.0 (pip dependency, separately installed)
+  - theHarvester: GPL-2.0 (external tool)
+  - Sublist3r: GPL-2.0 (external tool)
+  - DNSRecon: GPL-2.0 (external tool)
+  - holehe: GPL-3.0 (external tool)
+  - h8mail: GPL-3.0 (external tool)
+  - phoneinfoga: GPL-3.0 (external tool)
+  - TruffleHog: GPL-3.0 (CI/CD tool only)
+
+When using these tools, you are bound by their respective license terms.
+
 --------------------------------------------------------------------------------
 Frontend Dependencies (React / tsunam-react)
 --------------------------------------------------------------------------------
