@@ -120,7 +120,7 @@ pytest-cov==6.0.0
 pytest-xdist==3.6.1           # Parallel testing
 hypothesis==6.123.2           # Property-based testing
 black==24.10.0
-flake8==7.1.1
+flake8==7.3.0
 mypy==1.15.0
 isort==5.13.2
 pre-commit==4.0.1
