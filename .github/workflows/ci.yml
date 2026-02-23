@@ -127,7 +127,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: htmlcov/
@@ -260,7 +260,7 @@ jobs:
           pip-audit --format json > pip-audit-report.json || true
 
       - name: Upload security reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: security-reports
           path: |
