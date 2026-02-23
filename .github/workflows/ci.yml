@@ -206,7 +206,7 @@ jobs:
           # Add your production deployment commands here
 
       - name: Notify deployment
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
           payload: |
             {
