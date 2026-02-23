@@ -80,7 +80,7 @@ joblib==1.5.3
 phonenumbers==8.13.54
 
 # === Reporting ===
-reportlab==4.2.5
+reportlab==4.4.10
 python-pptx==1.0.2
 openpyxl==3.1.5
 Jinja2==3.1.6                 # CVE-2025-27516 FIXED
