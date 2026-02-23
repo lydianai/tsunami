@@ -40,7 +40,7 @@ Flask-Caching==2.3.0
 # === Task Queue (24/7 Autonomous) ===
 celery[redis]==5.6.2
 flower==2.0.1
-dramatiq[redis,watch]==1.18.0
+dramatiq[redis,watch]==2.0.1
 
 # === Security (ALL PATCHED) ===
 cryptography==46.0.4          # CVE-2024-12797 FIXED
