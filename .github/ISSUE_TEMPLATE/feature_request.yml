@@ -1,0 +1,104 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for TSUNAMI
+title: "[FEAT] "
+labels: ["enhancement", "triage"]
+assignees:
+  - lydianai
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request Guidelines
+        - Check [existing feature requests](https://github.com/lydianai/tsunami/issues?q=label%3Aenhancement) to avoid duplicates
+        - For security-related features, also review [SECURITY.md](https://github.com/lydianai/tsunami/blob/main/SECURITY.md)
+        - **All requested features must comply with white-hat principles in [LEGAL.md](https://github.com/lydianai/tsunami/blob/main/LEGAL.md)**
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which area does this feature belong to?
+      options:
+        - Select one
+        - OSINT / Reconnaissance
+        - Threat Intelligence
+        - Geolocation / Network Analysis
+        - Anomaly Detection / Shannon Analysis
+        - Authentication / Access Control
+        - Dashboard / Visualization
+        - API / Integration
+        - Performance / Scalability
+        - Docker / Deployment
+        - Documentation
+        - White-hat Security Tooling
+        - AI / LLM Integration
+        - Reporting / Export
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: Describe the feature in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem It Solves
+      description: What problem does this feature solve? Who benefits?
+      placeholder: "As a SOC analyst, I need X so that I can Y..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your preferred implementation approach (optional)
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've considered?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Estimated Priority
+      options:
+        - Low (nice to have)
+        - Medium (would improve workflow)
+        - High (blocking current use case)
+        - Critical (security or data integrity impact)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Screenshots, mockups, references to similar tools, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: This feature is for authorized, legitimate security use only
+          required: true
+        - label: I have checked existing feature requests and this is not a duplicate
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://github.com/lydianai/tsunami/blob/main/CODE_OF_CONDUCT.md)
+          required: true

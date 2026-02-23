@@ -1,0 +1,267 @@
+version: 1
+description: API rate limiting configuration for TSUNAMI Cyber Intelligence Platform
+
+# Global defaults
+defaults:
+  window: 60        # seconds
+  requests: 60      # per window per IP
+  burst: 5          # additional burst allowance
+  enabled: true
+  per_user: false
+
+# Endpoint-specific overrides
+endpoints:
+  # ============================================================
+  # Authentication endpoints - STRICT limits (brute-force protection)
+  # ============================================================
+  
+  "/api/auth/login":
+    requests: 5
+    window: 300     # 5 attempts per 5 minutes
+    burst: 0
+    per_user: false
+    block_on_exceed: true
+    lockout_duration: 900  # 15 minutes lockout after block
+
+  "/api/auth/register":
+    requests: 3
+    window: 3600    # 3 registrations per hour per IP
+    burst: 0
+    per_user: false
+
+  "/api/auth/2fa/verify":
+    requests: 10
+    window: 60
+    burst: 0
+    per_user: true
+
+  "/api/auth/password/reset":
+    requests: 3
+    window: 3600
+    burst: 0
+    per_user: false
+
+  "/api/auth/logout":
+    requests: 30
+    window: 60
+    burst: 5
+    per_user: true
+
+  # ============================================================
+  # OSINT / Intelligence gathering - MODERATE limits
+  # (OSINT queries can be slow/resource-intensive)
+  # ============================================================
+
+  "/api/osint/analyze":
+    requests: 20
+    window: 60
+    burst: 3
+    per_user: true
+    cost_based: true    # More expensive queries count more
+
+  "/api/osint/username":
+    requests: 10
+    window: 60
+    burst: 2
+    per_user: true
+
+  "/api/osint/email":
+    requests: 15
+    window: 60
+    burst: 3
+    per_user: true
+
+  "/api/osint/phone":
+    requests: 10
+    window: 60
+    burst: 2
+    per_user: true
+
+  "/api/osint/domain":
+    requests: 15
+    window: 60
+    burst: 3
+    per_user: true
+
+  # ============================================================
+  # Threat Intelligence - MODERATE limits
+  # ============================================================
+
+  "/api/threats/search":
+    requests: 30
+    window: 60
+    burst: 5
+    per_user: true
+
+  "/api/threats/bulk":
+    requests: 5
+    window: 60
+    burst: 1
+    per_user: true
+
+  "/api/mitre/search":
+    requests: 60
+    window: 60
+    burst: 10
+    per_user: true
+
+  # ============================================================
+  # AI Analysis - STRICT limits (expensive Groq API calls)
+  # ============================================================
+
+  "/api/ai/analyze":
+    requests: 10
+    window: 60
+    burst: 2
+    per_user: true
+
+  "/api/ai/report":
+    requests: 5
+    window: 300     # 5 reports per 5 minutes
+    burst: 1
+    per_user: true
+
+  # ============================================================
+  # Shannon / Network Analysis
+  # ============================================================
+
+  "/api/shannon/analyze":
+    requests: 30
+    window: 60
+    burst: 5
+    per_user: true
+
+  "/api/network/scan":
+    requests: 5
+    window: 300     # Network scans are expensive
+    burst: 0
+    per_user: true
+    require_auth: true
+
+  # ============================================================
+  # Geolocation - GENEROUS limits (lightweight)
+  # ============================================================
+
+  "/api/geo/location":
+    requests: 120
+    window: 60
+    burst: 20
+    per_user: false
+
+  # ============================================================
+  # Sinkhole management
+  # ============================================================
+
+  "/api/sinkhole/list":
+    requests: 60
+    window: 60
+    burst: 10
+    per_user: true
+
+  "/api/sinkhole/add":
+    requests: 10
+    window: 60
+    burst: 2
+    per_user: true
+    require_auth: true
+
+  # ============================================================
+  # System endpoints - GENEROUS limits (health/status)
+  # ============================================================
+
+  "/api/health":
+    requests: 1000
+    window: 60
+    burst: 100
+    per_user: false
+    bypass_auth: true
+
+  "/api/status":
+    requests: 100
+    window: 60
+    burst: 10
+    per_user: false
+
+  # ============================================================
+  # Admin endpoints - Per-authenticated-user
+  # ============================================================
+
+  "/api/admin/*":
+    requests: 100
+    window: 60
+    burst: 10
+    per_user: true
+    require_auth: true
+    require_roles:
+      - admin
+      - operator
+
+  # ============================================================
+  # Dashboard / UI data endpoints
+  # ============================================================
+
+  "/api/dashboard/*":
+    requests: 120
+    window: 60
+    burst: 20
+    per_user: true
+
+  "/api/stats/*":
+    requests: 30
+    window: 60
+    burst: 5
+    per_user: true
+
+# Exemptions - these bypass rate limiting
+exemptions:
+  # Localhost testing
+  ips:
+    - "127.0.0.1"
+    - "::1"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+
+  # Internal monitoring (Prometheus, Grafana)
+  user_agents:
+    - "Prometheus/*"
+    - "Grafana/*"
+    - "kube-probe/*"
+
+  # Internal API keys (set via environment)
+  api_keys:
+    - env: INTERNAL_API_KEY
+    - env: MONITORING_API_KEY
+
+# Error response configuration
+on_limit_exceeded:
+  status_code: 429
+  response_type: json
+  retry_after: true
+  log: true
+  body:
+    error: "Rate limit exceeded"
+    message: "Too many requests. Please slow down and try again."
+
+# Storage backend for rate limit state
+storage:
+  type: redis       # Use Redis for distributed rate limiting
+  key_prefix: "tsunami:ratelimit:"
+  fallback: memory  # Fall back to in-memory if Redis unavailable
+
+# Advanced options
+options:
+  # Moving window vs fixed window algorithm
+  algorithm: sliding_window
+
+  # Include rate limit headers in all responses
+  headers:
+    include_limit: true    # X-RateLimit-Limit
+    include_remaining: true # X-RateLimit-Remaining
+    include_reset: true    # X-RateLimit-Reset
+    include_retry_after: true  # Retry-After (on 429)
+
+  # Trust X-Forwarded-For header (set true if behind load balancer/proxy)
+  trust_proxy: false
+  trusted_proxies:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"

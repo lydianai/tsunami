@@ -1,0 +1,661 @@
+openapi: 3.0.3
+info:
+  title: TSUNAMI Cyber Intelligence Platform API
+  description: |
+    Advanced cyber intelligence platform with SIGINT/OSINT, threat intelligence,
+    geolocation, Shannon entropy analysis, and AI-powered threat detection.
+    
+    ## Authentication
+    
+    All protected endpoints require a valid JWT Bearer token obtained via `/api/auth/login`.
+    
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limiting
+    
+    - Default: 60 requests/minute per IP
+    - Authentication endpoints: 5 requests/5 minutes
+    - OSINT endpoints: 20 requests/minute per user
+    
+    ## White-Hat Usage
+    
+    This API is designed exclusively for **authorized security testing and intelligence gathering**.
+    All users must comply with [LEGAL.md](https://github.com/lydianai/tsunami/blob/main/LEGAL.md).
+  version: 6.0.0
+  contact:
+    name: TSUNAMI Team
+    email: security@ailydian.com
+    url: https://github.com/lydianai/tsunami
+  license:
+    name: MIT
+    url: https://github.com/lydianai/tsunami/blob/main/LICENSE
+  x-logo:
+    url: https://raw.githubusercontent.com/lydianai/tsunami/main/static/images/logo.png
+
+servers:
+  - url: http://localhost:8082
+    description: Local development server
+  - url: https://tsunami.ailydian.com
+    description: Production server (if deployed)
+
+tags:
+  - name: Authentication
+    description: User authentication, registration, and session management
+  - name: Dashboard
+    description: Main intelligence dashboard and overview endpoints
+  - name: Threats
+    description: Threat intelligence, IOC lookup, and threat correlation
+  - name: OSINT
+    description: Open Source Intelligence — IP, domain, email, phone, username analysis
+  - name: Geolocation
+    description: IP and domain geolocation services
+  - name: Shannon
+    description: Entropy analysis for anomaly and DGA detection
+  - name: Sinkhole
+    description: Traffic sinkhole monitoring and management
+  - name: MITRE ATT&CK
+    description: MITRE ATT&CK technique mapping and threat classification
+  - name: AI Analysis
+    description: AI/LLM-powered threat analysis and natural language reporting
+  - name: Network
+    description: Network scanning, port analysis, and service fingerprinting
+  - name: System
+    description: System health, status, and configuration endpoints
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Returns the current health status of the TSUNAMI platform
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Platform is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                version: "6.0.0"
+                timestamp: "2026-02-22T12:00:00Z"
+
+  /api/status:
+    get:
+      tags:
+        - System
+      summary: Platform status
+      description: Returns detailed status of all TSUNAMI modules
+      operationId: platformStatus
+      responses:
+        '200':
+          description: Status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate with username and password to receive JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: "analyst"
+              password: "your-secure-password"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitResponse'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      description: Invalidate the current session
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/threats/search:
+    get:
+      tags:
+        - Threats
+      summary: Search threat intelligence
+      description: Search for threat intelligence data by IOC (IP, domain, hash, URL, email)
+      operationId: threatSearch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: IOC to search (IP address, domain, MD5/SHA1/SHA256 hash, URL, or email)
+          example: "192.168.1.1"
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ip, domain, hash, url, email, auto]
+            default: auto
+          description: IOC type (auto-detected if not specified)
+        - name: sources
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [virustotal, abuseipdb, shodan, threatfox, all]
+          description: Threat intelligence sources to query
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: Threat intelligence data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatSearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/osint/analyze:
+    post:
+      tags:
+        - OSINT
+      summary: Analyze target (IP/domain/email/phone/username)
+      description: |
+        Perform comprehensive OSINT analysis on a target.
+        **Requires authorization to analyze the target.**
+      operationId: osintAnalyze
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OsintRequest'
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OsintResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/geo/location:
+    get:
+      tags:
+        - Geolocation
+      summary: Get IP geolocation
+      description: Resolve geolocation data for an IP address
+      operationId: geoLocation
+      parameters:
+        - name: ip
+          in: query
+          required: true
+          schema:
+            type: string
+            format: ipv4
+          example: "8.8.8.8"
+      responses:
+        '200':
+          description: Geolocation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/shannon/analyze:
+    post:
+      tags:
+        - Shannon
+      summary: Analyze domain entropy
+      description: |
+        Calculate Shannon entropy for domain names to detect DGA (Domain Generation Algorithm)
+        domains and DNS tunneling.
+      operationId: shannonAnalyze
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShannonRequest'
+      responses:
+        '200':
+          description: Entropy analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShannonResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/mitre/search:
+    get:
+      tags:
+        - MITRE ATT&CK
+      summary: Search MITRE ATT&CK techniques
+      description: Search and map observed behaviors to MITRE ATT&CK techniques
+      operationId: mitreSearch
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "spearphishing"
+        - name: matrix
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [enterprise, mobile, ics]
+            default: enterprise
+      responses:
+        '200':
+          description: MITRE ATT&CK techniques
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MitreTechnique'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/ai/analyze:
+    post:
+      tags:
+        - AI Analysis
+      summary: AI-powered threat analysis
+      description: |
+        Use Groq LLM to analyze threat data and generate natural language intelligence reports.
+      operationId: aiAnalyze
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiAnalysisRequest'
+      responses:
+        '200':
+          description: AI analysis report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiAnalysisResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sinkhole/list:
+    get:
+      tags:
+        - Sinkhole
+      summary: List sinkhole entries
+      description: Get all monitored sinkhole traffic entries
+      operationId: sinkholeList
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 500
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Sinkhole entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SinkholeEntry'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        modules:
+          type: object
+          additionalProperties:
+            type: object
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 64
+        password:
+          type: string
+          minLength: 8
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+        token_type:
+          type: string
+          default: bearer
+        expires_in:
+          type: integer
+          description: Token expiry in seconds
+
+    ThreatSearchResponse:
+      type: object
+      properties:
+        ioc:
+          type: string
+        type:
+          type: string
+        threat_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        sources:
+          type: array
+          items:
+            type: object
+        tags:
+          type: array
+          items:
+            type: string
+        last_seen:
+          type: string
+          format: date-time
+
+    OsintRequest:
+      type: object
+      required:
+        - target
+        - target_type
+      properties:
+        target:
+          type: string
+          description: Target to analyze (IP, domain, email, phone number, or username)
+        target_type:
+          type: string
+          enum: [ip, domain, email, phone, username, auto]
+        tools:
+          type: array
+          items:
+            type: string
+          description: Specific OSINT tools to use (omit for all applicable)
+        authorization:
+          type: string
+          description: Reference to written authorization document
+
+    OsintResponse:
+      type: object
+      properties:
+        target:
+          type: string
+        target_type:
+          type: string
+        results:
+          type: object
+          additionalProperties:
+            type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    GeoResponse:
+      type: object
+      properties:
+        ip:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        isp:
+          type: string
+        asn:
+          type: string
+
+    ShannonRequest:
+      type: object
+      required:
+        - domains
+      properties:
+        domains:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 1000
+        threshold:
+          type: number
+          description: Entropy threshold for DGA classification (default: 3.5)
+          default: 3.5
+
+    ShannonResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              domain:
+                type: string
+              entropy:
+                type: number
+              is_dga:
+                type: boolean
+              confidence:
+                type: number
+
+    MitreTechnique:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "T1566.001"
+        name:
+          type: string
+          example: "Spearphishing Attachment"
+        tactic:
+          type: string
+          example: "Initial Access"
+        description:
+          type: string
+        url:
+          type: string
+          format: uri
+
+    AiAnalysisRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          description: Threat intelligence data to analyze
+        prompt:
+          type: string
+          description: Optional custom analysis prompt
+        format:
+          type: string
+          enum: [executive, technical, json]
+          default: technical
+
+    AiAnalysisResponse:
+      type: object
+      properties:
+        analysis:
+          type: string
+          description: AI-generated threat analysis report
+        model:
+          type: string
+          description: AI model used for analysis
+        tokens_used:
+          type: integer
+
+    SinkholeEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        source_ip:
+          type: string
+        destination_domain:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        malware_family:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+
+    RateLimitResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Rate limit exceeded"
+        retry_after:
+          type: integer
+          description: Seconds until rate limit resets
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitResponse'

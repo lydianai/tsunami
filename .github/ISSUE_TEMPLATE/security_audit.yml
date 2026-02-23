@@ -1,0 +1,72 @@
+name: Security Audit Request
+description: Request a security review or white-hat audit finding (non-critical)
+title: "[SECURITY] "
+labels: ["security", "audit"]
+assignees:
+  - lydianai
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠️ IMPORTANT: Critical Vulnerabilities
+        
+        **If you found a security vulnerability, DO NOT use this form.**
+        
+        Report critical vulnerabilities privately via:
+        - 🔒 [GitHub Security Advisories (Private)](https://github.com/lydianai/tsunami/security/advisories/new)
+        - 📧 Email: security@ailydian.com
+        
+        This form is for **non-critical security improvement suggestions** only (hardening, best practices, documentation gaps).
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Audit Type
+      options:
+        - Code hardening suggestion
+        - Dependency audit finding (non-critical)
+        - Documentation gap (security guidance missing)
+        - White-hat tooling improvement
+        - OWASP compliance gap
+        - Legal/compliance concern
+    validations:
+      required: true
+
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding Description
+      description: Describe the security improvement opportunity
+    validations:
+      required: true
+
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+      description: What specific improvement do you recommend?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cvss
+    attributes:
+      label: Estimated Risk Level
+      options:
+        - Informational (no direct security impact)
+        - Low (CVSS 0.1–3.9)
+        - Medium (CVSS 4.0–6.9)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: This is NOT a critical vulnerability (I would use Security Advisories for those)
+          required: true
+        - label: I have authorization to test the systems involved
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://github.com/lydianai/tsunami/blob/main/CODE_OF_CONDUCT.md) and [LEGAL.md](https://github.com/lydianai/tsunami/blob/main/LEGAL.md)
+          required: true

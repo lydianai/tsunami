@@ -1,0 +1,30 @@
+# CODEOWNERS for TSUNAMI
+# Defines who is responsible for reviewing code changes
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all files require review from the maintainers
+* @lydianai
+
+# Core application
+/dalga_web.py @lydianai
+/modules/ @lydianai
+
+# Security-critical files require maintainer review
+/SECURITY.md @lydianai
+/LEGAL.md @lydianai
+/.github/workflows/ @lydianai
+/config/ @lydianai
+
+# Frontend
+/tsunam-react/ @lydianai
+
+# OSINT tools - any changes require maintainer sign-off
+/osint_tools/ @lydianai
+
+# CI/CD configuration
+/.github/ @lydianai
+
+# Documentation
+/docs/ @lydianai
+/README.md @lydianai
+/CONTRIBUTING.md @lydianai

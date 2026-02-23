@@ -1,0 +1,10 @@
+# Funding configuration for TSUNAMI
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+github: AiLydian
+
+# Uncomment when other funding platforms are available:
+# patreon: lydianai
+# open_collective: tsunami-project
+# ko_fi: lydianai
+# custom: ['https://ailydian.com/sponsor']

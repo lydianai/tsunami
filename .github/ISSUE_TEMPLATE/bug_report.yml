@@ -1,0 +1,129 @@
+name: Bug Report
+description: File a bug report to help improve TSUNAMI
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees:
+  - lydianai
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before Filing a Bug Report
+        - Check the [existing issues](https://github.com/lydianai/tsunami/issues) to avoid duplicates
+        - Review the [documentation](https://github.com/lydianai/tsunami/wiki) for known limitations
+        - **Security vulnerabilities must be reported via [GitHub Security Advisories](https://github.com/lydianai/tsunami/security/advisories/new) — NOT as public issues**
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of TSUNAMI is affected?
+      options:
+        - Select one
+        - Backend (dalga_web.py / Flask)
+        - Frontend (tsunam-react / React)
+        - OSINT Module (username/email/phone/domain)
+        - Threat Intelligence Module
+        - Geolocation Engine
+        - Shannon Entropy Module
+        - Authentication / Session Management
+        - WebSocket / Real-time Features
+        - Database (PostgreSQL/SQLite)
+        - Docker / Deployment
+        - CI/CD Pipeline
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: TSUNAMI Version
+      description: What version are you running? (check git tag or VERSION file)
+      placeholder: "e.g., v6.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Development (local)
+        - Docker Compose
+        - Production (VPS/Cloud)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      placeholder: "e.g., Python 3.12.4 (run: python3 --version)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: |
+        Describe what happened vs what you expected.
+        Include error messages, tracebacks, and relevant log output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide minimal steps to reproduce the bug
+      placeholder: |
+        1. Start TSUNAMI with `gunicorn ...`
+        2. Navigate to `http://localhost:8082/...`
+        3. Click on '...'
+        4. See error: '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Paste relevant logs (remove any sensitive data first!)
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Screenshots, configuration snippets (no secrets!), or other context
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: This is NOT a security vulnerability (use Security Advisories for those)
+          required: true
+        - label: I have removed all sensitive data (API keys, passwords, IPs) from this report
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://github.com/lydianai/tsunami/blob/main/CODE_OF_CONDUCT.md)
+          required: true

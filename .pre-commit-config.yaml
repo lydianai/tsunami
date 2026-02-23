@@ -1,95 +1,156 @@
-# TSUNAMI Pre-commit Configuration
-# AILYDIAN AutoFix - Code Quality Enhancement
-#
-# Install: pip install pre-commit && pre-commit install
-# Run all: pre-commit run --all-files
-
 repos:
-  # General hooks
+  # ===========================================================
+  # General file quality checks
+  # ===========================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^osint_tools/
+        args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
-        exclude: ^osint_tools/
       - id: check-yaml
-        args: [--unsafe]
+        args: [--allow-multiple-documents]
       - id: check-json
+      - id: check-toml
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: [--maxkb=5120]
       - id: check-merge-conflict
-      - id: detect-private-key
       - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: no-commit-to-branch
+        args: [--branch=main]
 
-  # Python formatting with Black
+  # ===========================================================
+  # Python formatting
+  # ===========================================================
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.10.0
     hooks:
       - id: black
-        language_version: python3.11
-        exclude: ^osint_tools/
+        language_version: python3
         args: [--line-length=120]
+        files: \.py$
 
-  # Import sorting with isort
-  - repo: https://github.com/pycqa/isort
+  # ===========================================================
+  # Python import sorting
+  # ===========================================================
+  - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        exclude: ^osint_tools/
         args: [--profile=black, --line-length=120]
+        files: \.py$
 
-  # Flake8 linting
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+  # ===========================================================
+  # Python linting (flake8)
+  # ===========================================================
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: ^osint_tools/
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
+        args: [--max-line-length=120, --extend-ignore=E203,W503]
+        files: \.py$
+        exclude: |
+          (?x)^(
+            migrations/|
+            venv/|
+            osint_tools/|
+            \.git/
+          )
 
-  # Security checks with bandit
+  # ===========================================================
+  # Python security scanning (bandit)
+  # ===========================================================
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.7
+    rev: 1.7.10
     hooks:
       - id: bandit
-        args: [-c, pyproject.toml, -r, ., -x, ./osint_tools,./tests]
-        additional_dependencies: ["bandit[toml]"]
+        args: [-r, --skip=B101,B601, --level=MEDIUM]
+        files: \.py$
+        exclude: |
+          (?x)^(
+            tests/|
+            osint_tools/|
+            venv/
+          )
 
-  # Type checking with mypy
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        exclude: ^(osint_tools|tests)/
-        args: [--ignore-missing-imports]
-        additional_dependencies:
-          - types-requests
-          - types-redis
-
-  # Check for secrets
+  # ===========================================================
+  # Secret detection (CRITICAL for security projects)
+  # ===========================================================
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: ^(osint_tools/|\.env\.example)
+        args:
+          - '--baseline'
+          - '.secrets.baseline'
+          - '--exclude-files'
+          - '.env.example'
+          - '--exclude-files'
+          - 'osint_tools/.*'
+          - '--exclude-files'
+          - 'tests/fixtures/.*'
+        exclude: |
+          (?x)^(
+            \.env\.example|
+            osint_tools/|
+            tests/fixtures/|
+            NOTICE|
+            \.secrets\.baseline
+          )
 
-  # Dockerfile linting
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.0
+  # ===========================================================
+  # YAML linting
+  # ===========================================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
     hooks:
-      - id: hadolint-docker
-        args: [--ignore, DL3008, --ignore, DL3013]
+      - id: yamllint
+        args: [-d, '{extends: relaxed, rules: {line-length: {max: 160}}}']
+        files: \.(yaml|yml)$
+        exclude: |
+          (?x)^(
+            \.github/workflows/|
+            osint_tools/
+          )
 
-# CI configuration
-ci:
-  autofix_commit_msg: |
-    [pre-commit.ci] auto fixes from pre-commit.com hooks
-  autofix_prs: true
-  autoupdate_branch: ''
-  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
-  autoupdate_schedule: weekly
-  skip: [mypy, bandit]
-  submodules: false
+  # ===========================================================
+  # Markdown linting
+  # ===========================================================
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.43.0
+    hooks:
+      - id: markdownlint
+        args: [--disable, MD013, MD033, MD041]
+        files: \.md$
+        exclude: |
+          (?x)^(
+            osint_tools/|
+            CHANGELOG\.md
+          )
+
+# ===========================================================
+# Configuration
+# ===========================================================
+default_language_version:
+  python: python3.12
+
+exclude: |
+  (?x)^(
+    \.git/|
+    venv/|
+    node_modules/|
+    \.pytest_cache/|
+    __pycache__/|
+    \.eggs/|
+    osint_tools/username/sherlock/|
+    osint_tools/username/maigret/|
+    osint_tools/.*/.git/
+  )
+
+fail_fast: false
+
+minimum_pre_commit_version: '3.0.0'

@@ -1,0 +1,317 @@
+TSUNAMI - Advanced Cyber Intelligence Platform
+Copyright (c) 2024-2026 TSUNAMI Team / AiLydian
+All rights reserved.
+
+Licensed under the MIT License. See LICENSE file for full license text.
+
+================================================================================
+THIRD-PARTY SOFTWARE NOTICES
+================================================================================
+
+This product includes software developed by third parties, each subject to
+their own license terms. Acknowledgments and license information follow.
+
+--------------------------------------------------------------------------------
+Python Backend Dependencies
+--------------------------------------------------------------------------------
+
+Flask (3.1)
+  License: BSD 3-Clause License
+  Copyright (c) 2010 Pallets
+  Homepage: https://github.com/pallets/flask
+
+Flask-SocketIO
+  License: MIT License
+  Copyright (c) 2014 Miguel Grinberg
+  Homepage: https://github.com/miguelgrinberg/Flask-SocketIO
+
+python-socketio
+  License: MIT License
+  Copyright (c) 2015 Miguel Grinberg
+  Homepage: https://github.com/miguelgrinberg/python-socketio
+
+eventlet
+  License: MIT License
+  Copyright (c) 2005-2006 Bob Ippolito; Copyright 2008-2012 Eventlet Contributors
+  Homepage: https://github.com/eventlet/eventlet
+
+SQLAlchemy (2.0)
+  License: MIT License
+  Copyright (c) 2005-2024 SQLAlchemy authors and contributors
+  Homepage: https://github.com/sqlalchemy/sqlalchemy
+
+Flask-SQLAlchemy
+  License: BSD 3-Clause License
+  Copyright (c) 2010 Pallets
+  Homepage: https://github.com/pallets-eco/flask-sqlalchemy
+
+Celery (5)
+  License: BSD License
+  Copyright (c) 2009-2024 Ask Solem and contributors
+  Homepage: https://github.com/celery/celery
+
+Redis (redis-py)
+  License: MIT License
+  Copyright (c) 2012 Andy McCurdy
+  Homepage: https://github.com/redis/redis-py
+
+PostgreSQL (psycopg2)
+  License: LGPL with exceptions (see psycopg2 LICENSE file)
+  Copyright (c) 2001-2021 Federico Di Gregorio and contributors
+  Homepage: https://www.psycopg.org/
+
+PyJWT
+  License: MIT License
+  Copyright (c) 2015-2024 Jose Padilla
+  Homepage: https://github.com/jpadilla/pyjwt
+
+Flask-JWT-Extended
+  License: MIT License
+  Copyright (c) 2016-2024 Logan Henriquez
+  Homepage: https://github.com/vimalloc/flask-jwt-extended
+
+cryptography
+  License: Apache Software License 2.0 and BSD License
+  Copyright (c) individual contributors
+  Homepage: https://github.com/pyca/cryptography
+
+bcrypt
+  License: Apache License 2.0
+  Copyright (c) 2013 Donald Stufft and individual contributors
+  Homepage: https://github.com/pyca/bcrypt
+
+Flask-Talisman
+  License: Apache License 2.0
+  Copyright (c) Google Inc.
+  Homepage: https://github.com/GoogleCloudPlatform/flask-talisman
+
+Flask-Limiter
+  License: MIT License
+  Copyright (c) 2024 Ali-Akber Saifee
+  Homepage: https://github.com/alisaifee/flask-limiter
+
+Flask-Login
+  License: MIT License
+  Copyright (c) 2011 Matthew Frazier
+  Homepage: https://github.com/maxcountryman/flask-login
+
+Flask-WTF
+  License: BSD License
+  Copyright (c) 2010 Dan Jacob
+  Homepage: https://github.com/wtforms/flask-wtf
+
+Werkzeug
+  License: BSD 3-Clause License
+  Copyright (c) 2007 Pallets
+  Homepage: https://github.com/pallets/werkzeug
+
+Jinja2
+  License: BSD 3-Clause License
+  Copyright (c) 2007 Pallets
+  Homepage: https://github.com/pallets/jinja
+
+Gunicorn
+  License: MIT License
+  Copyright (c) 2009-2024 Benoit Chesneau
+  Homepage: https://github.com/benoitc/gunicorn
+
+requests
+  License: Apache License 2.0
+  Copyright (c) 2019 Kenneth Reitz
+  Homepage: https://github.com/psf/requests
+
+aiohttp
+  License: Apache License 2.0
+  Copyright (c) aio-libs contributors
+  Homepage: https://github.com/aio-libs/aiohttp
+
+Pillow
+  License: HPND License
+  Copyright (c) 1995-2011 Fredrik Lundh
+  Homepage: https://github.com/python-pillow/Pillow
+
+pandas
+  License: BSD 3-Clause License
+  Copyright (c) 2008-2024 AQR Capital Management, LLC; 2011-2024 Open Source Contributors
+  Homepage: https://github.com/pandas-dev/pandas
+
+numpy
+  License: BSD License
+  Copyright (c) 2005-2024 NumPy Developers
+  Homepage: https://github.com/numpy/numpy
+
+scikit-learn
+  License: BSD 3-Clause License
+  Copyright (c) 2007-2024 The scikit-learn developers
+  Homepage: https://github.com/scikit-learn/scikit-learn
+
+MaxMind GeoIP2 / geoip2
+  License: Apache License 2.0
+  Copyright (c) 2013-2024 MaxMind, Inc.
+  Homepage: https://github.com/maxmind/GeoIP2-python
+
+PyYAML
+  License: MIT License
+  Copyright (c) 2017-2021 Ingy döt Net and Kirill Simonov
+  Homepage: https://github.com/yaml/pyyaml
+
+python-dotenv
+  License: BSD 3-Clause License
+  Copyright (c) 2014 Saurabh Kumar (python-dotenv)
+  Homepage: https://github.com/theskumar/python-dotenv
+
+Groq Python Client
+  License: Apache License 2.0
+  Copyright (c) Groq, Inc.
+  Homepage: https://github.com/groq/groq-python
+
+--------------------------------------------------------------------------------
+OSINT Tools (Bundled Third-Party Tools)
+--------------------------------------------------------------------------------
+
+Sherlock (Username OSINT)
+  License: MIT License
+  Copyright (c) 2018-2024 Sherlock Project Contributors
+  Homepage: https://github.com/sherlock-project/sherlock
+
+Maigret (Username OSINT)
+  License: MIT License
+  Copyright (c) 2020-2024 Maigret Contributors
+  Homepage: https://github.com/soxoj/maigret
+
+theHarvester (Domain/Email OSINT)
+  License: GNU General Public License v2.0
+  Copyright (c) 2007-2024 Christian Martorella
+  Homepage: https://github.com/laramies/theHarvester
+
+Sublist3r (Subdomain Enumeration)
+  License: GNU General Public License v2.0
+  Copyright (c) 2015-2024 Ahmed Aboul-Ela
+  Homepage: https://github.com/aboul3la/Sublist3r
+
+Subfinder (Subdomain Discovery)
+  License: MIT License
+  Copyright (c) 2018-2024 ProjectDiscovery
+  Homepage: https://github.com/projectdiscovery/subfinder
+
+DNSRecon (DNS Enumeration)
+  License: GNU General Public License v2.0
+  Copyright (c) 2006-2024 Carlos Perez
+  Homepage: https://github.com/darkoperator/dnsrecon
+
+Amass (Network Mapping)
+  License: Apache License 2.0
+  Copyright (c) 2017-2024 Jeff Foley
+  Homepage: https://github.com/owasp-amass/amass
+
+holehe (Email OSINT)
+  License: GNU General Public License v3.0
+  Copyright (c) 2020-2024 holehe contributors
+  Homepage: https://github.com/megadose/holehe
+
+h8mail (Email OSINT)
+  License: GNU General Public License v3.0
+  Copyright (c) 2019-2024 h8mail contributors
+  Homepage: https://github.com/khast3x/h8mail
+
+phoneinfoga (Phone OSINT)
+  License: GNU General Public License v3.0
+  Copyright (c) 2019-2024 sundowndev
+  Homepage: https://github.com/sundowndev/phoneinfoga
+
+social-analyzer (Social Media OSINT)
+  License: MIT License
+  Copyright (c) 2020-2024 Qeeqbox
+  Homepage: https://github.com/qeeqbox/social-analyzer
+
+WhatsmyName (Username OSINT)
+  License: Apache License 2.0
+  Copyright (c) 2020-2024 WebBreacher
+  Homepage: https://github.com/WebBreacher/WhatsMyName
+
+--------------------------------------------------------------------------------
+Frontend Dependencies (React / tsunam-react)
+--------------------------------------------------------------------------------
+
+React (19)
+  License: MIT License
+  Copyright (c) Meta Platforms, Inc. and affiliates
+  Homepage: https://github.com/facebook/react
+
+D3.js
+  License: ISC License
+  Copyright (c) 2010-2024 Mike Bostock
+  Homepage: https://github.com/d3/d3
+
+Leaflet
+  License: BSD 2-Clause License
+  Copyright (c) 2010-2024 Vladimir Agafonkin
+  Homepage: https://github.com/Leaflet/Leaflet
+
+react-leaflet
+  License: MIT License
+  Copyright (c) 2015-2024 Paul Le Cam
+  Homepage: https://github.com/PaulLeCam/react-leaflet
+
+socket.io-client
+  License: MIT License
+  Copyright (c) 2014-2024 Guillermo Rauch
+  Homepage: https://github.com/socketio/socket.io
+
+axios
+  License: MIT License
+  Copyright (c) 2014-present Matt Zabriskie & Collaborators
+  Homepage: https://github.com/axios/axios
+
+--------------------------------------------------------------------------------
+Development & Tooling
+--------------------------------------------------------------------------------
+
+pytest
+  License: MIT License
+  Copyright (c) 2004-2024 Holger Krekel and others
+  Homepage: https://github.com/pytest-dev/pytest
+
+pytest-cov
+  License: MIT License
+  Homepage: https://github.com/pytest-dev/pytest-cov
+
+black (code formatter)
+  License: MIT License
+  Copyright (c) 2018-2024 Łukasz Langa and contributors
+  Homepage: https://github.com/psf/black
+
+flake8 (linting)
+  License: MIT License
+  Copyright (c) 2010-2024 Tarek Ziade
+  Homepage: https://github.com/PyCQA/flake8
+
+isort (import sorting)
+  License: MIT License
+  Copyright (c) 2013-2024 Timothy Edmund Crosley
+  Homepage: https://github.com/PyCQA/isort
+
+bandit (security linting)
+  License: Apache License 2.0
+  Copyright (c) 2015 Leslie Carr, Luke Hinds, Travis McPeak
+  Homepage: https://github.com/PyCQA/bandit
+
+Docker
+  License: Apache License 2.0
+  Copyright (c) Docker, Inc.
+  Homepage: https://github.com/docker
+
+Trivy (vulnerability scanner)
+  License: Apache License 2.0
+  Copyright (c) 2019-2024 Aqua Security Software Ltd.
+  Homepage: https://github.com/aquasecurity/trivy
+
+TruffleHog (secret scanner)
+  License: GNU General Public License v3.0
+  Copyright (c) 2024 Truffle Security Inc.
+  Homepage: https://github.com/trufflesecurity/trufflehog
+
+================================================================================
+For the full text of applicable licenses, please see the LICENSE file or
+the respective project websites listed above.
+================================================================================

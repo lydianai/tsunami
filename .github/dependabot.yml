@@ -1,0 +1,71 @@
+version: 2
+updates:
+  # Python backend dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    reviewers:
+      - "lydianai"
+    assignees:
+      - "lydianai"
+    ignore:
+      # Ignore major version updates for core Flask (manual migration)
+      - dependency-name: "flask"
+        update-types: ["version-update:semver-major"]
+      # Ignore major updates for Flask-SocketIO (breaking changes)
+      - dependency-name: "flask-socketio"
+        update-types: ["version-update:semver-major"]
+      # Ignore major updates for SQLAlchemy (breaking changes)
+      - dependency-name: "sqlalchemy"
+        update-types: ["version-update:semver-major"]
+
+  # npm dependencies (React frontend)
+  - package-ecosystem: "npm"
+    directory: "/tsunam-react"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps/frontend)"
+      include: "scope"
+    reviewers:
+      - "lydianai"
+    assignees:
+      - "lydianai"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci-cd"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    reviewers:
+      - "lydianai"

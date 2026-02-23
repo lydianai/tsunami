@@ -7,10 +7,13 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-green?style=flat-square&logo=flask)](https://flask.palletsprojects.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-orange?style=flat-square&logo=github-actions)](https://github.com/lydianai/tsunami/actions)
+[![CI/CD](https://github.com/lydianai/tsunami/actions/workflows/ci.yml/badge.svg)](https://github.com/lydianai/tsunami/actions/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/Security-OWASP%20Hardened-red?style=flat-square)](SECURITY.md)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=flat-square&logo=docker)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
+[![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg?style=flat-square)](CODE_OF_CONDUCT.md)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-85EA2D?style=flat-square&logo=swagger)](openapi.yaml)
+[![White-Hat](https://img.shields.io/badge/White--Hat-Only-green?style=flat-square)](LEGAL.md)
 
 **Real-time cyber intelligence platform with SIGINT/OSINT, threat hunting, AI-powered anomaly detection, and live WebSocket dashboards.**
 
