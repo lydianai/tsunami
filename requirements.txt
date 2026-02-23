@@ -52,7 +52,7 @@ pyotp==2.9.0                  # TOTP/2FA support
 
 # === Network & OSINT ===
 requests==2.32.3
-aiohttp==3.11.11              # CVE-2025-53643 FIXED
+aiohttp==3.13.3              # CVE-2025-53643 FIXED
 httpx==0.28.1
 urllib3==2.6.0                # CVE-2025-66418 FIXED
 dnspython==2.7.0
