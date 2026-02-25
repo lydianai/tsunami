@@ -54,7 +54,7 @@ pyotp==2.9.0                  # TOTP/2FA support
 requests==2.32.3               # Monitor for updates
 aiohttp==3.11.11               # CVE-2025-53643 FIXED (latest available)
 httpx==0.28.1
-urllib3==2.6.0                 # CVE-2025-66418 FIXED (use with httpx)
+urllib3==2.6.3                 # CVE-2025-66418 FIXED (use with httpx)
 dnspython==2.7.0
 python-whois==0.9.5
 shodan==1.31.0
