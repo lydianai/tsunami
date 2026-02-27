@@ -449,7 +449,6 @@ def handle_result(data):
 
 All files are located in:
 ```
-/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/
 ```
 
 ### Reference Files
@@ -507,4 +506,3 @@ These implementation guides combine:
 - Production-tested patterns
 
 All code examples provided as educational reference for production integration.
-
