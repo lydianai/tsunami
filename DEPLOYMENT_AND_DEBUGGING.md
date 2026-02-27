@@ -616,9 +616,3 @@ async def fetch_scans():
 ## File Locations
 
 - Implementation files:
-  - `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/IMPLEMENTATION_RESEARCH.md`
-  - `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/COMPLETE_API_INTEGRATION.md`
-  - `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/streetview_leaflet_example.py`
-  - `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/cybersecurity_agent_core.py`
-  - `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/geolocation_wigle_opencellid.py`
-
