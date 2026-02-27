@@ -515,8 +515,6 @@ Content-Type: application/json
 
 ## AILYDIAN APIs
 
-### AILYDIAN v1 (214 Agent Orchestrator)
-
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
 | `/api/ailydian/durum` | GET | Yes | System status |
@@ -858,7 +856,6 @@ The application also provides WebSocket support via Socket.IO:
 | `dalga_gnn` | `GNN_MODUL_AKTIF` | Graph neural network |
 | `dalga_threat_intel` | `THREAT_INTEL_AKTIF` | Threat intelligence |
 | `dalga_vault` | `VAULT_AKTIF` | Encrypted key storage |
-| `dalga_ailydian` | `AILYDIAN_BRIDGE_AKTIF` | AI agent orchestration |
 | `dalga_ghost` | `GHOST_MODE_AKTIF` | Military-grade encryption |
 | `siber_komuta` | `SIBER_KOMUTA_AKTIF` | Cyber command center |
 | `dalga_osint_global` | `GLOBAL_OSINT_AKTIF` | Global OSINT |
