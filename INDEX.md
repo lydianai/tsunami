@@ -230,7 +230,6 @@ See `DEPLOYMENT_AND_DEBUGGING.md` → "Testing Strategy" section
 ## File Organization
 
 ```
-/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/
 ├── IMPLEMENTATION_RESEARCH.md        [56 KB] Main technical guide
 ├── COMPLETE_API_INTEGRATION.md       [31 KB] Backend + Frontend patterns
 ├── DEPLOYMENT_AND_DEBUGGING.md       [14 KB] Production guide
@@ -358,4 +357,3 @@ See `DEPLOYMENT_AND_DEBUGGING.md` → "Testing Strategy" section
 7. Deploy to production
 
 **Happy implementing!**
-
