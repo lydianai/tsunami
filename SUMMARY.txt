@@ -3,7 +3,6 @@ ADVANCED INTEGRATION IMPLEMENTATION - COMPLETE RESEARCH & CODE EXAMPLES
 ================================================================================
 
 PROJECT LOCATION:
-/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/
 
 ================================================================================
 DELIVERABLES
