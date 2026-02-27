@@ -15,7 +15,6 @@ from unittest.mock import patch, MagicMock, AsyncMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
 class TestOSINTCore:
     """Core OSINT functionality tests"""
 
@@ -42,7 +41,6 @@ class TestOSINTCore:
             assert EpostaAnaliz is not None
         except ImportError:
             pytest.skip("Email analyzer not available")
-
 
 class TestOSINTValidation:
     """Input validation for OSINT queries"""
@@ -74,7 +72,6 @@ class TestOSINTValidation:
         assert validator.is_valid_ip("256.1.1.1") == False
         assert validator.is_valid_ip("not.an.ip") == False
 
-
 class TestOSINTOrchestrator:
     """OSINT Orchestrator tests"""
 
@@ -97,14 +94,12 @@ class TestOSINTOrchestrator:
         except Exception as e:
             pytest.skip(f"Initialization failed: {e}")
 
-
 class TestAILYDIANIntegration:
     """AILYDIAN agent integration tests"""
 
     def test_ailydian_import(self):
         """Test AILYDIAN module can be imported"""
         try:
-            from dalga_ailydian import TsunamiAILYDIAN
             assert TsunamiAILYDIAN is not None
         except ImportError as e:
             pytest.skip(f"AILYDIAN not available: {e}")
@@ -112,7 +107,6 @@ class TestAILYDIANIntegration:
     def test_ailydian_recon_not_simulation(self):
         """Test recon function returns real data, not simulation"""
         try:
-            from dalga_ailydian import TsunamiAILYDIAN
 
             ailydian = TsunamiAILYDIAN()
             # Test internal method
@@ -129,7 +123,6 @@ class TestAILYDIANIntegration:
     def test_ailydian_osint_not_simulation(self):
         """Test OSINT function returns real data, not simulation"""
         try:
-            from dalga_ailydian import TsunamiAILYDIAN
 
             ailydian = TsunamiAILYDIAN()
             result = ailydian._run_osint({'query': 'example.com'})
@@ -141,7 +134,6 @@ class TestAILYDIANIntegration:
             pytest.skip("AILYDIAN not available")
         except Exception as e:
             pytest.skip(f"OSINT test failed: {e}")
-
 
 class TestOSINTGlobal:
     """Global OSINT functionality tests"""
@@ -161,7 +153,6 @@ class TestOSINTGlobal:
             assert OSINTToolsRunner is not None
         except ImportError:
             pytest.skip("Tools runner not available")
-
 
 class TestOSINTDataSanitization:
     """Test OSINT data sanitization"""
@@ -183,7 +174,6 @@ class TestOSINTDataSanitization:
         assert validator.is_safe_path('../../../etc/passwd', '/var/data') == False
         assert validator.is_safe_path('results/report.json', '/var/data') == True
 
-
 class TestOSINTRateLimiting:
     """Test OSINT rate limiting"""
 
@@ -202,7 +192,6 @@ class TestOSINTRateLimiting:
         # 11th request should be blocked
         allowed, info = rate_limit_check(key, max_requests=10, window_seconds=60)
         assert allowed == False
-
 
 class TestOSINTCaching:
     """Test OSINT result caching"""
