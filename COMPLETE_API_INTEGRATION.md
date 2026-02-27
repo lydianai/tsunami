@@ -1170,7 +1170,5 @@ This complete integration provides:
 6. **Monitoring**: Real-time threat alerts and metrics
 
 File Locations:
-- Flask application: `/home/lydian/Desktop/AILYDIAN-AGENT-ORCHESTRATOR/dalga/`
 - Example implementations provided above
 - Docker configuration for production deployment
-
