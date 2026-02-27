@@ -119,7 +119,6 @@ def _tor_bootstrap_bekle(max_sure=30):
     _startup_logger.warning("[TOR] Bootstrap zaman asimi")
     return False
 
-
 def tor_servis_baslat():
     """TOR servisini otomatik baslat (kalici) + bootstrap bekle"""
     if not TOR_AUTO_START:
@@ -580,9 +579,7 @@ except ImportError as e:
         return os.getenv(name, default)
     _startup_logger.warning("VAULT modulu yuklenemedi", error=str(e))
 
-# DALGA AILYDIAN BRIDGE import (214 Agent Orchestrator)
 try:
-    from dalga_ailydian import ailydian_al, AILYDIANBridge
     AILYDIAN_BRIDGE_AKTIF = True
     _ailydian_bridge = None
 
@@ -652,7 +649,6 @@ except ImportError as e:
     def _siber_komuta_init():
         return None
     _startup_logger.warning("SIBER KOMUTA modulu yuklenemedi", error=str(e))
-
 
 # ==================== GÜVENLİ KOMUT ÇALIŞTIRMA ====================
 
@@ -833,7 +829,6 @@ class SecureCommandRunner:
 
 # Global instance
 _secure_runner = SecureCommandRunner()
-
 
 # ==================== TSUNAMI ORKESTRATOR ====================
 
@@ -1020,10 +1015,8 @@ class TSUNAMIOrkestrator:
         _orkestrator_logger = get_logger('tsunami.orkestrator')
         _orkestrator_logger.info(mesaj, component="orkestrator")
 
-
 # Global orkestrator instance
 _orkestrator = None
-
 
 def orkestrator_al() -> TSUNAMIOrkestrator:
     """Global orkestrator instance'i al"""
@@ -1031,7 +1024,6 @@ def orkestrator_al() -> TSUNAMIOrkestrator:
     if _orkestrator is None:
         _orkestrator = TSUNAMIOrkestrator.get_instance()
     return _orkestrator
-
 
 # ==================== MAC SATICI VERITABANI ====================
 MAC_VENDORS = {
@@ -2318,7 +2310,6 @@ class SpektrumAnalizoru:
         else:
             return {'seviye': 'kritik', 'aciklama': 'Baglanti cok zayif', 'renk': '#ff0000'}
 
-
 class TrafikMonitoru:
     """Ag trafigi izleme"""
 
@@ -2469,7 +2460,6 @@ class TrafikMonitoru:
             pass
         return sonuc
 
-
 class CihazParmakIzi:
     """Gelismis cihaz parmak izi cikarma"""
 
@@ -2583,7 +2573,6 @@ class CihazParmakIzi:
 
         return sonuc
 
-
 class SinyalTriangulasyonu:
     """Sinyal gucune dayali konum tahmini"""
 
@@ -2642,7 +2631,6 @@ class SinyalTriangulasyonu:
             }
 
         return {'hata': 'Hesaplama yapilamadi'}
-
 
 class RaporOlusturucu:
     """Detayli rapor olusturma"""
@@ -2727,7 +2715,6 @@ class RaporOlusturucu:
         dosya_yolu = DALGA_REPORTS / dosya_adi
         dosya_yolu.write_text(self.json_rapor())
         return str(dosya_yolu)
-
 
 class ShodanAPI:
     """Kapsamli Shodan API Entegrasyonu"""
@@ -2904,7 +2891,6 @@ class ShodanAPI:
                     return servis
         return {}
 
-
 class OpenCellIDAPI:
     """Kapsamli OpenCellID API Entegrasyonu"""
 
@@ -3015,7 +3001,6 @@ class OpenCellIDAPI:
             {"ad": "Turk Telekom", "mcc": 286, "mnc": 3, "tip": "GSM/UMTS/LTE"},
             {"ad": "Turk Telekom (Eski AVEA)", "mcc": 286, "mnc": 4, "tip": "GSM/UMTS/LTE"},
         ]
-
 
 # ==================== MULLVAD VPN ENTEGRASYONU ====================
 class MullvadVPN:
@@ -3160,7 +3145,6 @@ class MullvadVPN:
                     return {"ip": data.get("ip"), "mullvad_bagli": False}
             except Exception:
                 return {"ip": "Bilinmeyen", "mullvad_bagli": False}
-
 
 # ==================== UNIVERSAL VPN YONETICISI ====================
 class UniversalVPN:
@@ -3472,10 +3456,8 @@ class UniversalVPN:
         except Exception as e:
             return {"basarili": False, "hata": str(e)}
 
-
 # Global universal VPN instance
 universal_vpn = UniversalVPN()
-
 
 # ==================== OSINT MODULU ====================
 class OSINTModulu:
@@ -3675,7 +3657,6 @@ class OSINTModulu:
                 sonuclar["platformlar"][platform] = {"url": url, "durum": "hata"}
 
         return sonuclar
-
 
 # ==================== YEREL GUVENLIK ARACLARI ====================
 class YerelAracYoneticisi:
@@ -4159,7 +4140,6 @@ class YerelAracYoneticisi:
                     })
         return eksik
 
-
 # Global VPN instances
 vpn = MullvadVPN()  # Eski uyumluluk icin
 # universal_vpn zaten yukarda tanimlandi - coklu VPN destegi saglar
@@ -4347,7 +4327,6 @@ def logout():
         session.clear()
     return redirect(url_for('login'))
 
-
 # ==================== CSRF TOKEN API ====================
 # Note: /api/csrf-token endpoint may be provided by dalga_hardening module
 # This endpoint is registered only if HARDENING_AKTIF is False
@@ -4370,7 +4349,6 @@ def panel():
     """Ana Panel - Tum sayfalar burada iframe ile acilir"""
     return render_template('panel.html', kullanici=session.get('user'))
 
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -4386,20 +4364,17 @@ def harita():
     response.headers['Expires'] = '0'
     return response
 
-
 @app.route('/beyin')
 @login_required
 def beyin():
     """DALGA BEYIN - Otonom Merkezi Zeka Paneli"""
     return render_template('beyin.html', kullanici=session.get('user'))
 
-
 @app.route('/pentest')
 @login_required
 def pentest():
     """PentestOPS - Pentest Operasyon Yonetimi"""
     return render_template('pentest.html', kullanici=session.get('user'))
-
 
 @app.route('/zafiyetler')
 @login_required
@@ -4429,7 +4404,6 @@ def api_durum():
         'araclar': araclar,
         'okunmamis_alarm': db.okunmamis_alarm_sayisi()
     })
-
 
 @app.route('/api/guvenlik/durum')
 @login_required
@@ -4463,7 +4437,6 @@ def api_guvenlik_durum():
         }
 
     return jsonify(security_status)
-
 
 @app.route('/api/guvenlik/2fa/setup', methods=['POST'])
 @(limiter.limit("3 per minute") if limiter else lambda f: f)
@@ -4504,7 +4477,6 @@ def api_2fa_setup():
         'instructions': 'Google Authenticator veya benzer bir uygulama ile QR kodunu tarayın'
     })
 
-
 @app.route('/api/guvenlik/2fa/verify', methods=['POST'])
 @(limiter.limit("5 per minute") if limiter else lambda f: f)
 @login_required
@@ -4528,7 +4500,6 @@ def api_2fa_verify():
         return jsonify({'basarili': True, 'mesaj': '2FA başarıyla aktifleştirildi'})
     else:
         return jsonify({'basarili': False, 'hata': 'Geçersiz kod'}), 401
-
 
 @app.route('/api/wifi/tara', methods=['POST'])
 @login_required
@@ -5226,7 +5197,6 @@ def api_vpn_killswitch():
     aktif = data.get('aktif', True)
     return jsonify(vpn.kill_switch_ayarla(aktif))
 
-
 # ==================== RADVPN MESH NETWORK API ====================
 # RadVPN entegrasyonu - Decentralized mesh VPN
 # Kaynak: https://github.com/mehrdadrad/radvpn (MIT License)
@@ -5452,7 +5422,6 @@ def api_radvpn_konfigurasyon():
         "node_count": len(manager.config.nodes) if manager.config else 0,
         "binary_ready": manager.check_binary().get('ready', False)
     })
-
 
 # ==================== GHOST OSINT CRM API ====================
 # GHOST entegrasyonu - OSINT Investigation Management
@@ -5898,7 +5867,6 @@ def api_ghost_dashboard():
 
     return jsonify(ghost.get_dashboard_data())
 
-
 # ==================== CANLI TEHDİT HARİTASI API ====================
 # Global Threat Map entegrasyonu - MIT Lisanslı
 
@@ -5975,7 +5943,6 @@ def api_threats_turkey():
     except Exception as e:
         return jsonify({"type": "FeatureCollection", "features": [], "error": str(e)}), 500
 
-
 # ==================== WAF CHECKER API ====================
 # WAF-Checker entegrasyonu - MIT Lisanslı
 
@@ -6043,7 +6010,6 @@ def api_waf_detect():
     except Exception as e:
         logger.error(f"[WAF] Tespit hatası: {e}")
         return jsonify({"basarili": False, "hata": str(e)}), 500
-
 
 def _notify_soar_waf_detection(waf_data: dict):
     """WAF tespitini SOAR'a bildir ve incident oluştur"""
@@ -6149,7 +6115,6 @@ def api_waf_bypass_suggestions():
     except Exception as e:
         return jsonify({"basarili": False, "hata": str(e)}), 500
 
-
 # ==================== GIZLILIK VPN API (TSUNAMI UYUMLU) ====================
 # Bu endpointler TSUNAMI sesli asistan icin olusturuldu
 
@@ -6162,7 +6127,6 @@ def api_gizlilik_vpn_baslat():
         socketio.emit('gizlilik_durum', {'vpn': True, 'mesaj': 'VPN aktif edildi'})
     return jsonify(sonuc)
 
-
 @app.route('/api/gizlilik/vpn/durdur', methods=['POST'])
 @login_required
 def api_gizlilik_vpn_durdur():
@@ -6170,7 +6134,6 @@ def api_gizlilik_vpn_durdur():
     sonuc = universal_vpn.kes()
     socketio.emit('gizlilik_durum', {'vpn': False, 'mesaj': 'VPN kapatildi'})
     return jsonify(sonuc)
-
 
 @app.route('/api/gizlilik/durum')
 @login_required
@@ -6188,7 +6151,6 @@ def api_gizlilik_durum():
         'kill_switch': vpn_durum.get('kill_switch', False)
     })
 
-
 # ==================== SİBER KOMUTA MERKEZİ API ====================
 
 @app.route('/api/siber/durum')
@@ -6203,7 +6165,6 @@ def api_siber_durum():
         return jsonify({'hata': 'Siber Komuta baslatilamadi'}), 500
 
     return jsonify(siber.get_status())
-
 
 @app.route('/api/siber/ajanlar')
 @login_required
@@ -6229,7 +6190,6 @@ def api_siber_ajanlar():
         'katmanlar': by_layer
     })
 
-
 @app.route('/api/siber/ajan/<ajan_id>')
 @login_required
 def api_siber_ajan_detay(ajan_id):
@@ -6245,7 +6205,6 @@ def api_siber_ajan_detay(ajan_id):
 
     from dataclasses import asdict
     return jsonify(asdict(agent))
-
 
 @app.route('/api/siber/komut', methods=['POST'])
 @login_required
@@ -6280,7 +6239,6 @@ def api_siber_komut():
 
     return jsonify(result)
 
-
 @app.route('/api/siber/osint', methods=['POST'])
 @login_required
 def api_siber_osint():
@@ -6306,7 +6264,6 @@ def api_siber_osint():
 
     return jsonify(result)
 
-
 @app.route('/api/siber/tehdit-analiz', methods=['POST'])
 @login_required
 def api_siber_tehdit_analiz():
@@ -6327,7 +6284,6 @@ def api_siber_tehdit_analiz():
         loop.close()
 
     return jsonify(result)
-
 
 @app.route('/api/siber/hava-sahasi')
 @login_required
@@ -6351,7 +6307,6 @@ def api_siber_hava_sahasi():
         loop.close()
 
     return jsonify(result)
-
 
 @app.route('/api/siber/baz-istasyonu', methods=['POST'])
 @login_required
@@ -6378,7 +6333,6 @@ def api_siber_baz_istasyonu():
         loop.close()
 
     return jsonify(result)
-
 
 @app.route('/api/siber/ajan-gorev', methods=['POST'])
 @login_required
@@ -6418,7 +6372,6 @@ def api_siber_ajan_gorev():
             result_dict[k] = v.isoformat()
     return jsonify(result_dict)
 
-
 @app.route('/api/siber/tehdit-avi', methods=['POST'])
 @login_required
 def api_siber_tehdit_avi():
@@ -6444,7 +6397,6 @@ def api_siber_tehdit_avi():
 
     return jsonify(result)
 
-
 @app.route('/api/siber/rapor-olustur', methods=['POST'])
 @login_required
 def api_siber_rapor_olustur():
@@ -6467,7 +6419,6 @@ def api_siber_rapor_olustur():
 
     return jsonify({'rapor': rapor, 'basarili': True})
 
-
 @app.route('/api/siber/iss')
 @login_required
 def api_siber_iss():
@@ -6487,7 +6438,6 @@ def api_siber_iss():
         loop.close()
 
     return jsonify(result)
-
 
 # ==================== SHODAN KAPSAMLI API ====================
 
@@ -6919,7 +6869,6 @@ def api_yerel_aktif_araclar():
         'kontrol_zamani': datetime.now().isoformat()
     })
 
-
 # ==================== GERCEK ARAC CALISTIRMA API ====================
 # TSUNAMI ve Terminal entegrasyonu icin
 
@@ -7196,7 +7145,6 @@ ARAC_KOMUTLARI = {
 # Aktif arac prosesleri (pid -> bilgi)
 AKTIF_ARAC_PROSESLERI = {}
 
-
 @app.route('/api/arac/calistir', methods=['POST'])
 @login_required
 def api_arac_calistir():
@@ -7265,7 +7213,6 @@ def api_arac_calistir():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/arac/durdur', methods=['POST'])
 @login_required
 def api_arac_durdur():
@@ -7290,7 +7237,6 @@ def api_arac_durdur():
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
     return jsonify({'basarili': False, 'hata': 'PID veya arac adi gerekli'}), 400
-
 
 @app.route('/api/arac/cikti/<int:pid>')
 @login_required
@@ -7323,7 +7269,6 @@ def api_arac_cikti(pid):
 
     return jsonify({'basarili': False, 'hata': 'Proses bilgisi alinamadi'}), 500
 
-
 @app.route('/api/arac/listele')
 @login_required
 def api_arac_listele():
@@ -7336,7 +7281,6 @@ def api_arac_listele():
         } for k, v in ARAC_KOMUTLARI.items()},
         'toplam': len(ARAC_KOMUTLARI)
     })
-
 
 @app.route('/api/terminal/calistir', methods=['POST'])
 @login_required
@@ -7383,7 +7327,6 @@ def api_terminal_calistir():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 # WebSocket terminal
 @socketio.on('terminal_komut')
 def handle_terminal_komut(data):
@@ -7415,7 +7358,6 @@ def handle_terminal_komut(data):
             'hata': str(e),
             'basarili': False
         })
-
 
 # ==================== KOMUTA MERKEZI API ====================
 
@@ -8603,7 +8545,6 @@ class DalgaCLI:
 
         return {'basarili': True, 'cikti': cikti, 'yenile_harita': True}
 
-
 class DenetimGunlugu:
     """Denetim günlüğü sistemi"""
 
@@ -8642,7 +8583,6 @@ class DenetimGunlugu:
         except Exception:
             pass
         return loglar
-
 
 class GizlilikYoneticisi:
     """Ultra gizlilik yönetimi"""
@@ -8689,7 +8629,6 @@ class GizlilikYoneticisi:
             }
         except Exception:
             return {'korunuyor': False}
-
 
 # ==================== CLI API ENDPOINT'LERI ====================
 
@@ -8967,7 +8906,6 @@ def api_stealth_durdur():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 # ==================== TOR MANUEL KONTROL ====================
 # Kullanici manuel olarak TOR'u kapatabilir/acabilir
 # Varsayilan: Kalici AKTIF
@@ -9027,7 +8965,6 @@ def api_tor_durum():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/tor/baslat', methods=['POST'])
 @login_required
 def api_tor_baslat():
@@ -9070,7 +9007,6 @@ def api_tor_baslat():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/tor/durdur', methods=['POST'])
 @login_required
 def api_tor_durdur():
@@ -9112,7 +9048,6 @@ def api_tor_durdur():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/tor/yeni-kimlik', methods=['POST'])
 @login_required
@@ -9246,7 +9181,6 @@ def api_tor_yeni_kimlik():
         'alternatif': 'TOR Browser kullanarak yeni kimlik alabilirsiniz (Ctrl+Shift+U)'
     }), 503
 
-
 @app.route('/api/ghost/durum')
 @login_required
 def api_ghost_durum():
@@ -9274,7 +9208,6 @@ def api_ghost_durum():
             'scope': 'Global'
         }
     })
-
 
 # =====================================================================
 # AYARLAR TOGGLE ENDPOINTLERI (Tor/Ghost Kalici Acma/Kapama)
@@ -9339,7 +9272,6 @@ def api_settings_tor():
         logger.error(f"[SETTINGS] Tor toggle hatasi: {e}")
         return jsonify({'basarili': False, 'hata': 'Tor ayari degistirilemedi'}), 500
 
-
 @app.route('/api/settings/ghost', methods=['POST'])
 @login_required
 def api_settings_ghost():
@@ -9388,7 +9320,6 @@ def api_settings_ghost():
     except Exception as e:
         logger.error(f"[SETTINGS] Ghost toggle hatasi: {e}")
         return jsonify({'basarili': False, 'hata': 'Ghost Mode ayari degistirilemedi'}), 500
-
 
 @app.route('/api/settings/stealth')
 @login_required
@@ -9441,7 +9372,6 @@ def api_settings_stealth():
         }
     })
 
-
 @app.route('/api/vault/durum')
 @login_required
 def api_vault_durum():
@@ -9486,7 +9416,6 @@ def api_vault_durum():
         }
     })
 
-
 @app.route('/api/sinkhole/durum')
 @login_required
 def api_sinkhole_durum_kisa():
@@ -9525,7 +9454,6 @@ def api_sinkhole_durum_kisa():
             'saniyede_sorgu': stats.get('queries_per_second', 0)
         }
     })
-
 
 @app.route('/api/hardening/durum')
 @login_required
@@ -9567,7 +9495,6 @@ def api_hardening_durum():
             'Referrer-Policy': 'strict-origin-when-cross-origin'
         }
     })
-
 
 @app.route('/api/defender/durum')
 @login_required
@@ -9620,7 +9547,6 @@ def api_defender_durum():
         }
     })
 
-
 @app.route('/api/yapilandirma')
 @login_required
 def api_yapilandirma():
@@ -9630,7 +9556,6 @@ def api_yapilandirma():
         'yapilandirma': TSUNAMI_CONFIG,
         'dosya': TSUNAMI_CONFIG_PATH
     })
-
 
 @app.route('/api/yapilandirma/guncelle', methods=['POST'])
 @login_required
@@ -9662,7 +9587,6 @@ def api_yapilandirma_guncelle():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 # ==================== AI ASISTAN API (GPT4All) ====================
 
@@ -9711,7 +9635,6 @@ def _ble_modulleri_yukle():
         logger.warning(f"BLE modulleri yuklenemedi: {e}")
         return False
 
-
 def _nlp_engine_yukle():
     """NLP motorunu yukle (lazy loading)"""
     global _nlp_engine
@@ -9727,7 +9650,6 @@ def _nlp_engine_yukle():
     except ImportError as e:
         logger.warning(f"NLP modulu yuklenemedi: {e}")
         return None
-
 
 @app.route('/api/ai/mesaj', methods=['POST'])
 @login_required
@@ -9758,7 +9680,6 @@ def api_ai_mesaj():
         logger.error(f"AI mesaj hatasi: {e}")
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ai/gecmis')
 @login_required
 def api_ai_gecmis():
@@ -9773,7 +9694,6 @@ def api_ai_gecmis():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ai/temizle', methods=['POST'])
 @login_required
 def api_ai_temizle():
@@ -9786,7 +9706,6 @@ def api_ai_temizle():
         return jsonify({'basarili': True, 'mesaj': 'Sohbet gecmisi temizlendi'})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/ai/durum')
 @login_required
@@ -9814,7 +9733,6 @@ def api_ai_durum():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 # ==================== AI ISTATISTIK API ====================
 
 @app.route('/api/ai/stats/ozet')
@@ -9830,7 +9748,6 @@ def api_ai_stats_ozet():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ai/stats/gunluk')
 @login_required
 def api_ai_stats_gunluk():
@@ -9844,7 +9761,6 @@ def api_ai_stats_gunluk():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ai/stats/haftalik')
 @login_required
 def api_ai_stats_haftalik():
@@ -9857,7 +9773,6 @@ def api_ai_stats_haftalik():
         return jsonify({'basarili': True, 'istatistik': istatistik})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/ai/stats/grafik')
 @login_required
@@ -9873,7 +9788,6 @@ def api_ai_stats_grafik():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ai/stats/maliyet')
 @login_required
 def api_ai_stats_maliyet():
@@ -9887,7 +9801,6 @@ def api_ai_stats_maliyet():
         return jsonify({'basarili': True, 'maliyet': tasarruf})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 # ==================== BLE RADAR API ====================
 
@@ -9928,7 +9841,6 @@ def api_ble_tara():
         logger.error(f"BLE tarama hatasi: {e}")
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ble/liste')
 @login_required
 def api_ble_liste():
@@ -9942,7 +9854,6 @@ def api_ble_liste():
         return jsonify({'basarili': True, 'cihazlar': cihazlar, 'toplam': len(cihazlar)})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/ble/cihaz/<adres>')
 @login_required
@@ -9958,7 +9869,6 @@ def api_ble_cihaz(adres):
         return jsonify({'basarili': False, 'hata': 'Cihaz bulunamadi'}), 404
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/ble/tehditler')
 @login_required
@@ -9979,7 +9889,6 @@ def api_ble_tehditler():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 @app.route('/api/ble/tehdit/<adres>/kapat', methods=['POST'])
 @login_required
 def api_ble_tehdit_kapat(adres):
@@ -9992,7 +9901,6 @@ def api_ble_tehdit_kapat(adres):
         return jsonify({'basarili': True, 'mesaj': f'Uyari kapatildi: {adres}'})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @app.route('/api/ble/istatistik')
 @login_required
@@ -10011,7 +9919,6 @@ def api_ble_istatistik():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)}), 500
-
 
 @socketio.on('stealth_durum_iste')
 def ws_stealth_durum():
@@ -10038,7 +9945,6 @@ def ws_stealth_harita():
             emit('stealth_harita', map_data)
         finally:
             loop.close()
-
 
 # ==================== SİBER KOMUTA SOCKETIO HANDLERLERİ ====================
 
@@ -10131,7 +10037,6 @@ def ws_siber_tehdit_avi(data):
         emit('siber_hata', {'hata': str(e)})
     finally:
         loop.close()
-
 
 @app.route('/api/denetim/log')
 @login_required
@@ -10320,7 +10225,6 @@ class KonumTespitAgenti(OtonomAgent):
                 pass
         return None
 
-
 class AgentYoneticisi:
     """Tüm agentları yöneten merkezi sistem"""
 
@@ -10404,7 +10308,6 @@ class AgentYoneticisi:
             sonuc = agent.calistir()
             return {'basarili': True, 'agent': agent_adi, 'sonuc': sonuc}
         return {'basarili': False, 'hata': f'Agent bulunamadı: {agent_adi}'}
-
 
 # ==================== SWARM COORDINATION SİSTEMİ ====================
 
@@ -10779,7 +10682,6 @@ class SwarmKoordinator:
             'oncelik': g.oncelik
         } for g in gorevler]
 
-
 # Global swarm koordinator
 _swarm_koordinator = None
 
@@ -10789,7 +10691,6 @@ def swarm_al() -> SwarmKoordinator:
     if _swarm_koordinator is None:
         _swarm_koordinator = SwarmKoordinator.get_instance()
     return _swarm_koordinator
-
 
 # ==================== CANLI SALDIRI VERİSİ ====================
 
@@ -11503,7 +11404,6 @@ class CanliSaldiriVerisi:
             }
         }
 
-
 # ==================== AGENT API ENDPOINT'LERİ ====================
 
 @app.route('/api/agent/durum')
@@ -11524,7 +11424,6 @@ def api_agent_baslat():
     """Tüm agentları başlat"""
     AgentYoneticisi.baslat()
     return jsonify({'basarili': True, 'mesaj': 'Agentlar başlatıldı'})
-
 
 # ==================== SWARM API ====================
 
@@ -11649,7 +11548,6 @@ def api_swarm_agentlar():
         'agentlar': swarm._agent_yetenekleri
     })
 
-
 # ==================== GNN API (Graph Neural Networks) ====================
 
 @app.route('/api/gnn/durum')
@@ -11684,7 +11582,6 @@ def api_gnn_durum():
         }
     })
 
-
 @app.route('/api/gnn/analiz')
 @login_required
 def api_gnn_analiz():
@@ -11700,7 +11597,6 @@ def api_gnn_analiz():
         'analiz': analiz
     })
 
-
 @app.route('/api/gnn/graf')
 @login_required
 def api_gnn_graf():
@@ -11715,7 +11611,6 @@ def api_gnn_graf():
         'basarili': True,
         'graf': graf_data
     })
-
 
 @app.route('/api/gnn/merkezi')
 @login_required
@@ -11733,7 +11628,6 @@ def api_gnn_merkezi():
         'merkezi_dugumler': merkezi
     })
 
-
 @app.route('/api/gnn/topluluklar')
 @login_required
 def api_gnn_topluluklar():
@@ -11748,7 +11642,6 @@ def api_gnn_topluluklar():
         'basarili': True,
         'topluluklar': topluluklar
     })
-
 
 @app.route('/api/gnn/yol')
 @login_required
@@ -11770,7 +11663,6 @@ def api_gnn_yol():
         'basarili': yol is not None and 'hata' not in yol,
         'yol': yol
     })
-
 
 @app.route('/api/gnn/saldiri/ekle', methods=['POST'])
 @login_required
@@ -11796,7 +11688,6 @@ def api_gnn_saldiri_ekle():
         'sonuc': sonuc
     })
 
-
 @app.route('/api/gnn/temizle', methods=['POST'])
 @login_required
 def api_gnn_temizle():
@@ -11815,7 +11706,6 @@ def api_gnn_temizle():
         'silinen_dugum': silinen
     })
 
-
 @app.route('/api/gnn/tehdit/siniflar')
 @login_required
 def api_gnn_tehdit_siniflar():
@@ -11828,7 +11718,6 @@ def api_gnn_tehdit_siniflar():
             for s in TehditSinifi
         ]
     })
-
 
 @app.route('/api/gnn/dugum/tipler')
 @login_required
@@ -11843,7 +11732,6 @@ def api_gnn_dugum_tipler():
         ]
     })
 
-
 @app.route('/api/gnn/kenar/tipler')
 @login_required
 def api_gnn_kenar_tipler():
@@ -11856,7 +11744,6 @@ def api_gnn_kenar_tipler():
             for t in KenarTipi
         ]
     })
-
 
 @app.route('/api/gnn/betweenness')
 @login_required
@@ -11874,7 +11761,6 @@ def api_gnn_betweenness():
         'kritik_dugumler': sonuc
     })
 
-
 @app.route('/api/gnn/link-prediction')
 @login_required
 def api_gnn_link_prediction():
@@ -11891,7 +11777,6 @@ def api_gnn_link_prediction():
         'tahminler': tahminler
     })
 
-
 @app.route('/api/gnn/metrikler')
 @login_required
 def api_gnn_metrikler():
@@ -11906,7 +11791,6 @@ def api_gnn_metrikler():
         'basarili': True,
         'metrikler': metrikler
     })
-
 
 @app.route('/api/gnn/gpu')
 @login_required
@@ -11923,7 +11807,6 @@ def api_gnn_gpu():
         'gpu': durum
     })
 
-
 @app.route('/api/gnn/model/kaydet', methods=['POST'])
 @login_required
 def api_gnn_model_kaydet():
@@ -11938,7 +11821,6 @@ def api_gnn_model_kaydet():
     sonuc = gnn.model_kaydet(dizin)
 
     return jsonify(sonuc)
-
 
 @app.route('/api/gnn/model/yukle', methods=['POST'])
 @login_required
@@ -11955,7 +11837,6 @@ def api_gnn_model_yukle():
 
     return jsonify(sonuc)
 
-
 @app.route('/api/gnn/model/gpu', methods=['POST'])
 @login_required
 def api_gnn_model_gpu():
@@ -11967,7 +11848,6 @@ def api_gnn_model_gpu():
     sonuc = gnn.modelleri_gpuya_tasi()
 
     return jsonify(sonuc)
-
 
 @app.route('/api/gnn/d3')
 @login_required
@@ -11983,7 +11863,6 @@ def api_gnn_d3():
         'basarili': True,
         'graf': d3_data
     })
-
 
 @app.route('/api/gnn/egitim/baslat', methods=['POST'])
 @login_required
@@ -12012,7 +11891,6 @@ def api_gnn_egitim_baslat():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/gnn/egitim/tum-modeller', methods=['POST'])
 @login_required
 def api_gnn_egitim_tum_modeller():
@@ -12033,7 +11911,6 @@ def api_gnn_egitim_tum_modeller():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/gnn/tehdit-feed/topla', methods=['POST'])
 @login_required
@@ -12058,7 +11935,6 @@ def api_gnn_tehdit_feed_topla():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/gnn/egitim/veri-olustur', methods=['POST'])
 @login_required
 def api_gnn_egitim_veri_olustur():
@@ -12080,7 +11956,6 @@ def api_gnn_egitim_veri_olustur():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/saldiri/canli')
 @login_required
@@ -12320,7 +12195,6 @@ class OSINTGraph:
             sayilar[tip] = sayilar.get(tip, 0) + 1
         return sayilar
 
-
 class OSINTZenginlestirici:
     """OSINT veri zenginleştirme işlemleri"""
 
@@ -12529,7 +12403,6 @@ class OSINTZenginlestirici:
         sonuc['basarili'] = True
         return sonuc
 
-
 class OSINTAgenti(OtonomAgent):
     """OSINT araştırma agenti"""
 
@@ -12628,10 +12501,8 @@ class OSINTAgenti(OtonomAgent):
         self.sonuclar.append(sonuclar)
         return sonuclar
 
-
 # Global OSINT agenti
 osint_agent = OSINTAgenti()
-
 
 # OSINT API Endpoint'leri
 @app.route('/api/osint/arastir', methods=['POST'])
@@ -12647,13 +12518,11 @@ def api_osint_arastir():
     sonuc = osint_agent.calistir(hedef)
     return jsonify(sonuc)
 
-
 @app.route('/api/osint/graf/dns/<domain>')
 @login_required
 def api_osint_graf_dns(domain):
     """DNS kayıtlarını çözümle"""
     return jsonify(OSINTZenginlestirici.dns_cozumle(domain))
-
 
 @app.route('/api/osint/graf/whois/<domain>')
 @login_required
@@ -12661,13 +12530,11 @@ def api_osint_graf_whois(domain):
     """WHOIS sorgusu"""
     return jsonify(OSINTZenginlestirici.whois_sorgula(domain))
 
-
 @app.route('/api/osint/graf/ip/<ip>')
 @login_required
 def api_osint_graf_ip(ip):
     """IP bilgisi sorgula"""
     return jsonify(OSINTZenginlestirici.ip_bilgi(ip))
-
 
 @app.route('/api/osint/graf/subdomains/<domain>')
 @login_required
@@ -12675,20 +12542,17 @@ def api_osint_graf_subdomains(domain):
     """Subdomain keşfi"""
     return jsonify(OSINTZenginlestirici.subdomain_kesfet(domain))
 
-
 @app.route('/api/osint/graf/ssl/<domain>')
 @login_required
 def api_osint_graf_ssl(domain):
     """SSL sertifika analizi"""
     return jsonify(OSINTZenginlestirici.ssl_analiz(domain))
 
-
 @app.route('/api/osint/graf/social/<kullanici>')
 @login_required
 def api_osint_graf_social(kullanici):
     """Sosyal medya araması"""
     return jsonify(OSINTZenginlestirici.sosyal_medya_ara(kullanici))
-
 
 # ==================== GELISMIS OSINT API ====================
 # dalga_osint.py modulu ile gercek OSINT yetenekleri
@@ -12700,7 +12564,6 @@ except ImportError:
     OSINT_MODUL_AKTIF = False
     _osint_load_logger = get_logger('tsunami.osint')
     _osint_load_logger.warning("dalga_osint modulu yuklenemedi")
-
 
 @app.route('/api/osint/v2/durum')
 @login_required
@@ -12714,7 +12577,6 @@ def api_osint_v2_durum():
         'basarili': True,
         'durum': osint.durum()
     })
-
 
 @app.route('/api/osint/v2/arastir', methods=['POST'])
 @login_required
@@ -12759,7 +12621,6 @@ def api_osint_v2_arastir():
         'sonuc': sonuc.to_dict()
     })
 
-
 @app.route('/api/osint/v2/telefon', methods=['POST'])
 @login_required
 def api_osint_v2_telefon():
@@ -12798,7 +12659,6 @@ def api_osint_v2_telefon():
         'kaynaklar': sonuc.kaynaklar
     })
 
-
 @app.route('/api/osint/v2/email', methods=['POST'])
 @login_required
 def api_osint_v2_email():
@@ -12836,7 +12696,6 @@ def api_osint_v2_email():
         'guven': sonuc.guven_skoru,
         'kaynaklar': sonuc.kaynaklar
     })
-
 
 @app.route('/api/osint/v2/kullanici', methods=['POST'])
 @login_required
@@ -12878,7 +12737,6 @@ def api_osint_v2_kullanici():
         'kaynaklar': sonuc.kaynaklar
     })
 
-
 @app.route('/api/osint/v2/ip', methods=['POST'])
 @login_required
 def api_osint_v2_ip():
@@ -12918,7 +12776,6 @@ def api_osint_v2_ip():
         'kaynaklar': sonuc.kaynaklar
     })
 
-
 @app.route('/api/osint/v2/domain', methods=['POST'])
 @login_required
 def api_osint_v2_domain():
@@ -12948,7 +12805,6 @@ def api_osint_v2_domain():
         'konum': sonuc.konum,
         'kaynaklar': sonuc.kaynaklar
     })
-
 
 @app.route('/api/osint/v2/spiderfoot', methods=['POST'])
 @login_required
@@ -13017,7 +12873,6 @@ def api_osint_v2_spiderfoot():
         logger.error(f"[SpiderFoot] API hatasi: {str(e)}")
         return jsonify({'basarili': False, 'hata': f'SpiderFoot tarama hatasi: {str(e)}'})
 
-
 @app.route('/api/osint/v2/dosya', methods=['POST'])
 @login_required
 def api_osint_v2_dosya():
@@ -13069,7 +12924,6 @@ def api_osint_v2_dosya():
 
     return jsonify({'basarili': False, 'hata': 'Dosya veya dosya yolu belirtilmedi'})
 
-
 @app.route('/api/osint/v2/sifre-kontrol', methods=['POST'])
 @login_required
 def api_osint_v2_sifre_kontrol():
@@ -13099,7 +12953,6 @@ def api_osint_v2_sifre_kontrol():
         'sonuc': sonuc
     })
 
-
 @app.route('/api/osint/v2/toplu', methods=['POST'])
 @login_required
 def api_osint_v2_toplu():
@@ -13128,7 +12981,6 @@ def api_osint_v2_toplu():
         'sonuclar': [s.to_dict() for s in sonuclar],
         'toplam': len(sonuclar)
     })
-
 
 @app.route('/api/osint/v2/harita', methods=['POST'])
 @login_required
@@ -13166,7 +13018,6 @@ def api_osint_v2_harita():
         'markers': markers,
         'toplam': len(markers)
     })
-
 
 @app.route('/api/osint/v2/virustotal', methods=['POST'])
 @login_required
@@ -13222,7 +13073,6 @@ def api_osint_v2_virustotal():
             return jsonify({'basarili': False, 'hata': str(e)})
 
     return jsonify({'basarili': False, 'hata': 'Hash belirtilmedi'})
-
 
 # ==================== AI KOMUT SISTEMI ====================
 class DALGAAIKomut:
@@ -13509,7 +13359,6 @@ Ben size su konularda yardimci olabilirim:
             'harita_guncelle': sonuc.get('yenile_harita', False)
         }
 
-
 @app.route('/api/ai/komut', methods=['POST'])
 @login_required
 def api_ai_komut():
@@ -13522,7 +13371,6 @@ def api_ai_komut():
 
     sonuc = DALGAAIKomut.yorumla(mesaj)
     return jsonify(sonuc)
-
 
 # ==================== AKILLI KOMUT API ====================
 # Birlesik Turkce NLP destekli komut isleyici
@@ -13907,7 +13755,6 @@ def _akilli_komut_isle(mesaj: str, parsed: dict) -> dict:
     # Hicbir pattern eslesmediyse basarisiz don
     return {'basarili': False, 'hata': 'Komut anlasilamadi'}
 
-
 @app.route('/api/ai/akilli-komut', methods=['POST'])
 @login_required
 def api_ai_akilli_komut():
@@ -13969,7 +13816,6 @@ def api_ai_akilli_komut():
         logger.error(f"Akilli komut hatasi: {e}")
         return jsonify({'basarili': False, 'hata': str(e)}), 500
 
-
 # ==================== GLOBAL OSINT API ====================
 # OpenInfraMap, city-roads, 102+ OSINT API, Pastebin, 193 ulke OSINT
 
@@ -13985,7 +13831,6 @@ def api_global_osint_durum():
         'basarili': True,
         'durum': osint.get_status()
     })
-
 
 @app.route('/api/osint/global/infrastructure', methods=['POST'])
 @login_required
@@ -14011,7 +13856,6 @@ def api_global_osint_infrastructure():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/global/infrastructure/config')
 @login_required
 def api_global_osint_infrastructure_config():
@@ -14024,7 +13868,6 @@ def api_global_osint_infrastructure_config():
         'basarili': True,
         'config': osint.get_infrastructure_tile_config()
     })
-
 
 @app.route('/api/osint/global/cityroads', methods=['POST'])
 @login_required
@@ -14049,7 +13892,6 @@ def api_global_osint_cityroads():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/global/investigate/ip/<ip>')
 @login_required
 def api_global_osint_investigate_ip(ip):
@@ -14065,7 +13907,6 @@ def api_global_osint_investigate_ip(ip):
         return jsonify({'basarili': True, 'sonuc': result})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/osint/global/investigate/domain/<domain>')
 @login_required
@@ -14083,7 +13924,6 @@ def api_global_osint_investigate_domain(domain):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/global/investigate/email/<email>')
 @login_required
 def api_global_osint_investigate_email(email):
@@ -14100,7 +13940,6 @@ def api_global_osint_investigate_email(email):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/global/investigate/username/<username>')
 @login_required
 def api_global_osint_investigate_username(username):
@@ -14116,7 +13955,6 @@ def api_global_osint_investigate_username(username):
         return jsonify({'basarili': True, 'sonuc': result})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/osint/global/pastebin/search', methods=['POST'])
 @login_required
@@ -14142,7 +13980,6 @@ def api_global_osint_pastebin_search():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/global/pastebin/sites')
 @login_required
 def api_global_osint_pastebin_sites():
@@ -14156,7 +13993,6 @@ def api_global_osint_pastebin_sites():
         'siteler': osint.get_pastebin_sites()
     })
 
-
 @app.route('/api/osint/global/countries')
 @login_required
 def api_global_osint_countries():
@@ -14169,7 +14005,6 @@ def api_global_osint_countries():
         'basarili': True,
         'ulkeler': osint.list_countries()
     })
-
 
 @app.route('/api/osint/global/country/<country_code>')
 @login_required
@@ -14185,7 +14020,6 @@ def api_global_osint_country(country_code):
         return jsonify({'basarili': True, 'ulke': result})
     else:
         return jsonify({'basarili': False, 'hata': f'Ulke bulunamadi: {country_code}'})
-
 
 @app.route('/api/osint/global/countries/search')
 @login_required
@@ -14205,7 +14039,6 @@ def api_global_osint_countries_search():
         'sonuclar': osint.search_countries(query)
     })
 
-
 @app.route('/api/osint/global/tools/categories')
 @login_required
 def api_global_osint_tool_categories():
@@ -14219,7 +14052,6 @@ def api_global_osint_tool_categories():
         'kategoriler': osint.get_tool_categories()
     })
 
-
 @app.route('/api/osint/global/tools/category/<category>')
 @login_required
 def api_global_osint_tools_by_category(category):
@@ -14232,7 +14064,6 @@ def api_global_osint_tools_by_category(category):
         'basarili': True,
         'araclar': osint.get_tools_in_category(category)
     })
-
 
 @app.route('/api/osint/global/tools/search')
 @login_required
@@ -14252,7 +14083,6 @@ def api_global_osint_tools_search():
         'sonuclar': osint.search_tools(query)
     })
 
-
 @app.route('/api/osint/global/tools/all')
 @login_required
 def api_global_osint_all_tools():
@@ -14266,7 +14096,6 @@ def api_global_osint_all_tools():
         'araclar': osint.get_all_tools()
     })
 
-
 @app.route('/api/osint/global/map/layers')
 @login_required
 def api_global_osint_map_layers():
@@ -14279,7 +14108,6 @@ def api_global_osint_map_layers():
         'basarili': True,
         'config': osint.get_map_layers_config()
     })
-
 
 @app.route('/api/osint/global/map/markers', methods=['POST'])
 @login_required
@@ -14298,7 +14126,6 @@ def api_global_osint_map_markers():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 # ==================== EAGLE EYE API ====================
 # Kartal Gözü - Global Gerçek Zamanlı İzleme Sistemi
 
@@ -14314,7 +14141,6 @@ def api_eagle_durum():
         'basarili': True,
         'durum': eagle.get_status()
     })
-
 
 @app.route('/api/eagle/ara', methods=['POST'])
 @login_required
@@ -14339,7 +14165,6 @@ def api_eagle_ara():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/eagle/konum', methods=['POST'])
 @login_required
 def api_eagle_konum():
@@ -14363,7 +14188,6 @@ def api_eagle_konum():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/eagle/depremler')
 @login_required
 def api_eagle_depremler():
@@ -14382,7 +14206,6 @@ def api_eagle_depremler():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/eagle/afetler')
 @login_required
 def api_eagle_afetler():
@@ -14398,7 +14221,6 @@ def api_eagle_afetler():
         return jsonify({'basarili': True, 'sonuc': result})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/eagle/ucaklar', methods=['POST'])
 @login_required
@@ -14422,7 +14244,6 @@ def api_eagle_ucaklar():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/eagle/tehdit/<ip>')
 @login_required
 def api_eagle_tehdit_ip(ip):
@@ -14438,7 +14259,6 @@ def api_eagle_tehdit_ip(ip):
         return jsonify({'basarili': True, 'sonuc': result})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/eagle/uyarilar')
 @login_required
@@ -14461,7 +14281,6 @@ def api_eagle_uyarilar():
         traceback.print_exc()
         return jsonify({'basarili': False, 'hata': f'Uyari getirme hatasi: {type(e).__name__}'})
 
-
 # ==================== OSINT ORCHESTRATOR API ====================
 # Türkçe doğal dil ile tüm 614+ OSINT aracını otomatik çalıştır
 
@@ -14472,7 +14291,6 @@ except ImportError as e:
     _osint_orch_logger = get_logger('tsunami.osint')
     _osint_orch_logger.warning("OSINT Orchestrator yuklenemedi", error=str(e))
     OSINT_ORCHESTRATOR_AKTIF = False
-
 
 @app.route('/api/osint/orchestrator/investigate', methods=['POST'])
 @login_required
@@ -14503,7 +14321,6 @@ def api_osint_orchestrator_investigate():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/osint/orchestrator/analyze', methods=['POST'])
 @login_required
 def api_osint_orchestrator_analyze():
@@ -14524,7 +14341,6 @@ def api_osint_orchestrator_analyze():
         'basarili': True,
         'analiz': analysis
     })
-
 
 @app.route('/api/osint/orchestrator/tools')
 @login_required
@@ -14564,7 +14380,6 @@ def api_osint_orchestrator_tools():
         'kategoriler': categories
     })
 
-
 @app.route('/api/osint/orchestrator/status')
 @login_required
 def api_osint_orchestrator_status():
@@ -14582,7 +14397,6 @@ def api_osint_orchestrator_status():
         }
     })
 
-
 # WebSocket: Canlı Eagle Eye olayları
 @socketio.on('eagle_baslat')
 def socket_eagle_baslat():
@@ -14598,7 +14412,6 @@ def socket_eagle_baslat():
         emit('eagle_durum', {'aktif': True, 'mesaj': 'Eagle Eye canlı akış başlatıldı'})
     else:
         emit('eagle_durum', {'aktif': False, 'mesaj': 'Eagle Eye modülü yüklü değil'})
-
 
 # ==================== OSINT OTONOM SISTEM ====================
 class OSINTOtonomSistem:
@@ -14768,7 +14581,6 @@ class OSINTOtonomSistem:
             'timestamp': datetime.now().isoformat()
         }
 
-
 @app.route('/api/osint/otonom', methods=['POST'])
 @login_required
 def api_osint_otonom():
@@ -14787,7 +14599,6 @@ def api_osint_otonom():
 
     return jsonify({'sonuc': sonuc})
 
-
 @app.route('/api/osint/hedefler', methods=['GET', 'POST'])
 @login_required
 def api_osint_hedefler():
@@ -14801,7 +14612,6 @@ def api_osint_hedefler():
 
     return jsonify({'hedefler': OSINTOtonomSistem._hedefler})
 
-
 # ==================== KAPSAMLI TARAMA API ====================
 @app.route('/api/tarama/wifi', methods=['POST'])
 @login_required
@@ -14814,7 +14624,6 @@ def api_tarama_wifi():
         socketio.emit('tarama_sonuc', {'tip': 'wifi', 'sonuclar': sonuclar})
     return jsonify({'basarili': True, 'sonuclar': sonuclar or []})
 
-
 @app.route('/api/tarama/bluetooth', methods=['POST'])
 @login_required
 def api_tarama_bluetooth():
@@ -14824,7 +14633,6 @@ def api_tarama_bluetooth():
         db.bluetooth_kaydet(sonuclar)
         socketio.emit('tarama_sonuc', {'tip': 'bluetooth', 'sonuclar': sonuclar})
     return jsonify({'basarili': True, 'sonuclar': sonuclar or []})
-
 
 @app.route('/api/tarama/ip', methods=['POST'])
 @login_required
@@ -14887,7 +14695,6 @@ def api_tarama_ip():
 
     return jsonify({'basarili': True, 'sonuclar': sonuclar})
 
-
 @app.route('/api/tarama/iot', methods=['POST'])
 @login_required
 def api_tarama_iot():
@@ -14930,7 +14737,6 @@ def api_tarama_iot():
 
     socketio.emit('tarama_sonuc', {'tip': 'iot', 'sonuclar': sonuclar})
     return jsonify({'basarili': True, 'cihazlar': sonuclar})
-
 
 # ==================== TEHDIT ISTIHBARATI ====================
 
@@ -14993,7 +14799,6 @@ def api_tehdit_guncel():
 
     return jsonify({'basarili': True, 'tehditler': tehditler, 'gercek_veri': True})
 
-
 @app.route('/api/tor/cikis-nodlari')
 @login_required
 def api_tor_cikis_nodlari():
@@ -15015,7 +14820,6 @@ def api_tor_cikis_nodlari():
         pass
 
     return jsonify({'basarili': True, 'aktivite': aktivite, 'nodlar': nodlar[:20]})
-
 
 # ==================== KARTALGOZ MODULLERI - PENTAGON SEVIYE ====================
 # Biometric, Surveillance, Tracking, Risk Analysis
@@ -15166,7 +14970,6 @@ class KartalgozBiometric:
         except Exception as e:
             return {'basarili': False, 'hata': str(e)}
 
-
 class KartalgozSurveillance:
     """Gozetim ve Izleme Modulu"""
 
@@ -15217,7 +15020,6 @@ class KartalgozSurveillance:
     def aktif_izlemeler(self) -> List[Dict]:
         """Aktif izleme oturumlarini getir"""
         return [o for o in self.izleme_oturumlari.values() if o['durum'] == 'aktif']
-
 
 class KartalgozRiskAnaliz:
     """Risk Analiz ve Puanlama Modulu"""
@@ -15275,12 +15077,10 @@ class KartalgozRiskAnaliz:
             'oneri': 'Detayli inceleme oneriliyor' if anomaliler else 'Normal aktivite'
         }
 
-
 # KARTALGOZ Singleton Instances
 kartalgoz_biometric = KartalgozBiometric()
 kartalgoz_surveillance = KartalgozSurveillance()
 kartalgoz_risk = KartalgozRiskAnaliz()
-
 
 # ==================== KARTALGOZ API ENDPOINTS ====================
 
@@ -15296,7 +15096,6 @@ def api_kartalgoz_yuz():
         socketio.emit('biyometrik_tespit', {'tip': 'yuz', 'sonuc': sonuc})
     return jsonify(sonuc)
 
-
 @app.route('/api/kartalgoz/biyometrik/duygu', methods=['POST'])
 @login_required
 def api_kartalgoz_duygu():
@@ -15304,7 +15103,6 @@ def api_kartalgoz_duygu():
     data = request.get_json() or {}
     sonuc = kartalgoz_biometric.duygu_analiz(data)
     return jsonify(sonuc)
-
 
 @app.route('/api/kartalgoz/gozetim/kamera', methods=['POST'])
 @login_required
@@ -15318,7 +15116,6 @@ def api_kartalgoz_kamera_ekle():
     )
     return jsonify(sonuc)
 
-
 @app.route('/api/kartalgoz/gozetim/kameralar')
 @login_required
 def api_kartalgoz_kameralar():
@@ -15327,7 +15124,6 @@ def api_kartalgoz_kameralar():
         'basarili': True,
         'kameralar': list(kartalgoz_surveillance.aktif_kameralar.values())
     })
-
 
 @app.route('/api/kartalgoz/izleme/baslat', methods=['POST'])
 @login_required
@@ -15341,7 +15137,6 @@ def api_kartalgoz_izleme_baslat():
     socketio.emit('izleme_basladi', sonuc)
     return jsonify(sonuc)
 
-
 @app.route('/api/kartalgoz/izleme/aktif')
 @login_required
 def api_kartalgoz_aktif_izlemeler():
@@ -15350,7 +15145,6 @@ def api_kartalgoz_aktif_izlemeler():
         'basarili': True,
         'izlemeler': kartalgoz_surveillance.aktif_izlemeler()
     })
-
 
 @app.route('/api/kartalgoz/risk/hesapla', methods=['POST'])
 @login_required
@@ -15365,7 +15159,6 @@ def api_kartalgoz_risk_hesapla():
         socketio.emit('yuksek_risk_uyari', sonuc)
     return jsonify(sonuc)
 
-
 @app.route('/api/kartalgoz/risk/anomali', methods=['POST'])
 @login_required
 def api_kartalgoz_anomali():
@@ -15373,7 +15166,6 @@ def api_kartalgoz_anomali():
     data = request.get_json() or {}
     sonuc = kartalgoz_risk.anomali_tespit(data)
     return jsonify(sonuc)
-
 
 @app.route('/api/kartalgoz/durum')
 @login_required
@@ -15396,7 +15188,6 @@ def api_kartalgoz_durum():
             'risk_profili': len(kartalgoz_risk.risk_profilleri)
         }
     })
-
 
 # ==================== PENTAGON SEVIYE YETENEKLER ====================
 
@@ -15451,7 +15242,6 @@ class PentagonThreatCorrelation:
                 tespit_edilen.append(kampanya)
 
         return tespit_edilen
-
 
 class PentagonIntelFusion:
     """Coklu Kaynak Istihbarat Fuzyon Motoru"""
@@ -15509,7 +15299,6 @@ class PentagonIntelFusion:
             'analiz_zamani': datetime.now().isoformat()
         }
 
-
 class PentagonAutoResponse:
     """Otomatik Yanit Sistemi"""
 
@@ -15562,12 +15351,10 @@ class PentagonAutoResponse:
         self.aksiyon_gecmisi.append(aksiyon)
         return {'aksiyon_alindi': True, 'aksiyon': aksiyon}
 
-
 # Pentagon Singleton Instances
 pentagon_correlation = PentagonThreatCorrelation()
 pentagon_intel = PentagonIntelFusion()
 pentagon_response = PentagonAutoResponse()
-
 
 # ==================== PENTAGON API ENDPOINTS ====================
 
@@ -15594,7 +15381,6 @@ def api_pentagon_olay():
 
     return jsonify(sonuc)
 
-
 @app.route('/api/pentagon/korelasyon/kampanyalar')
 @login_required
 def api_pentagon_kampanyalar():
@@ -15603,7 +15389,6 @@ def api_pentagon_kampanyalar():
         'basarili': True,
         'kampanyalar': list(pentagon_correlation.aktif_kampanyalar.values())
     })
-
 
 @app.route('/api/pentagon/istihbarat/ekle', methods=['POST'])
 @login_required
@@ -15614,7 +15399,6 @@ def api_pentagon_intel_ekle():
     veri = data.get('veri', {})
     intel = pentagon_intel.istihbarat_ekle(kaynak, veri)
     return jsonify({'basarili': True, 'istihbarat': intel})
-
 
 @app.route('/api/pentagon/istihbarat/fuzyon', methods=['POST'])
 @login_required
@@ -15627,7 +15411,6 @@ def api_pentagon_fuzyon():
     analiz = pentagon_intel.fuzyon_analiz(hedef)
     return jsonify({'basarili': True, 'analiz': analiz})
 
-
 @app.route('/api/pentagon/yanit/otomatik', methods=['POST'])
 @login_required
 def api_pentagon_yanit():
@@ -15638,7 +15421,6 @@ def api_pentagon_yanit():
         socketio.emit('otomatik_yanit', yanit['aksiyon'])
     return jsonify(yanit)
 
-
 @app.route('/api/pentagon/yanit/gecmis')
 @login_required
 def api_pentagon_yanit_gecmis():
@@ -15647,7 +15429,6 @@ def api_pentagon_yanit_gecmis():
         'basarili': True,
         'aksiyonlar': pentagon_response.aksiyon_gecmisi[-50:]  # Son 50
     })
-
 
 @app.route('/api/pentagon/durum')
 @login_required
@@ -15675,7 +15456,6 @@ def api_pentagon_durum():
         'hazirlik_durumu': 'DEFCON 5 - Normal',
         'son_guncelleme': datetime.now().isoformat()
     })
-
 
 @app.route('/api/tarama/kapsamli', methods=['POST'])
 @login_required
@@ -15729,7 +15509,6 @@ def api_tarama_kapsamli():
 
     return jsonify({'basarili': True, 'sonuclar': sonuclar})
 
-
 # ==================== SES SISTEMI API ====================
 @app.route('/api/ses/tts', methods=['POST'])
 @login_required
@@ -15747,7 +15526,6 @@ def api_ses_tts():
         'metin': metin,
         'dil': 'tr-TR'
     })
-
 
 @app.route('/api/ses/komut', methods=['POST'])
 @login_required
@@ -15778,7 +15556,6 @@ def api_ses_komut():
         'detay': sonuc.get('cikti', ''),
         'harita_guncelle': sonuc.get('harita_guncelle', False)
     })
-
 
 # ==================== BILDIRIM SISTEMI ====================
 class BildirimSistemi:
@@ -15823,7 +15600,6 @@ class BildirimSistemi:
                 b['okundu'] = True
                 break
 
-
 @app.route('/api/bildirim/listele')
 @login_required
 def api_bildirim_listele():
@@ -15831,14 +15607,12 @@ def api_bildirim_listele():
     limit = request.args.get('limit', 50, type=int)
     return jsonify({'bildirimler': BildirimSistemi.listele(limit)})
 
-
 @app.route('/api/bildirim/okundu/<bildirim_id>', methods=['POST'])
 @login_required
 def api_bildirim_okundu(bildirim_id):
     """Bildirimi okundu olarak isaretle"""
     BildirimSistemi.okundu_isle(bildirim_id)
     return jsonify({'basarili': True})
-
 
 @app.route('/api/bildirim/gonder', methods=['POST'])
 @login_required
@@ -15852,10 +15626,7 @@ def api_bildirim_gonder():
     bildirim = BildirimSistemi.ekle(baslik, mesaj, tip)
     return jsonify({'basarili': True, 'bildirim': bildirim})
 
-
-# ==================== AILYDIAN AGENT ORCHESTRATOR ENTEGRASYONU ====================
 """
-AILYDIAN Agent Orchestrator - DALGA Entegrasyonu
 =================================================
 - 214 Uzman Ajan erişimi
 - Doğal dil sorgu motoru
@@ -15866,7 +15637,6 @@ AILYDIAN Agent Orchestrator - DALGA Entegrasyonu
 """
 
 # AILYDIAN Yolu
-AILYDIAN_BASE = Path.home() / "Desktop" / "AILYDIAN-AGENT-ORCHESTRATOR"
 AILYDIAN_CORE = AILYDIAN_BASE / "core"
 
 # Ajan kategorileri (Türkçe) - Genişletilmiş
@@ -15891,9 +15661,7 @@ AJAN_KATEGORILERI = {
     'otomasyon': {'en': 'automation', 'aciklama': 'Otomasyon', 'ikon': '⚙️'}
 }
 
-
 class AILYDIANOrchestrator:
-    """AILYDIAN Agent Orchestrator - Ana Yönetici"""
 
     _instance = None
     _ajanlar: Dict[str, Dict] = {}
@@ -16356,7 +16124,6 @@ class AILYDIANOrchestrator:
             'kategoriler': AJAN_KATEGORILERI
         }
 
-
 class AILYDIANQueryEngine:
     """AILYDIAN Doğal Dil Sorgu Motoru"""
 
@@ -16583,7 +16350,6 @@ class AILYDIANQueryEngine:
             'detay': "Bu sorgu için özel bir komut bulunamadı. Daha fazla yardım için 'yardım' yazın."
         }
 
-
 # Global orchestrator ve query engine
 _ailydian_orchestrator = None
 _ailydian_query_engine = None
@@ -16600,7 +16366,6 @@ def get_ailydian_query_engine() -> AILYDIANQueryEngine:
         _ailydian_query_engine = AILYDIANQueryEngine()
     return _ailydian_query_engine
 
-
 # ==================== AILYDIAN API ENDPOINTS ====================
 
 @app.route('/api/ailydian/durum')
@@ -16608,7 +16373,6 @@ def get_ailydian_query_engine() -> AILYDIANQueryEngine:
 def api_ailydian_durum():
     """AILYDIAN sistem durumu"""
     return jsonify(get_ailydian_orchestrator().durum_getir())
-
 
 @app.route('/api/ailydian/ajanlar')
 @login_required
@@ -16622,7 +16386,6 @@ def api_ailydian_ajanlar():
         'ajanlar': ajanlar
     })
 
-
 @app.route('/api/ailydian/ajan/<ajan_id>')
 @login_required
 def api_ailydian_ajan(ajan_id):
@@ -16631,7 +16394,6 @@ def api_ailydian_ajan(ajan_id):
     if ajan:
         return jsonify({'basarili': True, 'ajan': ajan})
     return jsonify({'basarili': False, 'hata': 'Ajan bulunamadı'}), 404
-
 
 @app.route('/api/ailydian/ajan/ara', methods=['POST'])
 @login_required
@@ -16650,7 +16412,6 @@ def api_ailydian_ajan_ara():
         'sonuclar': sonuclar
     })
 
-
 @app.route('/api/ailydian/gorev', methods=['POST'])
 @login_required
 def api_ailydian_gorev_olustur():
@@ -16666,7 +16427,6 @@ def api_ailydian_gorev_olustur():
     gorev = get_ailydian_orchestrator().gorev_olustur(aciklama, ajan_id, oncelik)
     return jsonify({'basarili': True, 'gorev': gorev})
 
-
 @app.route('/api/ailydian/gorev/<gorev_id>/baslat', methods=['POST'])
 @login_required
 def api_ailydian_gorev_baslat(gorev_id):
@@ -16675,7 +16435,6 @@ def api_ailydian_gorev_baslat(gorev_id):
     if 'hata' in sonuc:
         return jsonify(sonuc), 404
     return jsonify({'basarili': True, 'gorev': sonuc})
-
 
 @app.route('/api/ailydian/gorevler')
 @login_required
@@ -16688,7 +16447,6 @@ def api_ailydian_gorevler():
         'toplam': len(gorevler),
         'gorevler': gorevler
     })
-
 
 @app.route('/api/ailydian/orkestrasyon', methods=['POST'])
 @login_required
@@ -16704,7 +16462,6 @@ def api_ailydian_orkestrasyon():
     ork = get_ailydian_orchestrator().orkestrasyon_baslat(hedef, ajanlar)
     return jsonify({'basarili': True, 'orkestrasyon': ork})
 
-
 @app.route('/api/ailydian/bellek', methods=['POST'])
 @login_required
 def api_ailydian_bellek_ekle():
@@ -16719,7 +16476,6 @@ def api_ailydian_bellek_ekle():
 
     kayit = get_ailydian_orchestrator().bellek_ekle(icerik, tip, meta)
     return jsonify({'basarili': True, 'kayit': kayit})
-
 
 @app.route('/api/ailydian/bellek/ara', methods=['POST'])
 @login_required
@@ -16738,7 +16494,6 @@ def api_ailydian_bellek_ara():
         'sonuclar': sonuclar
     })
 
-
 @app.route('/api/ailydian/sorgu', methods=['POST'])
 @login_required
 def api_ailydian_sorgu():
@@ -16752,7 +16507,6 @@ def api_ailydian_sorgu():
     sonuc = get_ailydian_query_engine().yorumla(sorgu)
     return jsonify(sonuc)
 
-
 @app.route('/api/ailydian/kategoriler')
 @login_required
 def api_ailydian_kategoriler():
@@ -16761,7 +16515,6 @@ def api_ailydian_kategoriler():
         'basarili': True,
         'kategoriler': AJAN_KATEGORILERI
     })
-
 
 @app.route('/api/ailydian/soru', methods=['POST'])
 @login_required
@@ -16791,7 +16544,6 @@ def api_ailydian_soru():
             'cevap': f'Islem sirasinda bir hata olustu: {str(e)}'
         })
 
-
 # ==================== AILYDIAN BRIDGE API v2 (214 Agent Tam Güç) ====================
 
 @app.route('/api/ailydian/v2/status')
@@ -16813,7 +16565,6 @@ def api_ailydian_v2_status():
             'toplam_agent': 214
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 @app.route('/api/ailydian/v2/agents')
 @login_required
@@ -16838,7 +16589,6 @@ def api_ailydian_v2_agents():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/agent/<agent_id>')
 @login_required
 def api_ailydian_v2_agent(agent_id):
@@ -16853,7 +16603,6 @@ def api_ailydian_v2_agent(agent_id):
             return jsonify({'basarili': True, 'agent': agent})
         return jsonify({'basarili': False, 'hata': 'Agent bulunamadı'}), 404
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 @app.route('/api/ailydian/v2/query', methods=['POST'])
 @login_required
@@ -16877,7 +16626,6 @@ def api_ailydian_v2_query():
             'kaynak': result.get('source', 'unknown')
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 @app.route('/api/ailydian/v2/execute', methods=['POST'])
 @login_required
@@ -16907,7 +16655,6 @@ def api_ailydian_v2_execute():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/recon', methods=['POST'])
 @login_required
 def api_ailydian_v2_recon():
@@ -16934,7 +16681,6 @@ def api_ailydian_v2_recon():
             'durum': result.get('status')
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 @app.route('/api/ailydian/v2/redteam', methods=['POST'])
 @login_required
@@ -16964,7 +16710,6 @@ def api_ailydian_v2_redteam():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/osint', methods=['POST'])
 @login_required
 def api_ailydian_v2_osint():
@@ -16991,7 +16736,6 @@ def api_ailydian_v2_osint():
             'durum': result.get('status')
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 @app.route('/api/ailydian/v2/threat', methods=['POST'])
 @login_required
@@ -17020,7 +16764,6 @@ def api_ailydian_v2_threat():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/browser', methods=['POST'])
 @login_required
 def api_ailydian_v2_browser():
@@ -17048,7 +16791,6 @@ def api_ailydian_v2_browser():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/tasks')
 @login_required
 def api_ailydian_v2_tasks():
@@ -17067,7 +16809,6 @@ def api_ailydian_v2_tasks():
         })
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
 
-
 @app.route('/api/ailydian/v2/task/<task_id>')
 @login_required
 def api_ailydian_v2_task(task_id):
@@ -17082,7 +16823,6 @@ def api_ailydian_v2_task(task_id):
             return jsonify({'basarili': True, 'gorev': task})
         return jsonify({'basarili': False, 'hata': 'Görev bulunamadı'}), 404
     return jsonify({'basarili': False, 'hata': 'Bridge başlatılamadı'})
-
 
 # ==================== OPEN SOURCE INTEGRATION API ====================
 
@@ -17113,7 +16853,6 @@ def api_ailydian_v2_memory_search():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': f'Memory servisi hatası: {str(e)}'})
 
-
 @app.route('/api/ailydian/v2/memory/inject', methods=['POST'])
 @login_required
 def api_ailydian_v2_memory_inject():
@@ -17138,7 +16877,6 @@ def api_ailydian_v2_memory_inject():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': f'Injection hatası: {str(e)}'})
 
-
 @app.route('/api/ailydian/v2/train', methods=['POST'])
 @login_required
 def api_ailydian_v2_train():
@@ -17159,7 +16897,6 @@ def api_ailydian_v2_train():
         'epochs': epochs,
         'durum': 'queued'
     })
-
 
 @app.route('/api/ailydian/v2/skills/install', methods=['POST'])
 @login_required
@@ -17188,7 +16925,6 @@ def api_ailydian_v2_skills_install():
 
     return jsonify({'basarili': False, 'hata': 'Skill index bulunamadı'})
 
-
 @app.route('/api/ailydian/v2/skills/list')
 @login_required
 def api_ailydian_v2_skills_list():
@@ -17204,7 +16940,6 @@ def api_ailydian_v2_skills_list():
                 'skills': index.get('skills', [])
             })
     return jsonify({'basarili': False, 'hata': 'Skill index bulunamadı'})
-
 
 @app.route('/api/ailydian/v2/erpnext/generate', methods=['POST'])
 @login_required
@@ -17226,7 +16961,6 @@ def api_ailydian_v2_erpnext_generate():
         'events': events,
         'durum': 'generated'
     })
-
 
 @app.route('/api/ailydian/v2/3d/generate', methods=['POST'])
 @login_required
@@ -17251,7 +16985,6 @@ def api_ailydian_v2_3d_generate():
         'durum': 'processing'
     })
 
-
 @app.route('/api/ailydian/v2/gpui/component', methods=['POST'])
 @login_required
 def api_ailydian_v2_gpui_component():
@@ -17274,7 +17007,6 @@ def api_ailydian_v2_gpui_component():
         },
         'durum': 'generated'
     })
-
 
 @app.route('/api/ailydian/v2/integrations/status')
 @login_required
@@ -17320,7 +17052,6 @@ def api_ailydian_v2_integrations_status():
         'entegrasyonlar': integrations
     })
 
-
 # ==================== GHOST MODE API ====================
 
 @app.route('/api/ghost/status')
@@ -17343,7 +17074,6 @@ def api_ghost_status():
             }
         })
     return jsonify({'basarili': False, 'hata': 'Ghost Mode başlatılamadı'})
-
 
 @app.route('/api/ghost/activate', methods=['POST'])
 @login_required
@@ -17374,7 +17104,6 @@ def api_ghost_activate():
             'mesaj': 'Ghost Mode aktif' if success else 'Aktivasyon başarısız'
         })
     return jsonify({'basarili': False, 'hata': 'Ghost Mode başlatılamadı'})
-
 
 @app.route('/api/terminal/komut', methods=['POST'])
 @login_required
@@ -17443,7 +17172,6 @@ def api_terminal_komut():
     except Exception as e:
         return jsonify({'cikti': f'Hata: {str(e)}', 'tip': 'err'})
 
-
 @app.route('/api/sesli/komut', methods=['POST'])
 @login_required
 def api_sesli_komut():
@@ -17505,7 +17233,6 @@ def api_sesli_komut():
         'mesaj': f'Komut anlasilamadi: "{komut}". Sayfa adi + "ac" veya "git" deneyin.'
     })
 
-
 # ==================== TERMINAL AILYDIAN KOMUTLARI ====================
 # DALGAAIKomut sınıfına AILYDIAN komutlarını ekle
 
@@ -17519,7 +17246,6 @@ AILYDIAN_TERMINAL_KOMUTLARI = {
     '/ailydian': 'AILYDIAN durumu',
     '/ai': 'AI sorgusu'
 }
-
 
 def ailydian_terminal_komut(komut: str, argumanlar: List[str]) -> Dict:
     """AILYDIAN terminal komutu işle"""
@@ -17612,7 +17338,6 @@ Uzmanlık: {ajan.get('specialization', '-')}"""
     elif komut == '/ailydian':
         durum = orch.durum_getir()
         stats = durum['istatistikler']
-        cikti = f"""AILYDIAN Agent Orchestrator
 ═══════════════════════════
 Versiyon: {durum['versiyon']}
 Durum: {durum['durum'].upper()}
@@ -17635,7 +17360,6 @@ Orkestrasyon: {durum['orkestrasyon_durumu']}
         return {'basarili': sonuc['basarili'], 'cikti': f"{sonuc['yanit']}\n\n{sonuc.get('detay', '')}"}
 
     return {'basarili': False, 'cikti': f"Bilinmeyen AILYDIAN komutu: {komut}"}
-
 
 # Terminal komut sistemine AILYDIAN'ı entegre et
 _original_terminal_komut = None
@@ -17661,7 +17385,6 @@ if hasattr(DALGAAIKomut, 'yorumla'):
 
     DALGAAIKomut.yorumla = _enhanced_yorumla
 
-
 # ==================== DALGA BEYIN ENTEGRASYONU ====================
 """
 DALGA BEYIN - Otonom Merkezi Zeka Sistemi
@@ -17673,7 +17396,6 @@ DALGA BEYIN - Otonom Merkezi Zeka Sistemi
 - Otomatik iyilestirme
 """
 
-
 @app.route('/api/beyin/durum-basit')
 @login_required
 def api_beyin_durum_basit():
@@ -17682,7 +17404,6 @@ def api_beyin_durum_basit():
         return jsonify({'hata': 'BEYIN modulu aktif degil'}), 503
     beyin = beyin_al()
     return jsonify(beyin.durum_ozeti())
-
 
 @app.route('/api/beyin/defcon')
 @login_required
@@ -17720,7 +17441,6 @@ def api_beyin_defcon():
         'gizli_mod': durum.get('gizli_mod', {}).get('mod', 'normal')
     })
 
-
 @app.route('/api/beyin/tehditler')
 @login_required
 def api_beyin_tehditler():
@@ -17730,7 +17450,6 @@ def api_beyin_tehditler():
     beyin = beyin_al()
     return jsonify({'tehditler': beyin.tehditler_listesi()})
 
-
 @app.route('/api/beyin/kararlar')
 @login_required
 def api_beyin_kararlar():
@@ -17739,7 +17458,6 @@ def api_beyin_kararlar():
         return jsonify({'hata': 'BEYIN modulu aktif degil'}), 503
     beyin = beyin_al()
     return jsonify({'kararlar': beyin.kararlar_listesi()})
-
 
 @app.route('/api/beyin/mod', methods=['GET', 'POST'])
 @login_required
@@ -17762,7 +17480,6 @@ def api_beyin_mod():
 
     return jsonify(beyin._gizli.durum())
 
-
 @app.route('/api/beyin/komut', methods=['POST'])
 @login_required
 def api_beyin_komut():
@@ -17781,7 +17498,6 @@ def api_beyin_komut():
     sonuc = beyin.manuel_komut(komut, parametre)
     return jsonify(sonuc)
 
-
 @app.route('/api/beyin/tehdit/bildir', methods=['POST'])
 @login_required
 def api_beyin_tehdit_bildir():
@@ -17798,7 +17514,6 @@ def api_beyin_tehdit_bildir():
     beyin.tehdit_bildir(kaynak, {'skor': skor, 'detay': detay})
     return jsonify({'basarili': True, 'kaynak': kaynak, 'skor': skor})
 
-
 # BEYIN WebSocket olaylari
 @socketio.on('beyin_durum_iste')
 def ws_beyin_durum_iste():
@@ -17806,7 +17521,6 @@ def ws_beyin_durum_iste():
     if BEYIN_AKTIF:
         beyin = beyin_al()
         emit('beyin_durum', beyin.durum_ozeti())
-
 
 @socketio.on('beyin_komut')
 def ws_beyin_komut(data):
@@ -17817,7 +17531,6 @@ def ws_beyin_komut(data):
         parametre = data.get('parametre', {})
         sonuc = beyin.manuel_komut(komut, parametre)
         emit('beyin_komut_sonuc', sonuc)
-
 
 # ==================== KOMUTA MERKEZİ API ====================
 # Merkezi kontrol paneli için ek endpoint'ler
@@ -17836,7 +17549,6 @@ def api_beyin_onay_bekleyenler():
         'basarili': True,
         'bekleyenler': _onay_bekleyenler
     })
-
 
 @app.route('/api/beyin/onay', methods=['POST'])
 @login_required
@@ -17886,7 +17598,6 @@ def api_beyin_onay():
         'mesaj': 'Aksiyon onaylandi' if onay else 'Aksiyon reddedildi'
     })
 
-
 @app.route('/api/beyin/alarmlar')
 @login_required
 def api_beyin_alarmlar():
@@ -17918,7 +17629,6 @@ def api_beyin_alarmlar():
         'basarili': True,
         'alarmlar': _alarm_listesi
     })
-
 
 @app.route('/api/beyin/defcon', methods=['POST'])
 @login_required
@@ -17959,7 +17669,6 @@ def api_beyin_defcon_set():
         'mesaj': f'DEFCON {seviye} aktif'
     })
 
-
 @app.route('/api/beyin/lockdown', methods=['POST'])
 @login_required
 def api_beyin_lockdown():
@@ -17996,7 +17705,6 @@ def api_beyin_lockdown():
         'defcon': _defcon_seviyesi,
         'mesaj': 'Lockdown aktif' if aktif else 'Lockdown deaktif'
     })
-
 
 @app.route('/api/beyin/durum')
 @login_required
@@ -18076,7 +17784,6 @@ def api_beyin_durum():
         }
     })
 
-
 @app.route('/api/komuta/stealth/durum')
 @login_required
 def api_komuta_stealth_durum():
@@ -18134,7 +17841,6 @@ def api_komuta_stealth_durum():
             'zaman': None
         }
     })
-
 
 @app.route('/api/komuta/threat_intel/durum')
 @login_required
@@ -18203,7 +17909,6 @@ def api_komuta_threat_intel_durum():
         }
     })
 
-
 # ==================== SHANNON AI PENTESTER API ====================
 
 # Shannon modül singleton'ları
@@ -18247,7 +17952,6 @@ def _get_shannon_map():
             logger.error(f"[SHANNON] Map init error: {e}")
     return _shannon_map
 
-
 @app.route('/api/shannon/start', methods=['POST'])
 @login_required
 def api_shannon_start():
@@ -18284,7 +17988,6 @@ def api_shannon_start():
         'mesaj': f'Shannon pentest başlatıldı: {target_url}'
     })
 
-
 @app.route('/api/shannon/status/<session_id>')
 @login_required
 def api_shannon_status(session_id: str):
@@ -18298,7 +18001,6 @@ def api_shannon_status(session_id: str):
         return jsonify({'basarili': False, 'hata': 'Oturum bulunamadı'}), 404
 
     return jsonify({'basarili': True, **status})
-
 
 @app.route('/api/shannon/sessions')
 @login_required
@@ -18314,7 +18016,6 @@ def api_shannon_sessions():
         'sessions': sessions,
         'toplam': len(sessions)
     })
-
 
 @app.route('/api/shannon/findings/<session_id>')
 @login_required
@@ -18334,7 +18035,6 @@ def api_shannon_findings(session_id: str):
         'findings': [f.to_dict() for f in findings],
         'toplam': len(findings)
     })
-
 
 @app.route('/api/shannon/findings/<session_id>/soar', methods=['POST'])
 @login_required
@@ -18359,7 +18059,6 @@ def api_shannon_to_soar(session_id: str):
         'incidents_created': len(incidents),
         'mesaj': f'{len(incidents)} incident SOAR\'a aktarıldı'
     })
-
 
 @app.route('/api/shannon/findings/<session_id>/markers')
 @login_required
@@ -18387,7 +18086,6 @@ def api_shannon_map_markers(session_id: str):
         'markers': markers
     })
 
-
 @app.route('/api/shannon/cancel/<session_id>', methods=['POST'])
 @login_required
 def api_shannon_cancel(session_id: str):
@@ -18408,7 +18106,6 @@ def api_shannon_cancel(session_id: str):
         return jsonify({'basarili': True, 'mesaj': 'Pentest iptal edildi'})
     else:
         return jsonify({'basarili': False, 'hata': 'İptal edilemedi veya oturum bulunamadı'}), 400
-
 
 @app.route('/api/shannon/durum')
 @login_required
@@ -18492,7 +18189,6 @@ def api_shannon_module_status():
         }
     })
 
-
 @app.route('/api/shannon/statistics')
 @login_required
 def api_shannon_statistics():
@@ -18520,7 +18216,6 @@ def api_shannon_statistics():
         }
     })
 
-
 # Onay gerektiren aksiyon oluştur (internal use)
 def komuta_onay_gerektir(aksiyon_tipi, hedef, sebep, risk_seviyesi='orta'):
     """Onay gerektiren bir aksiyon oluştur"""
@@ -18545,7 +18240,6 @@ def komuta_onay_gerektir(aksiyon_tipi, hedef, sebep, risk_seviyesi='orta'):
         pass
 
     return aksiyon['id']
-
 
 # ==================== PENTESTOPS API ====================
 import uuid
@@ -18575,7 +18269,6 @@ def api_pentest_projeler():
 
     return jsonify({'basarili': True, 'id': proje_id, 'mesaj': 'Proje olusturuldu'})
 
-
 @app.route('/api/pentest/projeler/<proje_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def api_pentest_proje_detay(proje_id):
@@ -18597,7 +18290,6 @@ def api_pentest_proje_detay(proje_id):
         # Soft delete - durumu 'silindi' yap
         db.pentest_proje_guncelle(proje_id, durum='silindi')
         return jsonify({'basarili': True, 'mesaj': 'Proje silindi'})
-
 
 @app.route('/api/pentest/bulgular', methods=['GET', 'POST'])
 @login_required
@@ -18640,7 +18332,6 @@ def api_pentest_bulgular():
 
     return jsonify({'basarili': True, 'id': bulgu_id, 'mesaj': 'Bulgu eklendi'})
 
-
 @app.route('/api/pentest/bulgular/<bulgu_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 def api_pentest_bulgu_detay(bulgu_id):
@@ -18653,7 +18344,6 @@ def api_pentest_bulgu_detay(bulgu_id):
     elif request.method == 'DELETE':
         db.pentest_bulgu_guncelle(bulgu_id, durum='silindi')
         return jsonify({'basarili': True, 'mesaj': 'Bulgu silindi'})
-
 
 @app.route('/api/pentest/gorevler', methods=['GET', 'POST'])
 @login_required
@@ -18684,7 +18374,6 @@ def api_pentest_gorevler():
 
     return jsonify({'basarili': True, 'id': gorev_id, 'mesaj': 'Gorev eklendi'})
 
-
 @app.route('/api/pentest/gorevler/<gorev_id>', methods=['PUT', 'DELETE'])
 @login_required
 def api_pentest_gorev_detay(gorev_id):
@@ -18698,7 +18387,6 @@ def api_pentest_gorev_detay(gorev_id):
         db.pentest_gorev_guncelle(gorev_id, durum='silindi')
         return jsonify({'basarili': True, 'mesaj': 'Gorev silindi'})
 
-
 @app.route('/api/pentest/istatistikler')
 @login_required
 def api_pentest_istatistikler():
@@ -18706,7 +18394,6 @@ def api_pentest_istatistikler():
     proje_id = request.args.get('proje_id')
     stats = db.pentest_istatistikler(proje_id)
     return jsonify({'basarili': True, 'istatistikler': stats})
-
 
 @app.route('/api/pentest/rapor/<proje_id>')
 @login_required
@@ -18766,7 +18453,6 @@ def api_pentest_rapor(proje_id):
 
     return jsonify({'basarili': True, 'rapor': rapor})
 
-
 # ==================== LYDIAN AI API ====================
 
 @app.route('/api/llm/durum')
@@ -18804,7 +18490,6 @@ def api_llm_durum():
 
     return jsonify({'basarili': True, 'durum': durum})
 
-
 @app.route('/api/llm/yukle', methods=['POST'])
 @login_required
 def api_llm_yukle():
@@ -18833,7 +18518,6 @@ def api_llm_yukle():
             'hata': f'{provider} yuklenemedi. API anahtari dogru mu?'
         }), 500
 
-
 @app.route('/api/llm/api-key', methods=['POST'])
 @login_required
 def api_llm_api_key():
@@ -18857,7 +18541,6 @@ def api_llm_api_key():
         'mesaj': f'{provider} API anahtari {"ayarlandi" if basarili else "ayarlanamadi"}'
     })
 
-
 @app.route('/api/llm/analiz', methods=['POST'])
 @login_required
 def api_llm_analiz():
@@ -18877,7 +18560,6 @@ def api_llm_analiz():
 
     return jsonify({'basarili': True, 'analiz': sonuc})
 
-
 @app.route('/api/llm/tehdit-analiz', methods=['POST'])
 @login_required
 def api_llm_tehdit_analiz():
@@ -18891,7 +18573,6 @@ def api_llm_tehdit_analiz():
     sonuc = beyin.akilli_tehdit_analizi(data)
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
-
 
 # ==================== GERCEK ZAMANLI LLM API ====================
 
@@ -18919,7 +18600,6 @@ def api_llm_canli_analiz():
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
 
-
 @app.route('/api/llm/saldiri-tahmini', methods=['POST'])
 @login_required
 def api_llm_saldiri_tahmini():
@@ -18940,7 +18620,6 @@ def api_llm_saldiri_tahmini():
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
 
-
 @app.route('/api/llm/defcon-onerisi', methods=['POST'])
 @login_required
 def api_llm_defcon_onerisi():
@@ -18959,7 +18638,6 @@ def api_llm_defcon_onerisi():
         sonuc = {'oneri': 5, 'aciklama': 'Normal durum'}
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
-
 
 @app.route('/api/llm/altyapi-risk', methods=['POST'])
 @login_required
@@ -18982,7 +18660,6 @@ def api_llm_altyapi_risk():
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
 
-
 @app.route('/api/llm/savunma-onerisi', methods=['POST'])
 @login_required
 def api_llm_savunma_onerisi():
@@ -19001,7 +18678,6 @@ def api_llm_savunma_onerisi():
         sonuc = {'oneriler': ['IP engelle', 'Log kaydet', 'Alarm olustur'], 'ai_destekli': False}
 
     return jsonify({'basarili': True, 'sonuc': sonuc})
-
 
 @app.route('/api/llm/modeller')
 @login_required
@@ -19058,7 +18734,6 @@ def api_llm_modeller():
     ]
     return jsonify({'basarili': True, 'providers': providers})
 
-
 # ==================== GEO API (COĞRAFIK ANALİZ) ====================
 # (Import dosya basinda yapildi)
 
@@ -19075,7 +18750,6 @@ def api_geo_durum():
         **geo.durum()
     })
 
-
 @app.route('/api/geo/kritik-altyapi')
 @login_required
 def api_geo_kritik_altyapi():
@@ -19088,7 +18762,6 @@ def api_geo_kritik_altyapi():
         'basarili': True,
         'geojson': geo.kritik_altyapi_geojson()
     })
-
 
 @app.route('/api/geo/il-sinirlari')
 @login_required
@@ -19118,7 +18791,6 @@ def api_geo_il_sinirlari():
 
     return jsonify({'basarili': False, 'hata': 'İl sınırları verisi bulunamadı'}), 503
 
-
 @app.route('/api/geo/il-merkezleri')
 @login_required
 def api_geo_il_merkezleri():
@@ -19131,7 +18803,6 @@ def api_geo_il_merkezleri():
         'basarili': True,
         'geojson': geo.il_merkezleri_geojson()
     })
-
 
 @app.route('/api/geo/mesafe-hesapla', methods=['POST'])
 @login_required
@@ -19155,7 +18826,6 @@ def api_geo_mesafe_hesapla():
         'basarili': True,
         'sonuclar': sonuclar
     })
-
 
 @app.route('/api/geo/yakin-altyapi', methods=['POST'])
 @login_required
@@ -19181,7 +18851,6 @@ def api_geo_yakin_altyapi():
         'sonuclar': sonuclar
     })
 
-
 @app.route('/api/geo/il-bazli-altyapi')
 @login_required
 def api_geo_il_bazli_altyapi():
@@ -19194,7 +18863,6 @@ def api_geo_il_bazli_altyapi():
         'basarili': True,
         'veriler': geo.il_bazli_altyapi_sayisi()
     })
-
 
 @app.route('/api/geo/tip-bazli-istatistik')
 @login_required
@@ -19209,7 +18877,6 @@ def api_geo_tip_bazli():
         'veriler': geo.tip_bazli_istatistik()
     })
 
-
 @app.route('/api/geo/saldiri-ekle', methods=['POST'])
 @login_required
 def api_geo_saldiri_ekle():
@@ -19223,7 +18890,6 @@ def api_geo_saldiri_ekle():
 
     return jsonify({'basarili': True})
 
-
 @app.route('/api/geo/saldiri-geojson')
 @login_required
 def api_geo_saldiri_geojson():
@@ -19236,7 +18902,6 @@ def api_geo_saldiri_geojson():
         'basarili': True,
         'geojson': geo.saldiri_geojson()
     })
-
 
 @app.route('/api/geo/hotspot-analizi')
 @login_required
@@ -19255,7 +18920,6 @@ def api_geo_hotspot():
         'hotspotlar': hotspotlar
     })
 
-
 @app.route('/api/geo/kmeans-clustering')
 @login_required
 def api_geo_kmeans():
@@ -19273,7 +18937,6 @@ def api_geo_kmeans():
         'kumeler': kumeler
     })
 
-
 @app.route('/api/geo/altyapi-risk-haritasi')
 @login_required
 def api_geo_risk_haritasi():
@@ -19286,7 +18949,6 @@ def api_geo_risk_haritasi():
         'basarili': True,
         'risk_haritasi': geo.altyapi_risk_haritasi()
     })
-
 
 @app.route('/api/geo/il-saldiri-istatistikleri')
 @login_required
@@ -19301,7 +18963,6 @@ def api_geo_il_saldiri():
         'veriler': geo.il_bazli_saldiri_istatistikleri()
     })
 
-
 @app.route('/api/geo/saldiri-dagilimi')
 @login_required
 def api_geo_saldiri_dagilimi():
@@ -19315,7 +18976,6 @@ def api_geo_saldiri_dagilimi():
         'veriler': geo.saldirilarin_il_dagilimi()
     })
 
-
 @app.route('/api/geo/kaynak-ulke-analizi')
 @login_required
 def api_geo_kaynak_ulke():
@@ -19328,7 +18988,6 @@ def api_geo_kaynak_ulke():
         'basarili': True,
         'veriler': geo.kaynak_ulke_analizi()
     })
-
 
 @app.route('/api/geo/en-tehlikeli-bolgeler')
 @login_required
@@ -19345,7 +19004,6 @@ def api_geo_tehlikeli_bolgeler():
         'veriler': geo.en_tehlikeli_bolgeler(limit)
     })
 
-
 @app.route('/api/geo/saldiri-yonu')
 @login_required
 def api_geo_saldiri_yonu():
@@ -19358,7 +19016,6 @@ def api_geo_saldiri_yonu():
         'basarili': True,
         'veriler': geo.saldiri_yonu_analizi()
     })
-
 
 @app.route('/api/geo/zaman-bazli-analiz')
 @login_required
@@ -19375,7 +19032,6 @@ def api_geo_zaman_analiz():
         'veriler': geo.zaman_bazli_analiz(saat_araligi)
     })
 
-
 @app.route('/api/geo/il-icindeki-saldirilari/<il_adi>')
 @login_required
 def api_geo_il_saldirilari(il_adi):
@@ -19389,7 +19045,6 @@ def api_geo_il_saldirilari(il_adi):
         'il': il_adi,
         'saldirilari': geo.il_icindeki_saldirilari_bul(il_adi)
     })
-
 
 # ==================== MCP API (HEXSTRIKE-AI) ====================
 
@@ -19405,14 +19060,12 @@ except ImportError:
 # Global MCP
 _mcp_client = None
 
-
 def _mcp_init():
     """MCP istemcisini baslat (lazy init)"""
     global _mcp_client
     if _mcp_client is None and MCP_AKTIF:
         _mcp_client = mcp_al()
     return _mcp_client
-
 
 @app.route('/api/mcp/durum')
 @login_required
@@ -19431,7 +19084,6 @@ def api_mcp_durum():
         'durum': durum
     })
 
-
 @app.route('/api/mcp/araclar')
 @login_required
 def api_mcp_araclar():
@@ -19447,7 +19099,6 @@ def api_mcp_araclar():
     araclar = client.araclari_listele(kategori)
     return jsonify({'basarili': True, 'araclar': araclar})
 
-
 @app.route('/api/mcp/kategoriler')
 @login_required
 def api_mcp_kategoriler():
@@ -19461,7 +19112,6 @@ def api_mcp_kategoriler():
 
     kategoriler = client.kategorileri_listele()
     return jsonify({'basarili': True, 'kategoriler': kategoriler})
-
 
 @app.route('/api/mcp/calistir', methods=['POST'])
 @login_required
@@ -19504,7 +19154,6 @@ def api_mcp_calistir():
         'hata': sonuc.hata
     })
 
-
 @app.route('/api/mcp/tam-kesfet', methods=['POST'])
 @login_required
 def api_mcp_tam_kesfet():
@@ -19524,7 +19173,6 @@ def api_mcp_tam_kesfet():
 
     sonuc = client.hizli_kesif(hedef)
     return jsonify({'basarili': True, 'sonuc': sonuc})
-
 
 @app.route('/api/mcp/osint', methods=['POST'])
 @login_required
@@ -19550,7 +19198,6 @@ def api_mcp_osint():
         sonuclar[arac] = {'basarili': s.basarili, 'cikti': s.cikti[:1000]}
 
     return jsonify({'basarili': True, 'sonuclar': sonuclar})
-
 
 # MCP Terminal entegrasyonu
 def _handle_mcp_komut(komut: str) -> dict:
@@ -19580,7 +19227,6 @@ def _handle_mcp_komut(komut: str) -> dict:
     except Exception as e:
         return {'basarili': False, 'cikti': f'MCP hatasi: {str(e)}'}
 
-
 # ==================== TSUNAMI ORKESTRATOR API ====================
 
 @app.route('/api/orkestrator/durum')
@@ -19589,7 +19235,6 @@ def api_orkestrator_durum():
     """Orkestrator durum bilgisi"""
     ork = orkestrator_al()
     return jsonify({'basarili': True, 'durum': ork.durum()})
-
 
 @app.route('/api/orkestrator/baslat', methods=['POST'])
 @login_required
@@ -19607,7 +19252,6 @@ def api_orkestrator_baslat():
         'durum': ork.durum()
     })
 
-
 @app.route('/api/orkestrator/tehdit', methods=['POST'])
 @login_required
 def api_orkestrator_tehdit():
@@ -19620,7 +19264,6 @@ def api_orkestrator_tehdit():
 
     sonuc = ork.tehdit_isle(data)
     return jsonify({'basarili': True, 'sonuc': sonuc})
-
 
 @app.route('/api/orkestrator/kesif', methods=['POST'])
 @login_required
@@ -19642,14 +19285,12 @@ def api_orkestrator_kesif():
 
     return jsonify({'basarili': True, 'kesif': sonuc})
 
-
 # WebSocket: Orkestrator baglantida baslat
 @socketio.on('connect')
 def handle_orkestrator_connect():
     """Baglantida orkestratoru kontrol et ve durum gonder"""
     ork = orkestrator_al()
     emit('orkestrator_durumu', ork.durum())
-
 
 # BEYIN Terminal Komutlari
 BEYIN_TERMINAL_KOMUTLARI = {
@@ -19659,7 +19300,6 @@ BEYIN_TERMINAL_KOMUTLARI = {
     '/gizlimod': 'Gizli modu degistir',
     '/otonomtest': 'Tehdit simulasyonu yap'
 }
-
 
 def beyin_terminal_komut(komut: str, argumanlar: list) -> Dict:
     """BEYIN terminal komutu isleyici"""
@@ -19742,10 +19382,8 @@ Ozellikler:
 
     return {'basarili': False, 'cikti': f"Bilinmeyen BEYIN komutu: {komut}"}
 
-
 # Terminal sistemine BEYIN komutlarini ekle
 _original_ailydian_terminal = ailydian_terminal_komut
-
 
 def _enhanced_ailydian_terminal(komut: str, argumanlar: list) -> Dict:
     """BEYIN entegreli terminal komut"""
@@ -19753,10 +19391,8 @@ def _enhanced_ailydian_terminal(komut: str, argumanlar: list) -> Dict:
         return beyin_terminal_komut(komut, argumanlar)
     return _original_ailydian_terminal(komut, argumanlar)
 
-
 # AILYDIAN komutlarina BEYIN'i ekle
 AILYDIAN_TERMINAL_KOMUTLARI.update(BEYIN_TERMINAL_KOMUTLARI)
-
 
 # ==================== SHODAN HARİTA API ====================
 
@@ -19777,11 +19413,9 @@ MCC_MNC_OPERATORLER = {
     (208, 10): 'SFR',
 }
 
-
 def _mcc_mnc_to_operator(mcc, mnc):
     """MCC/MNC kodlarını operatör adına çevir"""
     return MCC_MNC_OPERATORLER.get((mcc, mnc), f'Bilinmiyor ({mcc}/{mnc})')
-
 
 @app.route('/api/shodan/konum-harita', methods=['POST'])
 @login_required
@@ -19912,7 +19546,6 @@ def api_shodan_konum_harita():
 
     return jsonify({'basarili': False, 'hata': 'IP veya koordinat gerekli'})
 
-
 @app.route('/api/shodan/zafiyet-harita', methods=['POST'])
 @login_required
 def api_shodan_zafiyet_harita():
@@ -19962,7 +19595,6 @@ def api_shodan_zafiyet_harita():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/shodan/viewport', methods=['POST'])
 @login_required
@@ -20023,7 +19655,6 @@ def api_shodan_viewport():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== OPENCELLID HARİTA API ====================
 
@@ -20105,7 +19736,6 @@ def api_opencellid_harita():
 
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/opencellid/triangulasyon', methods=['POST'])
 @login_required
@@ -20195,7 +19825,6 @@ def api_opencellid_triangulasyon():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 # ==================== HAVA SAHASI TAKİBİ API ====================
 
 @app.route('/api/airspace/aircraft', methods=['POST'])
@@ -20250,7 +19879,6 @@ def api_airspace_aircraft():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/airspace/track/<icao24>')
 @login_required
 def api_airspace_track(icao24):
@@ -20281,7 +19909,6 @@ def api_airspace_track(icao24):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/airspace/turkey')
 @login_required
 def api_airspace_turkey():
@@ -20308,7 +19935,6 @@ def api_airspace_turkey():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== UYDU TAKİBİ API ====================
 
@@ -20340,7 +19966,6 @@ def api_satellite_iss():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/satellite/position/<int:norad_id>')
 @login_required
 def api_satellite_position(norad_id):
@@ -20368,7 +19993,6 @@ def api_satellite_position(norad_id):
             return jsonify({'basarili': False, 'hata': 'Uydu bulunamadı veya API key eksik'})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/satellite/above', methods=['POST'])
 @login_required
@@ -20401,7 +20025,6 @@ def api_satellite_above():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/satellite/turksat')
 @login_required
 def api_satellite_turksat():
@@ -20425,7 +20048,6 @@ def api_satellite_turksat():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/satellite/tle/<group>')
 @login_required
 def api_satellite_tle(group):
@@ -20447,7 +20069,6 @@ def api_satellite_tle(group):
             return jsonify({'basarili': False, 'hata': 'TLE verisi alınamadı'})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/satellite/starlink', methods=['POST'])
 @login_required
@@ -20476,7 +20097,6 @@ def api_satellite_starlink():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/aerospace/durum')
 @login_required
@@ -20520,7 +20140,6 @@ def api_aerospace_durum():
 
     return jsonify(durum)
 
-
 # ==================== DEPREM TAKİBİ ====================
 
 @app.route('/api/deprem/son')
@@ -20545,7 +20164,6 @@ def api_deprem_son():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/deprem/faylar')
 @login_required
 def api_deprem_faylar():
@@ -20558,7 +20176,6 @@ def api_deprem_faylar():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/deprem/bildirim')
 @login_required
@@ -20583,7 +20200,6 @@ def api_deprem_bildirim():
             })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== HAVA DURUMU ====================
 
@@ -20611,7 +20227,6 @@ def api_hava_koordinat():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/hava/il/<il>')
 @login_required
 def api_hava_il(il):
@@ -20632,7 +20247,6 @@ def api_hava_il(il):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/hava/iller')
 @login_required
 def api_hava_iller():
@@ -20645,7 +20259,6 @@ def api_hava_iller():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== THREAT INTELLIGENCE API ====================
 
@@ -20681,7 +20294,6 @@ def api_threat_intel_status():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/threat-intel/check/ip/<ip>')
 @login_required
@@ -20723,7 +20335,6 @@ def api_threat_intel_check_ip(ip):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/threat-intel/check/domain/<domain>')
 @login_required
 def api_threat_intel_check_domain(domain):
@@ -20764,7 +20375,6 @@ def api_threat_intel_check_domain(domain):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/threat-intel/apt-groups')
 @login_required
 def api_threat_intel_apt_groups():
@@ -20801,7 +20411,6 @@ def api_threat_intel_apt_groups():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/threat-intel/correlate', methods=['POST'])
 @login_required
 def api_threat_intel_correlate():
@@ -20826,7 +20435,6 @@ def api_threat_intel_correlate():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/threat-intel/feeds/update', methods=['POST'])
 @login_required
 def api_threat_intel_update():
@@ -20844,7 +20452,6 @@ def api_threat_intel_update():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== DALGA SIGINT API ====================
 # Wireless Signal Intelligence - WiFi, Bluetooth, Cell, IoT detection
@@ -20868,7 +20475,6 @@ def _sigint_db_init():
     if _sigint_db is None and SIGINT_AKTIF:
         _sigint_db = SigintDatabase()
     return _sigint_db
-
 
 @app.route('/api/sigint/status')
 @app.route('/api/sigint/durum')
@@ -20895,7 +20501,6 @@ def api_sigint_status():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/scan/wifi', methods=['POST'])
 @login_required
@@ -20996,7 +20601,6 @@ def api_sigint_scan_wifi():
         logger.error(f"[TSUNAMI-WiFi] Tarama hatası: {str(e)}")
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/scan/bluetooth', methods=['POST'])
 @login_required
 def api_sigint_scan_bluetooth():
@@ -21022,7 +20626,6 @@ def api_sigint_scan_bluetooth():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/scan/cell', methods=['POST'])
 @login_required
@@ -21051,7 +20654,6 @@ def api_sigint_scan_cell():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/scan/iot', methods=['POST'])
 @login_required
@@ -21084,7 +20686,6 @@ def api_sigint_scan_iot():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/scan/all', methods=['POST'])
 @login_required
@@ -21146,7 +20747,6 @@ def api_sigint_scan_all():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/devices')
 @login_required
 def api_sigint_devices():
@@ -21182,7 +20782,6 @@ def api_sigint_devices():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/devices/wifi')
 @login_required
 def api_sigint_devices_wifi():
@@ -21201,7 +20800,6 @@ def api_sigint_devices_wifi():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/devices/bluetooth')
 @login_required
@@ -21222,7 +20820,6 @@ def api_sigint_devices_bluetooth():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/devices/cell')
 @login_required
 def api_sigint_devices_cell():
@@ -21242,7 +20839,6 @@ def api_sigint_devices_cell():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/devices/iot')
 @login_required
 def api_sigint_devices_iot():
@@ -21261,7 +20857,6 @@ def api_sigint_devices_iot():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/device/<device_id>')
 @login_required
@@ -21292,7 +20887,6 @@ def api_sigint_device_detail(device_id):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/threats')
 @login_required
 def api_sigint_threats():
@@ -21311,7 +20905,6 @@ def api_sigint_threats():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/nearby', methods=['GET', 'POST'])
 @login_required
@@ -21407,7 +21000,6 @@ def api_sigint_nearby():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 @app.route('/api/sigint/search', methods=['POST'])
 @login_required
 def api_sigint_search():
@@ -21444,7 +21036,6 @@ def api_sigint_search():
 
     return jsonify({'basarili': False, 'hata': 'Geçersiz arama türü'})
 
-
 @app.route('/api/sigint/triangulate', methods=['POST'])
 @login_required
 def api_sigint_triangulate():
@@ -21472,7 +21063,6 @@ def api_sigint_triangulate():
             return jsonify({'basarili': False, 'hata': 'Konum hesaplanamadı'})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 @app.route('/api/sigint/export/<format>')
 @login_required
@@ -21554,7 +21144,6 @@ def api_sigint_export(format):
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 # ==================== SECURITY API ====================
 
 @app.route('/api/security/status')
@@ -21569,7 +21158,6 @@ def api_security_status():
             'threat_intel_aktif': THREAT_INTEL_AKTIF
         }
     })
-
 
 @app.route('/api/security/audit-log')
 @login_required
@@ -21591,7 +21179,6 @@ def api_security_audit_log():
             return jsonify({'basarili': True, 'loglar': []})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== YENİ MODÜL API'LERI (v2.0 Müdahale Yetenekleri) ====================
 
@@ -21696,7 +21283,6 @@ def api_sinkhole_durum():
     except Exception as e:
         return jsonify({'basarili': False, 'aktif': False, 'hata': str(e), 'modul': 'sinkhole'})
 
-
 @app.route('/api/harita/deception/durum')
 @login_required
 def api_deception_durum():
@@ -21755,7 +21341,6 @@ def api_deception_durum():
         })
     except Exception as e:
         return jsonify({'basarili': False, 'aktif': False, 'hata': str(e), 'modul': 'deception'})
-
 
 @app.route('/api/harita/hunter/durum')
 @login_required
@@ -21821,7 +21406,6 @@ def api_hunter_durum():
     except Exception as e:
         return jsonify({'basarili': False, 'aktif': False, 'hata': str(e), 'modul': 'hunter'})
 
-
 @app.route('/api/harita/wireless/durum')
 @login_required
 def api_wireless_durum():
@@ -21886,7 +21470,6 @@ def api_wireless_durum():
     except Exception as e:
         return jsonify({'basarili': False, 'aktif': False, 'hata': str(e), 'modul': 'wireless'})
 
-
 @app.route('/api/v5/soar/status')
 @login_required
 def api_soar_status():
@@ -21947,7 +21530,6 @@ def api_soar_status():
     except Exception as e:
         return jsonify({'basarili': False, 'aktif': False, 'active': False, 'hata': str(e), 'modul': 'soar'})
 
-
 @app.route('/api/waf/status')
 @login_required
 def api_waf_status():
@@ -21988,7 +21570,6 @@ def api_waf_status():
             }
         })
     return jsonify({'basarili': False, 'aktif': False, 'hata': 'WAF modülü yüklenemedi', 'modul': 'waf'})
-
 
 # --- DNS Sinkhole API ---
 @app.route('/api/harita/sinkhole/istatistik')
@@ -22209,7 +21790,6 @@ def api_nlp_query():
         import traceback
         return jsonify({'basarili': False, 'hata': str(e), 'detay': traceback.format_exc()})
 
-
 def tsunami_nlp_isle(sorgu: str) -> dict:
     """TSUNAMI Türkçe NLP İşleyici - Gerçek Veri"""
     import re
@@ -22276,7 +21856,6 @@ def tsunami_nlp_isle(sorgu: str) -> dict:
         'sorgu': sorgu
     }
 
-
 def tespit_niyet(sorgu: str) -> str:
     """Türkçe niyet tespiti"""
     # Tehdit/Saldırı
@@ -22302,7 +21881,6 @@ def tespit_niyet(sorgu: str) -> str:
         return 'durum'
     return 'arama'
 
-
 def tespit_konum(sorgu: str) -> str:
     """Türkiye şehir tespiti"""
     sehirler = {
@@ -22320,7 +21898,6 @@ def tespit_konum(sorgu: str) -> str:
         if key in sorgu_lower:
             return val
     return None
-
 
 def tespit_zaman(sorgu: str) -> dict:
     """Türkçe zaman ifadesi tespiti"""
@@ -22364,7 +21941,6 @@ def tespit_zaman(sorgu: str) -> dict:
 
     return {'baslangic': now - timedelta(hours=24), 'bitis': now, 'aciklama': 'Son 24 saat'}
 
-
 def tespit_hedefler(sorgu: str) -> dict:
     """IP, domain, hash tespiti"""
     import re
@@ -22384,7 +21960,6 @@ def tespit_hedefler(sorgu: str) -> dict:
     hedefler['hash'] = re.findall(hash_pattern, sorgu)
 
     return hedefler if any(hedefler.values()) else None
-
 
 def sorgula_tehditler(sorgu: str, konum: str, zaman: dict, hedefler: dict) -> tuple:
     """BEYIN ve veritabanından tehdit sorgula"""
@@ -22452,7 +22027,6 @@ def sorgula_tehditler(sorgu: str, konum: str, zaman: dict, hedefler: dict) -> tu
 
     return sonuclar, yanit
 
-
 def sorgula_honeypot(konum: str, zaman: dict) -> tuple:
     """Honeypot verilerini sorgula"""
     sonuclar = []
@@ -22480,7 +22054,6 @@ def sorgula_honeypot(konum: str, zaman: dict) -> tuple:
 
     return sonuclar, yanit
 
-
 def sorgula_sinkhole(zaman: dict) -> tuple:
     """DNS Sinkhole verilerini sorgula"""
     sonuclar = []
@@ -22507,7 +22080,6 @@ def sorgula_sinkhole(zaman: dict) -> tuple:
 
     return sonuclar, yanit
 
-
 def sorgula_wireless() -> tuple:
     """Wireless IDS verilerini sorgula"""
     sonuclar = []
@@ -22533,7 +22105,6 @@ def sorgula_wireless() -> tuple:
 
     return sonuclar, yanit
 
-
 def sorgula_sistem_durumu() -> tuple:
     """Sistem durumunu sorgula"""
     sonuclar = []
@@ -22558,7 +22129,6 @@ def sorgula_sistem_durumu() -> tuple:
         yanit = f"⚠️ Durum sorgulanamadı: {str(e)}"
 
     return sonuclar, yanit
-
 
 def genel_arama(sorgu: str, konum: str, zaman: dict) -> tuple:
     """Genel arama - tüm kaynaklarda ara"""
@@ -22588,7 +22158,6 @@ def genel_arama(sorgu: str, konum: str, zaman: dict) -> tuple:
         yanit = f"'{sorgu}' için sonuç bulunamadı. Daha spesifik bir sorgu deneyin."
 
     return sonuclar, yanit
-
 
 # --- NLP Aksiyon API ---
 @app.route('/api/harita/nlp/aksiyon', methods=['POST'])
@@ -22686,7 +22255,6 @@ def api_nlp_aksiyon():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 # --- Birleşik Müdahale Harita API ---
 @app.route('/api/harita/mudahale/ozet')
 @login_required
@@ -22744,7 +22312,6 @@ def api_intervention_summary():
         return jsonify({'basarili': True, 'ozet': ozet})
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
-
 
 # ==================== SOC KOMUTA MERKEZi OZET ====================
 @app.route('/api/harita/soc/ozet')
@@ -22881,7 +22448,6 @@ def api_soc_summary():
     except Exception as e:
         return jsonify({'basarili': False, 'hata': str(e)})
 
-
 # ==================== SOC SocketIO ====================
 @socketio.on('soc_alarm_iste')
 def handle_soc_alarm_request(data):
@@ -22903,16 +22469,13 @@ def handle_soc_alarm_request(data):
             'hata': str(e)
         }, room=request.sid)
 
-
 def soc_yeni_alarm_bildir(alarm_data):
     """Yeni SOC alarmi geldiginde tum istemcilere bildir (modul icerisinden cagirilir)"""
     socketio.emit('soc_yeni_alarm', alarm_data)
 
-
 def soc_sla_ihlali_bildir(ihlal_data):
     """SLA ihlali tespit edildiginde tum istemcilere bildir"""
     socketio.emit('soc_sla_ihlali', ihlal_data)
-
 
 # ==================== ANA ====================
 def main():
